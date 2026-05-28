@@ -6,7 +6,8 @@ import {
   ShieldCheck, 
   Sparkles,
   Loader2,
-  Mail
+  Mail,
+  AlertCircle
 } from 'lucide-react';
 
 export default function Checkout({ onPaymentSuccess, onBackToLanding }) {
@@ -16,6 +17,7 @@ export default function Checkout({ onPaymentSuccess, onBackToLanding }) {
   const [emailInput, setEmailInput] = useState('');
   const [emailError, setEmailError] = useState('');
   const [showEmailField, setShowEmailField] = useState(false);
+  const [authError, setAuthError] = useState(null);
 
   // Credit card form states
   const [cardDetails, setCardDetails] = useState({
@@ -53,6 +55,7 @@ export default function Checkout({ onPaymentSuccess, onBackToLanding }) {
   // Handle Google Sign In (Firebase Auth or fallback)
   const handleGoogleSignIn = async () => {
     setIsProcessing(true);
+    setAuthError(null);
     try {
       // Try Firebase Auth
       const { getAuth, signInWithPopup, GoogleAuthProvider } = await import('firebase/auth');
@@ -68,15 +71,25 @@ export default function Checkout({ onPaymentSuccess, onBackToLanding }) {
         avatar: user.photoURL ? null : '👤',
         photoURL: user.photoURL,
         title: VIP_EMAILS.includes(user.email) 
-          ? (user.email.includes('webcamargo') ? 'Ex-Juiz do TRE e Advogado Eleitoral' : 'Especialista Eleitoral e Assessor Parlamentar')
+          ? (user.email.includes('webcamargo') ? 'Gestor de Campanha' : 'Especialista Eleitoral e Assessor Parlamentar')
           : 'Assinante'
       };
       
       setSelectedUser(userObj);
       setStep('card');
     } catch (firebaseError) {
-      // Firebase not configured — use manual email fallback
-      console.info('Firebase Auth não configurado. Usando modo de demonstração.');
+      console.error('Google Sign In error:', firebaseError);
+      let friendlyMessage = '';
+      if (firebaseError.code === 'auth/unauthorized-domain') {
+        friendlyMessage = 'Este domínio (e-politica-ia.vercel.app) não está autorizado no Console do Firebase. Adicione-o em Autenticação -> Configurações -> Domínios Autorizados no Firebase para habilitar a API do Google.';
+      } else if (firebaseError.code === 'auth/popup-blocked') {
+        friendlyMessage = 'O pop-up de login foi bloqueado pelo seu navegador. Por favor, libere os pop-ups para este site e tente novamente.';
+      } else if (firebaseError.message && firebaseError.message.includes('No Firebase App')) {
+        friendlyMessage = 'Chaves do Firebase não configuradas localmente. Use o e-mail manual para demonstração.';
+      } else {
+        friendlyMessage = firebaseError.message || 'Erro desconhecido ao conectar com a API do Google.';
+      }
+      setAuthError(friendlyMessage);
       setShowEmailField(true);
     } finally {
       setIsProcessing(false);
@@ -105,7 +118,7 @@ export default function Checkout({ onPaymentSuccess, onBackToLanding }) {
         ? (trimmedEmail.includes('webcamargo') ? '👨‍💼' : '👨‍💼')
         : '👤',
       title: isVipEmail 
-        ? (trimmedEmail.includes('webcamargo') ? 'Ex-Juiz do TRE e Advogado Eleitoral' : 'Especialista Eleitoral e Assessor Parlamentar')
+        ? (trimmedEmail.includes('webcamargo') ? 'Gestor de Campanha' : 'Especialista Eleitoral e Assessor Parlamentar')
         : 'Assinante'
     };
 
@@ -210,6 +223,29 @@ export default function Checkout({ onPaymentSuccess, onBackToLanding }) {
                 Entre com sua conta Google para começar a usar o e-politica.ia
               </p>
             </div>
+
+            {authError && (
+              <div style={{
+                background: 'rgba(239, 68, 68, 0.08)',
+                border: '1px solid rgba(239, 68, 68, 0.25)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '12px 16px',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '12px',
+                textAlign: 'left',
+                boxShadow: '0 0 15px rgba(239, 68, 68, 0.05)',
+                position: 'relative'
+              }}>
+                <AlertCircle size={18} style={{ color: '#EF4444', flexShrink: 0, marginTop: '2px' }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#EF4444' }}>Problema de Conexão com Google Auth</span>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-gray)', lineHeight: '1.4', margin: 0 }}>
+                    {authError}
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Google Sign-In Button */}
             <button

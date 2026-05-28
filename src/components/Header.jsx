@@ -9,7 +9,8 @@ export default function Header({
   sidebarCollapsed, 
   setSidebarCollapsed,
   toggleMobileSidebar,
-  activeUser
+  activeUser,
+  candidates
 }) {
   
   const getPageTitle = () => {
@@ -24,7 +25,8 @@ export default function Header({
     }
   };
 
-  const currentCandidateObj = CANDIDATES.find(c => c.id === activeCandidate) || CANDIDATES[0];
+  const candidateList = candidates && candidates.length > 0 ? candidates : CANDIDATES;
+  const currentCandidateObj = candidateList.find(c => c.id === activeCandidate) || candidateList[0];
 
   return (
     <header
@@ -138,7 +140,7 @@ export default function Header({
                 cursor: 'pointer',
               }}
             >
-              {CANDIDATES.map(c => (
+              {candidateList.map(c => (
                 <option key={c.id} value={c.id} style={{ background: 'var(--bg-dark)', color: 'var(--text-white)' }}>
                   {c.name} ({c.party})
                 </option>

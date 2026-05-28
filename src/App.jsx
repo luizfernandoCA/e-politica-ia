@@ -16,7 +16,7 @@ import CRM from './pages/CRM';
 import Reports from './pages/Reports';
 
 // Import Mock Data
-import { CANDIDATES as initialCandidates } from './data/electoralMockData';
+import { CANDIDATES as initialCandidates, reinitializeElectoralMockData } from './data/electoralMockData';
 import { CRM_CONTACTS as initialContacts, CAMPAIGN_CHECKLIST as initialTasks } from './data/crmMockData';
 import { 
   saveCampaignParams, 
@@ -66,7 +66,7 @@ export default function App() {
               avatar: user.photoURL ? null : '👤',
               photoURL: user.photoURL,
               title: VIP_EMAILS.includes(user.email) 
-                ? (user.email.includes('webcamargo') ? 'Ex-Juiz do TRE e Advogado Eleitoral' : 'Especialista Eleitoral e Assessor Parlamentar')
+                ? (user.email.includes('webcamargo') ? 'Gestor de Campanha' : 'Especialista Eleitoral e Assessor Parlamentar')
                 : 'Assinante'
             };
             setActiveUser(userObj);
@@ -124,47 +124,16 @@ export default function App() {
         // 1. Load Campaign parameters
         const params = await getCampaignParams(userId);
         if (params) {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('campaignParams', JSON.stringify(params));
+          }
+          reinitializeElectoralMockData();
           setCampaignParams(params);
           setIsCampaignConfigured(true);
           
           // Re-hydrate custom candidate list with user candidate
           const userCandidateId = 'dr-marcos-silva';
-          const customCandidates = [
-            {
-              id: userCandidateId,
-              name: params.candidateName,
-              party: `${params.party} (15)`,
-              role: params.role,
-              avatar: params.role === 'Prefeito' ? '👨‍⚖️' : '👨‍💼',
-              color: 'var(--accent-green)',
-              status: 'Candidato Principal',
-              baseCount: 0,
-              targetGoal: 10000
-            },
-            {
-              id: 'ana-souza',
-              name: 'Oponente PL',
-              party: 'PL (22)',
-              role: params.role,
-              avatar: '👩‍💼',
-              color: 'var(--accent-blue)',
-              status: 'Concorrente 1',
-              baseCount: 0,
-              targetGoal: 9500
-            },
-            {
-              id: 'roberto-lima',
-              name: 'Oponente PT',
-              party: 'PT (13)',
-              role: params.role,
-              avatar: '👨‍💼',
-              color: 'var(--accent-yellow)',
-              status: 'Concorrente 2',
-              baseCount: 0,
-              targetGoal: 8000
-            }
-          ];
-          setCandidates(customCandidates);
+          setCandidates([...initialCandidates]);
           setActiveCandidate(userCandidateId);
         } else {
           setIsCampaignConfigured(false);
@@ -241,44 +210,6 @@ export default function App() {
     setCampaignParams(params);
 
     const userCandidateId = 'dr-marcos-silva'; // Preserve key internally
-    const customCandidates = [
-      {
-        id: userCandidateId,
-        name: params.candidateName,
-        party: `${params.party} (15)`,
-        role: params.role,
-        avatar: params.role === 'Prefeito' ? '👨‍⚖️' : '👨‍💼',
-        color: 'var(--accent-green)',
-        status: 'Candidato Principal',
-        baseCount: 0, // CLEAN empty CRM start!
-        targetGoal: 10000
-      },
-      {
-        id: 'ana-souza',
-        name: 'Oponente PL',
-        party: 'PL (22)',
-        role: params.role,
-        avatar: '👩‍💼',
-        color: 'var(--accent-blue)',
-        status: 'Concorrente 1',
-        baseCount: 0,
-        targetGoal: 9500
-      },
-      {
-        id: 'roberto-lima',
-        name: 'Oponente PT',
-        party: 'PT (13)',
-        role: params.role,
-        avatar: '👨‍💼',
-        color: 'var(--accent-yellow)',
-        status: 'Concorrente 2',
-        baseCount: 0,
-        targetGoal: 8000
-      }
-    ];
-
-    setCandidates(customCandidates);
-    setActiveCandidate(userCandidateId);
     setContacts([]); // Starts with absolutely 0 pre-registered contacts!
 
     const defaultTasks = [
@@ -289,17 +220,21 @@ export default function App() {
     ];
     setTasks(defaultTasks);
 
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('campaignParams', JSON.stringify(params));
+      localStorage.setItem('crmContacts', JSON.stringify([]));
+      localStorage.setItem('campaignTasks', JSON.stringify(defaultTasks));
+    }
+    reinitializeElectoralMockData();
+
+    setCandidates([...initialCandidates]);
+    setActiveCandidate(userCandidateId);
+
     if (activeUser) {
       const userId = activeUser.uid || activeUser.email;
       await saveCampaignParams(userId, params);
       await saveContacts(userId, []);
       await saveTasks(userId, defaultTasks);
-    } else {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('campaignParams', JSON.stringify(params));
-        localStorage.setItem('crmContacts', JSON.stringify([]));
-        localStorage.setItem('campaignTasks', JSON.stringify(defaultTasks));
-      }
     }
 
     setIsCampaignConfigured(true);
@@ -495,6 +430,7 @@ export default function App() {
         mobileOpen={mobileSidebarOpen}
         setMobileOpen={setMobileSidebarOpen}
         onLogout={handleLogout}
+        onReconfigure={() => setIsCampaignConfigured(false)}
       />
 
       {/* Main Content Area */}
@@ -508,6 +444,7 @@ export default function App() {
           setSidebarCollapsed={setSidebarCollapsed}
           toggleMobileSidebar={toggleMobileSidebar}
           activeUser={activeUser}
+          candidates={candidates}
         />
 
         {/* Selected Page view */}

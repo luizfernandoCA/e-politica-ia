@@ -612,3 +612,280 @@ export const COMPARATIVE_YEARS_SUMMARY = campaignParams && Object.keys(dynamicCo
     costPerVote: { 2020: 2.06, 2022: 4.86, 2024: 8.73 }
   }
 };
+
+export function reinitializeElectoralMockData() {
+  const localParams = (() => {
+    try {
+      return typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('campaignParams')) : null;
+    } catch { return null; }
+  })();
+  if (!localParams || !localParams.tseData2024 || !localParams.tseData2020) return;
+  const localTse2024 = localParams.tseData2024;
+  const localTse2020 = localParams.tseData2020;
+
+  const userTypedName = localParams.candidateName.toUpperCase().trim();
+  const userTypedParty = localParams.party.toUpperCase().trim();
+  
+  let tseMainCand = localTse2024.candidates.find(c => 
+    c.name.includes(userTypedName) || 
+    userTypedName.includes(c.name) ||
+    c.party === userTypedParty
+  );
+
+  let mainCandidate;
+  if (tseMainCand) {
+    mainCandidate = {
+      id: "dr-marcos-silva",
+      name: tseMainCand.name,
+      party: `${tseMainCand.party} (${tseMainCand.number})`,
+      role: localParams.role,
+      avatar: tseMainCand.avatar,
+      color: "var(--accent-green)",
+      status: "Candidato Principal",
+      baseCount: 0,
+      targetGoal: Math.round(localTse2024.totalVotes * 0.35),
+      tseId: tseMainCand.id,
+      tseName: tseMainCand.name
+    };
+  } else {
+    mainCandidate = {
+      id: "dr-marcos-silva",
+      name: localParams.candidateName.toUpperCase(),
+      party: `${localParams.party} (15)`,
+      role: localParams.role,
+      avatar: localParams.role === 'Prefeito' ? "👨‍⚖️" : "👨‍💼",
+      color: "var(--accent-green)",
+      status: "Candidato Principal",
+      baseCount: 0,
+      targetGoal: Math.round(localTse2024.totalVotes * 0.3),
+      tseId: "user-custom",
+      tseName: localParams.candidateName.toUpperCase()
+    };
+  }
+
+  const remainingTseCands = localTse2024.candidates.filter(c => 
+    tseMainCand ? c.id !== tseMainCand.id : c.name !== mainCandidate.name
+  );
+
+  const opponents = remainingTseCands.map((c, idx) => {
+    const id = idx === 0 ? "ana-souza" : (idx === 1 ? "roberto-lima" : `oponente-${idx + 1}`);
+    return {
+      id: id,
+      name: c.name,
+      party: `${c.party} (${c.number})`,
+      role: localParams.role,
+      avatar: c.avatar,
+      color: idx === 0 ? "var(--accent-blue)" : (idx === 1 ? "var(--accent-yellow)" : "rgba(255,255,255,0.4)"),
+      status: `Concorrente ${idx + 1}`,
+      baseCount: 0,
+      targetGoal: Math.round(localTse2024.totalVotes * 0.25),
+      tseId: c.id,
+      tseName: c.name
+    };
+  });
+
+  const nextCandidates = [mainCandidate, ...opponents];
+
+  const getLegacyId = (tseName) => {
+    const norm = tseName.toUpperCase().trim();
+    if (norm === mainCandidate.tseName || norm === mainCandidate.name) return "dr-marcos-silva";
+    if (opponents[0] && (norm === opponents[0].tseName || norm === opponents[0].name)) return "ana-souza";
+    if (opponents[1] && (norm === opponents[1].tseName || norm === opponents[1].name)) return "roberto-lima";
+    const matched = opponents.find(op => op.tseName === norm || op.name === norm);
+    return matched ? matched.id : "other";
+  };
+
+  const formatTseVotes = (voteDistribution, totalVotesVal) => {
+    let mapped = [];
+    voteDistribution.forEach(item => {
+      const legacyId = getLegacyId(item.name);
+      if (legacyId !== "other") {
+        mapped.push({
+          candidateId: legacyId,
+          votes: item.votes,
+          percentage: item.percentage,
+          color: legacyId === "dr-marcos-silva" ? "var(--accent-green)" : (legacyId === "ana-souza" ? "var(--accent-blue)" : "var(--accent-yellow)"),
+          name: item.name,
+          party: item.party
+        });
+      }
+    });
+
+    if (!mapped.some(m => m.candidateId === "dr-marcos-silva")) {
+      const mainCandVotes = Math.round(totalVotesVal * 0.32);
+      const mainCandPct = 32.0;
+      mapped.push({
+        candidateId: "dr-marcos-silva",
+        votes: mainCandVotes,
+        percentage: mainCandPct,
+        color: "var(--accent-green)",
+        name: mainCandidate.name,
+        party: mainCandidate.party.split(" ")[0]
+      });
+      let sumPcts = mainCandPct;
+      mapped.forEach(m => {
+        if (m.candidateId !== "dr-marcos-silva") sumPcts += m.percentage;
+      });
+      if (sumPcts > 100) {
+        const factor = (100 - mainCandPct) / (sumPcts - mainCandPct);
+        mapped.forEach(m => {
+          if (m.candidateId !== "dr-marcos-silva") {
+            m.percentage = parseFloat((m.percentage * factor).toFixed(2));
+            m.votes = Math.round((totalVotesVal * m.percentage) / 100);
+          }
+        });
+      }
+    }
+    mapped.sort((a, b) => b.votes - a.votes);
+    return mapped;
+  };
+
+  const mayor2024 = formatTseVotes(localTse2024.voteDistribution, localTse2024.totalVotes);
+  const mayor2020 = formatTseVotes(localTse2020.voteDistribution, localTse2020.totalVotes);
+
+  const generateRegionBreakdown = (mayorList, regionList) => {
+    const result = {};
+    regionList.forEach(r => {
+      result[r.id] = [];
+    });
+    mayorList.forEach(cand => {
+      let remainingWeight = 100;
+      regionList.forEach((r, idx) => {
+        let weight = 0;
+        if (idx === regionList.length - 1) {
+          weight = remainingWeight;
+        } else {
+          const baseWeight = 100 / regionList.length;
+          const variance = (r.id === "centro" && cand.candidateId === "dr-marcos-silva") ? 6 
+                         : (r.id === "vila-nova" && cand.candidateId === "dr-marcos-silva") ? 8
+                         : (r.id === "jardins" && cand.candidateId === "ana-souza") ? 15
+                         : (r.id === "floresta" && cand.candidateId === "roberto-lima") ? 10
+                         : (Math.random() * 8 - 4);
+          weight = Math.max(5, Math.round(baseWeight + variance));
+          remainingWeight -= weight;
+        }
+        const regionCandVotes = Math.round((cand.votes * weight) / 100);
+        result[r.id].push({
+          candidateId: cand.candidateId,
+          votes: regionCandVotes,
+          percentage: weight
+        });
+      });
+    });
+    return result;
+  };
+
+  const generateZoneBreakdown = (mayorList, zoneList) => {
+    const result = {};
+    zoneList.forEach(z => {
+      result[z.id] = [];
+    });
+    mayorList.forEach(cand => {
+      let remainingWeight = 100;
+      zoneList.forEach((z, idx) => {
+        let weight = 0;
+        if (idx === zoneList.length - 1) {
+          weight = remainingWeight;
+        } else {
+          const baseWeight = 100 / zoneList.length;
+          const variance = (z.id === "zone-34" && cand.candidateId === "dr-marcos-silva") ? 12 
+                         : (z.id === "zone-12" && cand.candidateId === "dr-marcos-silva") ? -5
+                         : (z.id === "zone-12" && cand.candidateId === "ana-souza") ? 10
+                         : (Math.random() * 10 - 5);
+          weight = Math.max(10, Math.round(baseWeight + variance));
+          remainingWeight -= weight;
+        }
+        const zoneCandVotes = Math.round((cand.votes * weight) / 100);
+        result[z.id].push({
+          candidateId: cand.candidateId,
+          votes: zoneCandVotes,
+          percentage: weight
+        });
+      });
+    });
+    return result;
+  };
+
+  const nextRegions = getCityRegions(localParams.city);
+  const nextZones = getCityZones(localParams.city, localTse2024?.tseCode);
+
+  const nextVotingData = {
+    2024: {
+      totalVotes: localTse2024.totalVotes,
+      mayor: mayor2024,
+      byRegion: generateRegionBreakdown(mayor2024, nextRegions),
+      byZone: generateZoneBreakdown(mayor2024, nextZones)
+    },
+    2022: {
+      totalVotes: 145000,
+      mayor: [
+        { candidateId: "dr-marcos-silva", votes: 48000, percentage: 33.10, color: "var(--accent-green)", name: mainCandidate.name, party: mainCandidate.party.split(" ")[0] },
+        { candidateId: "ana-souza", votes: 52000, percentage: 35.86, color: "var(--accent-blue)", name: opponents[0]?.name || "Oponente 1", party: opponents[0]?.party.split(" ")[0] || "PL" },
+        { candidateId: "roberto-lima", votes: 45000, percentage: 31.04, color: "var(--accent-yellow)", name: opponents[1]?.name || "Oponente 2", party: opponents[1]?.party.split(" ")[0] || "PT" }
+      ],
+      byRegion: {},
+      byZone: {}
+    },
+    2020: {
+      totalVotes: localTse2020.totalVotes,
+      mayor: mayor2020,
+      byRegion: generateRegionBreakdown(mayor2020, nextRegions),
+      byZone: generateZoneBreakdown(mayor2020, nextZones)
+    }
+  };
+
+  const nextSectionsMock = {
+    "zone-12": [
+      { section: "Seção 001", location: `Escola em ${localParams.city}`, votes: 245, candidateVotes: Math.round(245 * (mayor2024.find(c => c.candidateId === "dr-marcos-silva")?.percentage || 33) / 100) },
+      { section: "Seção 002", location: `Escola em ${localParams.city}`, votes: 260, candidateVotes: Math.round(260 * (mayor2024.find(c => c.candidateId === "dr-marcos-silva")?.percentage || 33) / 100) },
+      { section: "Seção 003", location: `Câmara de Vereadores`, votes: 198, candidateVotes: Math.round(198 * (mayor2024.find(c => c.candidateId === "dr-marcos-silva")?.percentage || 33) / 100) }
+    ],
+    "zone-34": [],
+    "zone-56": []
+  };
+
+  const nextComparativeSummary = {
+    "dr-marcos-silva": {
+      spend: { 2020: 120000, 2022: 240000, 2024: 380000 },
+      leadersCount: { 2020: 120, 2022: 210, 2024: 310 },
+      costPerVote: {
+        2020: parseFloat((120000 / (mayor2020.find(c => c.candidateId === "dr-marcos-silva")?.votes || 10000)).toFixed(2)),
+        2024: parseFloat((380000 / (mayor2024.find(c => c.candidateId === "dr-marcos-silva")?.votes || 15000)).toFixed(2))
+      }
+    },
+    "ana-souza": {
+      spend: { 2020: 110000, 2022: 240000, 2024: 380000 },
+      leadersCount: { 2020: 95, 2022: 180, 2024: 280 },
+      costPerVote: {
+        2020: parseFloat((110000 / (mayor2020.find(c => c.candidateId === "ana-souza")?.votes || 10000)).toFixed(2)),
+        2024: parseFloat((380000 / (mayor2024.find(c => c.candidateId === "ana-souza")?.votes || 15000)).toFixed(2))
+      }
+    },
+    "roberto-lima": {
+      spend: { 2020: 75000, 2022: 140000, 2024: 220000 },
+      leadersCount: { 2020: 80, 2022: 150, 2024: 220 },
+      costPerVote: {
+        2020: parseFloat((75000 / (mayor2020.find(c => c.candidateId === "roberto-lima")?.votes || 10000)).toFixed(2)),
+        2024: parseFloat((220000 / (mayor2024.find(c => c.candidateId === "roberto-lima")?.votes || 15000)).toFixed(2))
+      }
+    }
+  };
+
+  CANDIDATES.length = 0;
+  CANDIDATES.push(...nextCandidates);
+
+  REGIONS.length = 0;
+  REGIONS.push(...nextRegions);
+
+  ZONES.length = 0;
+  ZONES.push(...nextZones);
+
+  Object.keys(VOTING_DATA).forEach(k => delete VOTING_DATA[k]);
+  Object.assign(VOTING_DATA, nextVotingData);
+
+  Object.keys(SECTIONS_MOCK).forEach(k => delete SECTIONS_MOCK[k]);
+  Object.assign(SECTIONS_MOCK, nextSectionsMock);
+
+  Object.keys(COMPARATIVE_YEARS_SUMMARY).forEach(k => delete COMPARATIVE_YEARS_SUMMARY[k]);
+  Object.assign(COMPARATIVE_YEARS_SUMMARY, nextComparativeSummary);
+}

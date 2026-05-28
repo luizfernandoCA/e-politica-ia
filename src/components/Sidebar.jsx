@@ -8,7 +8,8 @@ import {
   FileText,
   ChevronLeft,
   ChevronRight,
-  LogOut
+  LogOut,
+  Sliders
 } from 'lucide-react';
 import Logo from './Logo';
 
@@ -19,7 +20,8 @@ export default function Sidebar({
   setCollapsed,
   mobileOpen,
   setMobileOpen,
-  onLogout
+  onLogout,
+  onReconfigure
 }) {
 
   const menuItems = [
@@ -167,6 +169,46 @@ export default function Sidebar({
             );
           })}
         </nav>
+
+        {/* Reconfigure Campaign Button */}
+        {onReconfigure && (
+          <div style={{ padding: '0.25rem 0.75rem', marginBottom: '0.25rem' }}>
+            <button
+              onClick={onReconfigure}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: collapsed ? '0' : '12px',
+                justifyContent: collapsed ? 'center' : 'flex-start',
+                padding: '12px',
+                width: '100%',
+                borderRadius: 'var(--radius-sm)',
+                background: 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                color: 'var(--text-gray)',
+                transition: 'all var(--transition-fast)',
+                cursor: 'pointer'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.07)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                e.currentTarget.style.color = '#FFFFFF';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                e.currentTarget.style.color = 'var(--text-gray)';
+              }}
+            >
+              <Sliders size={20} style={{ color: 'var(--accent-blue-bright)' }} />
+              {!collapsed && (
+                <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>
+                  Ajustar Campanha
+                </span>
+              )}
+            </button>
+          </div>
+        )}
 
         {/* Logout Button */}
         <div style={{ padding: '0.5rem 0.75rem', borderTop: '1px solid var(--border-color)' }}>

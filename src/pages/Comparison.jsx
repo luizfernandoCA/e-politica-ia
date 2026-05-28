@@ -116,9 +116,9 @@ export default function Comparison() {
               onChange={(e) => setCompYear(parseInt(e.target.value))}
               style={{ padding: '6px 12px', fontSize: '0.85rem' }}
             >
-              <option value="2024">2024 (Prefeito)</option>
-              <option value="2022">2022 (Dep. Federal)</option>
-              <option value="2020">2020 (Vereador)</option>
+              <option value="2024">2024 (Vereador)</option>
+              <option value="2022">2022 (Deputado Estadual)</option>
+              <option value="2020">2020 (Vereador - Histórico)</option>
             </select>
           </div>
 

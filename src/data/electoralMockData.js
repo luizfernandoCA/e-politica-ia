@@ -21,7 +21,8 @@ const getCityRegions = (city) => {
       { id: "jardins", name: "Nova Porto Velho", population: 28000, profile: "Comercial e expansão residencial", issues: "Iluminação e conservação de vias", mapX: 70, mapY: 30, colorStrength: 0.4 },
       { id: "floresta", name: "Aponiã", population: 38000, profile: "Residencial muito populoso", issues: "Transporte público e creches", mapX: 35, mapY: 65, colorStrength: 0.65 },
       { id: "industrial", name: "Jatuarana", population: 15000, profile: "Zona comercial popular sul", issues: "Asfalto de vias pesadas e drenagem", mapX: 65, mapY: 70, colorStrength: 0.75 },
-      { id: "morada-sol", name: "Tancredo Neves", population: 22000, profile: "Expansão residencial recente", issues: "Escolas públicas e saneamento básico", mapX: 80, mapY: 55, colorStrength: 0.85 }
+      { id: "morada-sol", name: "Tancredo Neves", population: 22000, profile: "Expansão residencial recente", issues: "Escolas públicas e saneamento básico", mapX: 80, mapY: 55, colorStrength: 0.85 },
+      { id: "uniao-bandeirantes", name: "União Bandeirantes", population: 24000, profile: "Distrito agrícola e residencial", issues: "Pavimentação, saúde básica e energia", mapX: 15, mapY: 80, colorStrength: 0.9 }
     ];
   } else if (c.includes("JI-PARANA") || c.includes("JI-PARANÁ")) {
     return [
@@ -79,9 +80,10 @@ const getCityZones = (city, code) => {
   const tseCode = code || "00000";
   if (c.includes("PORTO VELHO")) {
     return [
-      { id: "zone-12", name: "Zona 02 (TRE-RO Porto Velho Centro)" },
-      { id: "zone-34", name: "Zona 20 (TRE-RO Porto Velho Leste)" },
-      { id: "zone-56", name: "Zona 21 (TRE-RO Porto Velho Sul)" }
+      { id: "zone-12", name: "Zona 02 (Sede Centro - Colégio Tiradentes PM-RO)" },
+      { id: "zone-34", name: "Zona 20 (Zona Leste - Escola Major Guapindaia)" },
+      { id: "zone-56", name: "Zona 21 (Zona Sul - Escola Marechal Rondon)" },
+      { id: "zone-ub", name: "Zona 22 (União Bandeirantes - Escola Claudio Manoel da Costa)" }
     ];
   } else if (c.includes("JI-PARANA") || c.includes("JI-PARANÁ")) {
     return [
@@ -391,7 +393,13 @@ if (campaignParams && tseData2024 && tseData2020) {
 
   // 4. Generate dynamic SECTIONS list for drill downs
   const locationsMap = {
-    "Porto Velho": ["Colégio Tiradentes PM-RO", "Câmara Municipal", "IFRO", "Escola Estela Compasso", "Escola João Bento"],
+    "Porto Velho": [
+      "Colégio Tiradentes PM-RO (Centro)", 
+      "Escola Estadual Major Guapindaia (Leste)", 
+      "Escola Estadual Marechal Rondon (Sul)", 
+      "Escola Claudio Manoel da Costa (União Bandeirantes)",
+      "Câmara Municipal de Porto Velho"
+    ],
     "Ji-Paraná": ["Escola Nova Brasília", "Câmara Municipal", "Ginásio Adhemar de Souza", "IFRO Ji-Paraná", "Colégio JPII"],
     "Ariquemes": ["Escola Setor 02", "Centro de Convivência Ariquemes", "Escola Monteiro Lobato", "Câmara de Vereadores"],
     "Cacoal": ["UNESC Cacoal", "Escola Teixeirão", "Câmara de Cacoal", "Clube do Vovô", "Escola Josino Brito"],
@@ -426,6 +434,11 @@ if (campaignParams && tseData2024 && tseData2020) {
       { section: "Seção 241", location: locations[0], votes: 205, candidateVotes: Math.round(205 * (mayor2024.find(c => c.candidateId === "dr-marcos-silva")?.percentage || 35) / 100) },
       { section: "Seção 242", location: locations[1], votes: 250, candidateVotes: Math.round(250 * (mayor2024.find(c => c.candidateId === "dr-marcos-silva")?.percentage || 35) / 100) },
       { section: "Seção 243", location: locations[1], votes: 240, candidateVotes: Math.round(240 * (mayor2024.find(c => c.candidateId === "dr-marcos-silva")?.percentage || 35) / 100) }
+    ],
+    "zone-ub": [
+      { section: "Seção 350", location: locations[3] || locations[0], votes: 310, candidateVotes: Math.round(310 * (mayor2024.find(c => c.candidateId === "dr-marcos-silva")?.percentage || 35) / 100) },
+      { section: "Seção 351", location: locations[3] || locations[0], votes: 295, candidateVotes: Math.round(295 * (mayor2024.find(c => c.candidateId === "dr-marcos-silva")?.percentage || 35) / 100) },
+      { section: "Seção 352", location: locations[3] || locations[0], votes: 280, candidateVotes: Math.round(280 * (mayor2024.find(c => c.candidateId === "dr-marcos-silva")?.percentage || 35) / 100) }
     ]
   };
 
@@ -836,12 +849,22 @@ export function reinitializeElectoralMockData() {
 
   const nextSectionsMock = {
     "zone-12": [
-      { section: "Seção 001", location: `Escola em ${localParams.city}`, votes: 245, candidateVotes: Math.round(245 * (mayor2024.find(c => c.candidateId === "dr-marcos-silva")?.percentage || 33) / 100) },
-      { section: "Seção 002", location: `Escola em ${localParams.city}`, votes: 260, candidateVotes: Math.round(260 * (mayor2024.find(c => c.candidateId === "dr-marcos-silva")?.percentage || 33) / 100) },
-      { section: "Seção 003", location: `Câmara de Vereadores`, votes: 198, candidateVotes: Math.round(198 * (mayor2024.find(c => c.candidateId === "dr-marcos-silva")?.percentage || 33) / 100) }
+      { section: "Seção 001", location: `Colégio Tiradentes PM-RO (Centro)`, votes: 245, candidateVotes: Math.round(245 * (mayor2024.find(c => c.candidateId === "dr-marcos-silva")?.percentage || 33) / 100) },
+      { section: "Seção 002", location: `Colégio Tiradentes PM-RO (Centro)`, votes: 260, candidateVotes: Math.round(260 * (mayor2024.find(c => c.candidateId === "dr-marcos-silva")?.percentage || 33) / 100) },
+      { section: "Seção 003", location: `Câmara Municipal de Porto Velho`, votes: 198, candidateVotes: Math.round(198 * (mayor2024.find(c => c.candidateId === "dr-marcos-silva")?.percentage || 33) / 100) }
     ],
-    "zone-34": [],
-    "zone-56": []
+    "zone-34": [
+      { section: "Seção 120", location: `Escola Estadual Major Guapindaia (Leste)`, votes: 215, candidateVotes: Math.round(215 * (mayor2024.find(c => c.candidateId === "dr-marcos-silva")?.percentage || 33) / 100) },
+      { section: "Seção 121", location: `Escola Estadual Major Guapindaia (Leste)`, votes: 230, candidateVotes: Math.round(230 * (mayor2024.find(c => c.candidateId === "dr-marcos-silva")?.percentage || 33) / 100) }
+    ],
+    "zone-56": [
+      { section: "Seção 240", location: `Escola Estadual Marechal Rondon (Sul)`, votes: 195, candidateVotes: Math.round(195 * (mayor2024.find(c => c.candidateId === "dr-marcos-silva")?.percentage || 33) / 100) },
+      { section: "Seção 241", location: `Escola Estadual Marechal Rondon (Sul)`, votes: 205, candidateVotes: Math.round(205 * (mayor2024.find(c => c.candidateId === "dr-marcos-silva")?.percentage || 33) / 100) }
+    ],
+    "zone-ub": [
+      { section: "Seção 350", location: `Escola Claudio Manoel da Costa (União Bandeirantes)`, votes: 310, candidateVotes: Math.round(310 * (mayor2024.find(c => c.candidateId === "dr-marcos-silva")?.percentage || 33) / 100) },
+      { section: "Seção 351", location: `Escola Claudio Manoel da Costa (União Bandeirantes)`, votes: 295, candidateVotes: Math.round(295 * (mayor2024.find(c => c.candidateId === "dr-marcos-silva")?.percentage || 33) / 100) }
+    ]
   };
 
   const nextComparativeSummary = {

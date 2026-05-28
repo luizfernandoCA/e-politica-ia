@@ -190,25 +190,41 @@ export default async function handler(req, res) {
 
     const targetTotalVotes = basePopulationMap[munCode] || 25000;
     
+    const isVereador = cargoCode === '13';
+    
     // Proportional voting distribution based on outcomes
     let voteDistribution = [];
     let remainingPercentage = 100.0;
 
     candidates.forEach((c, idx) => {
       let pct = 0;
-      if (c.isWinner) {
-        pct = candidates.length === 1 ? 100.0 : (candidates.length === 2 ? 54.5 : 42.8);
-      } else if (idx === 1) {
-        pct = candidates.length === 2 ? 45.5 : 34.2;
+      if (isVereador) {
+        // A single Vereador candidate in Porto Velho gets e.g. 0.8% to 1.5% of total votes
+        if (c.isWinner) {
+          pct = parseFloat((1.35 - (idx * 0.08) + (Math.random() * 0.2)).toFixed(2));
+        } else {
+          pct = parseFloat((0.45 - (idx * 0.03) + (Math.random() * 0.08)).toFixed(2));
+        }
+        if (pct < 0.15) pct = 0.15;
       } else {
-        pct = Math.max(2.5, remainingPercentage / (candidates.length - idx) - (Math.random() * 2));
+        // Prefeito (Mayor)
+        if (c.isWinner) {
+          pct = candidates.length === 1 ? 100.0 : (candidates.length === 2 ? 54.5 : 42.8);
+        } else if (idx === 1) {
+          pct = candidates.length === 2 ? 45.5 : 34.2;
+        } else {
+          pct = Math.max(2.5, remainingPercentage / (candidates.length - idx) - (Math.random() * 2));
+        }
       }
       
       pct = parseFloat(pct.toFixed(2));
-      if (idx === candidates.length - 1) {
-        pct = parseFloat(remainingPercentage.toFixed(2));
+      
+      if (!isVereador) {
+        if (idx === candidates.length - 1) {
+          pct = parseFloat(remainingPercentage.toFixed(2));
+        }
+        remainingPercentage -= pct;
       }
-      remainingPercentage -= pct;
 
       const votes = Math.round((targetTotalVotes * pct) / 100);
 

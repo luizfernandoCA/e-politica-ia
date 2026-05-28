@@ -633,8 +633,53 @@ export function reinitializeElectoralMockData() {
     } catch { return null; }
   })();
   if (!localParams || !localParams.tseData2024 || !localParams.tseData2020) return;
+  
   const localTse2024 = localParams.tseData2024;
   const localTse2020 = localParams.tseData2020;
+
+  // Robust Auto-healing for old cached inflated Vereador votes
+  const isVereador = localParams.role === 'Vereador' || (localTse2024.roleName && localTse2024.roleName.toUpperCase().includes('VEREADOR'));
+  if (isVereador) {
+    localTse2024.totalVotes = 380000;
+    if (localTse2024.candidates) {
+      localTse2024.candidates.forEach((c, idx) => {
+        if (c.votes > 15000) {
+          c.percentage = parseFloat((1.35 - (idx * 0.08) + (Math.random() * 0.2)).toFixed(2));
+          if (c.percentage < 0.15) c.percentage = 0.15;
+          c.votes = Math.round((localTse2024.totalVotes * c.percentage) / 100);
+        }
+      });
+    }
+    if (localTse2024.voteDistribution) {
+      localTse2024.voteDistribution.forEach((item, idx) => {
+        if (item.votes > 15000) {
+          item.percentage = parseFloat((1.35 - (idx * 0.08) + (Math.random() * 0.2)).toFixed(2));
+          if (item.percentage < 0.15) item.percentage = 0.15;
+          item.votes = Math.round((localTse2024.totalVotes * item.percentage) / 100);
+        }
+      });
+    }
+
+    localTse2020.totalVotes = 340000;
+    if (localTse2020.candidates) {
+      localTse2020.candidates.forEach((c, idx) => {
+        if (c.votes > 15000) {
+          c.percentage = parseFloat((1.2 - (idx * 0.08) + (Math.random() * 0.2)).toFixed(2));
+          if (c.percentage < 0.15) c.percentage = 0.15;
+          c.votes = Math.round((localTse2020.totalVotes * c.percentage) / 100);
+        }
+      });
+    }
+    if (localTse2020.voteDistribution) {
+      localTse2020.voteDistribution.forEach((item, idx) => {
+        if (item.votes > 15000) {
+          item.percentage = parseFloat((1.2 - (idx * 0.08) + (Math.random() * 0.2)).toFixed(2));
+          if (item.percentage < 0.15) item.percentage = 0.15;
+          item.votes = Math.round((localTse2020.totalVotes * item.percentage) / 100);
+        }
+      });
+    }
+  }
 
   const userTypedName = localParams.candidateName.toUpperCase().trim();
   const userTypedParty = localParams.party.toUpperCase().trim();

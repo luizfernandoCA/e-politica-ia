@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -13,17 +14,20 @@ const firebaseConfig = {
 // Initialize Firebase only if the API key is present
 let app;
 let auth;
+let db;
 
 try {
   if (firebaseConfig.apiKey) {
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
-    console.log('Firebase initialized successfully.');
+    db = getFirestore(app);
+    console.log('Firebase and Firestore initialized successfully.');
   } else {
-    console.warn('Firebase config is missing. Authentication will run in demo/fallback mode.');
+    console.warn('Firebase config is missing. Authentication and database will run in demo/fallback mode.');
   }
 } catch (error) {
   console.error('Failed to initialize Firebase:', error);
 }
 
-export { app, auth };
+export { app, auth, db };
+

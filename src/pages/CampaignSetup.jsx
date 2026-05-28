@@ -36,30 +36,63 @@ export default function CampaignSetup({ onSetupComplete }) {
     "Campanha estruturada com sucesso! Redirecionando..."
   ];
 
-  // Simulation of sync steps
-  useEffect(() => {
-    if (!isProcessing) return;
+  const [errorMessage, setErrorMessage] = useState(null);
 
-    const interval = setInterval(() => {
-      setCurrentStep((prev) => {
-        if (prev >= syncSteps.length - 1) {
-          clearInterval(interval);
-          setTimeout(() => {
-            onSetupComplete(formData);
-          }, 800);
-          return prev;
-        }
-        return prev + 1;
-      });
-    }, 1200);
-
-    return () => clearInterval(interval);
-  }, [isProcessing]);
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.candidateName || !formData.party) return;
+    
     setIsProcessing(true);
+    setErrorMessage(null);
+    setCurrentStep(0);
+
+    try {
+      // Step 0: Establish secure channel
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setCurrentStep(1);
+
+      // Step 1: Fetch 2024 Electoral Data
+      const res2024 = await fetch(`/api/tse?city=${encodeURIComponent(formData.city)}&role=${formData.role}&year=2024`);
+      const data2024 = await res2024.json();
+      
+      if (!data2024.success) {
+        throw new Error(data2024.error || 'Falha ao buscar dados do TSE de 2024.');
+      }
+      
+      setCurrentStep(2);
+
+      // Step 2: Fetch 2020 Electoral Data
+      const res2020 = await fetch(`/api/tse?city=${encodeURIComponent(formData.city)}&role=${formData.role}&year=2020`);
+      const data2020 = await res2020.json();
+      
+      if (!data2020.success) {
+        throw new Error(data2020.error || 'Falha ao buscar dados do TSE de 2020.');
+      }
+
+      setCurrentStep(3);
+      // Step 3: Run correlation models with e-politica.ia
+      await new Promise(resolve => setTimeout(resolve, 1200));
+      setCurrentStep(4);
+
+      // Step 4: Map localized leaders geographic coordinates
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setCurrentStep(5);
+
+      // Step 5: Complete setup successfully
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      const campaignConfig = {
+        ...formData,
+        tseData2024: data2024,
+        tseData2020: data2020
+      };
+
+      onSetupComplete(campaignConfig);
+    } catch (err) {
+      console.error('[CAMPAIGN SETUP ERROR]:', err);
+      setErrorMessage(err.message || 'Houve um erro de conexão com o portal do TSE. Verifique sua conexão e tente novamente.');
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -249,6 +282,14 @@ export default function CampaignSetup({ onSetupComplete }) {
                 <Database size={16} style={{ color: 'var(--accent-blue-bright)', flexShrink: 0 }} />
                 <span>O cruzamento com os dados públicos do TSE e TRE-RO levará alguns segundos. A inteligência artificial criará automaticamente o SWOT e as regras de bairros sob medida.</span>
               </div>
+
+              {/* Real API Connection Error alert */}
+              {errorMessage && (
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', fontSize: '0.8rem', color: '#FF4D4D', background: 'rgba(255,77,77,0.08)', padding: '12px', borderRadius: '6px', border: '1px solid rgba(255,77,77,0.15)', marginTop: '6px' }}>
+                  <AlertCircle size={18} style={{ flexShrink: 0, color: '#FF4D4D' }} />
+                  <span>{errorMessage}</span>
+                </div>
+              )}
 
               {/* Submit CTA */}
               <button

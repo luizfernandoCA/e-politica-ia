@@ -18,18 +18,23 @@ import Reports from './pages/Reports';
 // Import Mock Data
 import { CANDIDATES as initialCandidates } from './data/electoralMockData';
 import { CRM_CONTACTS as initialContacts, CAMPAIGN_CHECKLIST as initialTasks } from './data/crmMockData';
+import { 
+  saveCampaignParams, 
+  getCampaignParams, 
+  saveTasks, 
+  getTasks, 
+  saveContacts, 
+  getContacts 
+} from './services/dbService';
 
 export default function App() {
   // Authentication & Onboarding States
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
   const [activeUser, setActiveUser] = useState(null); // Google Profile details
-  const [isCampaignConfigured, setIsCampaignConfigured] = useState(() => {
-    return typeof window !== 'undefined' ? !!localStorage.getItem('campaignParams') : false;
-  });
-  const [campaignParams, setCampaignParams] = useState(() => {
-    return typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('campaignParams')) : null;
-  });
+  const [isCampaignConfigured, setIsCampaignConfigured] = useState(false);
+  const [campaignParams, setCampaignParams] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Navigation & UI States
   const [activePage, setActivePage] = useState('dashboard');
@@ -39,43 +44,183 @@ export default function App() {
 
   // Shared Global React States (allows interactive cross-page synchronization)
   const [candidates, setCandidates] = useState(initialCandidates);
-  const [contacts, setContacts] = useState(() => {
-    const isConfigured = typeof window !== 'undefined' ? !!localStorage.getItem('campaignParams') : false;
-    if (isConfigured) {
-      const savedContacts = typeof window !== 'undefined' ? localStorage.getItem('crmContacts') : null;
-      return savedContacts ? JSON.parse(savedContacts) : [];
+  const [contacts, setContacts] = useState([]);
+  const [tasks, setTasks] = useState([]);
+
+  // =========================================================================
+  // 1. Google Authentication State & Session Listener
+  // =========================================================================
+  useEffect(() => {
+    let unsubscribe = () => {};
+    async function initAuthListener() {
+      try {
+        const { getAuth, onAuthStateChanged } = await import('firebase/auth');
+        const auth = getAuth();
+        unsubscribe = onAuthStateChanged(auth, (user) => {
+          if (user) {
+            const VIP_EMAILS = ['webcamargo@gmail.com', 'sergio.augusto.olv@gmail.com'];
+            const userObj = {
+              uid: user.uid,
+              name: user.displayName || 'Usuário',
+              email: user.email,
+              avatar: user.photoURL ? null : '👤',
+              photoURL: user.photoURL,
+              title: VIP_EMAILS.includes(user.email) 
+                ? (user.email.includes('webcamargo') ? 'Ex-Juiz do TRE e Advogado Eleitoral' : 'Especialista Eleitoral e Assessor Parlamentar')
+                : 'Assinante'
+            };
+            setActiveUser(userObj);
+            setIsAuthenticated(true);
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('activeUser', JSON.stringify(userObj));
+            }
+          } else {
+            // Check if there is a local session fallback in case of manual email login
+            if (typeof window !== 'undefined') {
+              const cachedUser = localStorage.getItem('activeUser');
+              if (cachedUser) {
+                const userObj = JSON.parse(cachedUser);
+                setActiveUser(userObj);
+                setIsAuthenticated(true);
+              } else {
+                setIsLoading(false);
+              }
+            } else {
+              setIsLoading(false);
+            }
+          }
+        });
+      } catch (err) {
+        console.warn('Firebase Auth state listener running in fallback mode:', err);
+        // Fallback for manual session restore
+        if (typeof window !== 'undefined') {
+          const cachedUser = localStorage.getItem('activeUser');
+          if (cachedUser) {
+            const userObj = JSON.parse(cachedUser);
+            setActiveUser(userObj);
+            setIsAuthenticated(true);
+          } else {
+            setIsLoading(false);
+          }
+        } else {
+          setIsLoading(false);
+        }
+      }
     }
-    return initialContacts;
-  });
-  const [tasks, setTasks] = useState(() => {
-    const isConfigured = typeof window !== 'undefined' ? !!localStorage.getItem('campaignParams') : false;
-    if (isConfigured) {
-      const savedTasks = typeof window !== 'undefined' ? localStorage.getItem('campaignTasks') : null;
-      if (savedTasks) return JSON.parse(savedTasks);
+    initAuthListener();
+    return () => unsubscribe();
+  }, []);
+
+  // =========================================================================
+  // 2. Fetch User Data (Firestore / Cache fallback) once authenticated
+  // =========================================================================
+  useEffect(() => {
+    async function loadUserData() {
+      if (!activeUser) return;
+      setIsLoading(true);
+      const userId = activeUser.uid || activeUser.email;
       
-      const params = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('campaignParams')) : null;
-      return [
-        { id: 1, text: `Registrar comitê central em ${params?.city || 'sua cidade'}`, done: false, category: 'Administrativo' },
-        { id: 2, text: `Cadastrar as primeiras 50 lideranças no CRM`, done: false, category: 'Lideranças' },
-        { id: 3, text: `Gerar SWOT tático com a E-Poliana AI`, done: false, category: 'Estratégia' },
-        { id: 4, text: `Cruzar seções eleitorais de ${params?.city || 'sua cidade'} do TRE-RO`, done: false, category: 'Análise' }
-      ];
-    }
-    return initialTasks;
-  });
+      try {
+        // 1. Load Campaign parameters
+        const params = await getCampaignParams(userId);
+        if (params) {
+          setCampaignParams(params);
+          setIsCampaignConfigured(true);
+          
+          // Re-hydrate custom candidate list with user candidate
+          const userCandidateId = 'dr-marcos-silva';
+          const customCandidates = [
+            {
+              id: userCandidateId,
+              name: params.candidateName,
+              party: `${params.party} (15)`,
+              role: params.role,
+              avatar: params.role === 'Prefeito' ? '👨‍⚖️' : '👨‍💼',
+              color: 'var(--accent-green)',
+              status: 'Candidato Principal',
+              baseCount: 0,
+              targetGoal: 10000
+            },
+            {
+              id: 'ana-souza',
+              name: 'Oponente PL',
+              party: 'PL (22)',
+              role: params.role,
+              avatar: '👩‍💼',
+              color: 'var(--accent-blue)',
+              status: 'Concorrente 1',
+              baseCount: 0,
+              targetGoal: 9500
+            },
+            {
+              id: 'roberto-lima',
+              name: 'Oponente PT',
+              party: 'PT (13)',
+              role: params.role,
+              avatar: '👨‍💼',
+              color: 'var(--accent-yellow)',
+              status: 'Concorrente 2',
+              baseCount: 0,
+              targetGoal: 8000
+            }
+          ];
+          setCandidates(customCandidates);
+          setActiveCandidate(userCandidateId);
+        } else {
+          setIsCampaignConfigured(false);
+          setCampaignParams(null);
+          setCandidates(initialCandidates);
+        }
 
-  // Persist contacts and tasks to localStorage if campaign is configured
-  useEffect(() => {
-    if (isCampaignConfigured && typeof window !== 'undefined') {
-      localStorage.setItem('crmContacts', JSON.stringify(contacts));
+        // 2. Load CRM Contacts
+        const loadedContacts = await getContacts(userId);
+        if (loadedContacts) {
+          setContacts(loadedContacts);
+        } else {
+          setContacts(params ? [] : initialContacts);
+        }
+
+        // 3. Load Tasks
+        const loadedTasks = await getTasks(userId);
+        if (loadedTasks) {
+          setTasks(loadedTasks);
+        } else {
+          if (params) {
+            setTasks([
+              { id: 1, text: `Registrar comitê central em ${params.city}`, done: false, category: 'Administrativo' },
+              { id: 2, text: `Cadastrar as primeiras 50 lideranças no CRM`, done: false, category: 'Lideranças' },
+              { id: 3, text: `Gerar SWOT tático com a E-Poliana AI`, done: false, category: 'Estratégia' },
+              { id: 4, text: `Cruzar seções eleitorais de ${params.city} do TRE-RO`, done: false, category: 'Análise' }
+            ]);
+          } else {
+            setTasks(initialTasks);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching user campaign details from Firestore:', err);
+      } finally {
+        setIsLoading(false);
+      }
     }
-  }, [contacts, isCampaignConfigured]);
+    loadUserData();
+  }, [activeUser]);
+
+  // =========================================================================
+  // 3. Dynamic Real-Time Data Push back to Firestore on state change
+  // =========================================================================
+  useEffect(() => {
+    if (isCampaignConfigured && activeUser && contacts.length >= 0) {
+      const userId = activeUser.uid || activeUser.email;
+      saveContacts(userId, contacts);
+    }
+  }, [contacts, isCampaignConfigured, activeUser]);
 
   useEffect(() => {
-    if (isCampaignConfigured && typeof window !== 'undefined') {
-      localStorage.setItem('campaignTasks', JSON.stringify(tasks));
+    if (isCampaignConfigured && activeUser && tasks.length >= 0) {
+      const userId = activeUser.uid || activeUser.email;
+      saveTasks(userId, tasks);
     }
-  }, [tasks, isCampaignConfigured]);
+  }, [tasks, isCampaignConfigured, activeUser]);
 
   // Helper to toggle mobile sidebar
   const toggleMobileSidebar = () => {
@@ -84,15 +229,15 @@ export default function App() {
 
   // Handle successful subscription payment
   const handlePaymentSuccess = (userObj) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('activeUser', JSON.stringify(userObj));
+    }
     setActiveUser(userObj);
     setIsAuthenticated(true);
   };
 
   // Handle campaign setup wizard completion
-  const handleSetupComplete = (params) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('campaignParams', JSON.stringify(params));
-    }
+  const handleSetupComplete = async (params) => {
     setCampaignParams(params);
 
     const userCandidateId = 'dr-marcos-silva'; // Preserve key internally
@@ -136,12 +281,26 @@ export default function App() {
     setActiveCandidate(userCandidateId);
     setContacts([]); // Starts with absolutely 0 pre-registered contacts!
 
-    setTasks([
+    const defaultTasks = [
       { id: 1, text: `Registrar comitê central em ${params.city}`, done: false, category: 'Administrativo' },
       { id: 2, text: `Cadastrar as primeiras 50 lideranças no CRM`, done: false, category: 'Lideranças' },
       { id: 3, text: `Gerar SWOT tático com a E-Poliana AI`, done: false, category: 'Estratégia' },
       { id: 4, text: `Cruzar seções eleitorais de ${params.city} do TRE-RO`, done: false, category: 'Análise' }
-    ]);
+    ];
+    setTasks(defaultTasks);
+
+    if (activeUser) {
+      const userId = activeUser.uid || activeUser.email;
+      await saveCampaignParams(userId, params);
+      await saveContacts(userId, []);
+      await saveTasks(userId, defaultTasks);
+    } else {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('campaignParams', JSON.stringify(params));
+        localStorage.setItem('crmContacts', JSON.stringify([]));
+        localStorage.setItem('campaignTasks', JSON.stringify(defaultTasks));
+      }
+    }
 
     setIsCampaignConfigured(true);
     setActivePage('dashboard');
@@ -158,14 +317,25 @@ export default function App() {
   };
 
   // Handle logout
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      const { getAuth, signOut } = await import('firebase/auth');
+      const auth = getAuth();
+      await signOut(auth);
+    } catch (e) {
+      console.warn('Firebase signout fallback:', e);
+    }
+
     setIsAuthenticated(false);
     setShowCheckout(false);
     setActiveUser(null);
     setIsCampaignConfigured(false);
     setCampaignParams(null);
     if (typeof window !== 'undefined') {
+      localStorage.removeItem('activeUser');
       localStorage.removeItem('campaignParams');
+      localStorage.removeItem('crmContacts');
+      localStorage.removeItem('campaignTasks');
     }
     window.location.reload(); // Force reload to reinitialize mock databases cleanly!
   };
@@ -225,6 +395,61 @@ export default function App() {
         );
     }
   };
+
+  // =========================================================================
+  // Loading Screen (Auth Re-hydration / Loading Firestore)
+  // =========================================================================
+  if (isLoading) {
+    return (
+      <div style={{
+        background: 'var(--bg-dark)',
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '1.5rem',
+        color: '#FFFFFF',
+        position: 'relative'
+      }}>
+        <div style={{
+          position: 'absolute',
+          width: '400px',
+          height: '400px',
+          background: 'var(--accent-blue-glow)',
+          filter: 'blur(100px)',
+          borderRadius: '50%',
+          opacity: 0.3,
+          zIndex: 0
+        }} />
+        <div style={{
+          border: '3px solid rgba(255, 255, 255, 0.05)',
+          borderTop: '3px solid var(--accent-blue-bright)',
+          borderRadius: '50%',
+          width: '50px',
+          height: '50px',
+          animation: 'spin-rot 1s linear infinite',
+          position: 'relative',
+          zIndex: 1
+        }} />
+        <p style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: '0.9rem',
+          color: 'var(--text-gray)',
+          letterSpacing: '0.05em',
+          fontWeight: 600,
+          position: 'relative',
+          zIndex: 1
+        }}>SINCRO-CARREGANDO...</p>
+        <style>{`
+          @keyframes spin-rot {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    );
+  }
 
   // =========================================================================
   // Unauthenticated Public Funnel Views

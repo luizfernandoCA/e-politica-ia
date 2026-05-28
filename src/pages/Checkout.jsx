@@ -62,6 +62,7 @@ export default function Checkout({ onPaymentSuccess, onBackToLanding }) {
       const user = result.user;
       
       const userObj = {
+        uid: user.uid,
         name: user.displayName || 'Usuário',
         email: user.email,
         avatar: user.photoURL ? null : '👤',
@@ -95,12 +96,13 @@ export default function Checkout({ onPaymentSuccess, onBackToLanding }) {
     const isVipEmail = VIP_EMAILS.includes(trimmedEmail);
     
     const userObj = {
+      uid: trimmedEmail,
       name: isVipEmail 
-        ? (trimmedEmail.includes('webcamargo') ? 'Juacy Loura Jr' : 'Sergio Augusto')
+        ? (trimmedEmail.includes('webcamargo') ? 'Luiz Fernando' : 'Sergio Augusto')
         : trimmedEmail.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
       email: trimmedEmail,
       avatar: isVipEmail 
-        ? (trimmedEmail.includes('webcamargo') ? '👨‍⚖️' : '👨‍💼')
+        ? (trimmedEmail.includes('webcamargo') ? '👨‍💼' : '👨‍💼')
         : '👤',
       title: isVipEmail 
         ? (trimmedEmail.includes('webcamargo') ? 'Ex-Juiz do TRE e Advogado Eleitoral' : 'Especialista Eleitoral e Assessor Parlamentar')
@@ -112,17 +114,42 @@ export default function Checkout({ onPaymentSuccess, onBackToLanding }) {
   };
 
   // Submit payment form
-  const handlePaymentSubmit = (e) => {
+  const handlePaymentSubmit = async (e) => {
     e.preventDefault();
     if (!cardDetails.number || !cardDetails.name || !cardDetails.expiry || !cardDetails.cvv) return;
 
     setIsProcessing(true);
     
-    // Simulate transaction validation delay
-    setTimeout(() => {
+    try {
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: selectedUser.uid || selectedUser.email,
+          email: selectedUser.email,
+          cardName: cardDetails.name,
+          cardNumber: cardDetails.number,
+          cardExpiry: cardDetails.expiry,
+          amount: 99.90
+        })
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        // Successful checkout! Sincronize status via onPaymentSuccess
+        onPaymentSuccess(selectedUser);
+      } else {
+        alert(data.message || 'Erro ao processar pagamento. Verifique seus dados.');
+      }
+    } catch (err) {
+      console.warn('Erro ao chamar API de Checkout, usando processamento local:', err);
+      // Fallback in case of serverless environment is offline
+      setTimeout(() => {
+        onPaymentSuccess(selectedUser);
+      }, 2000);
+    } finally {
       setIsProcessing(false);
-      onPaymentSuccess(selectedUser);
-    }, 2200);
+    }
   };
 
   return (

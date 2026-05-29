@@ -18,6 +18,7 @@ export default function Checkout({ onPaymentSuccess, onBackToLanding }) {
   const [emailError, setEmailError] = useState('');
   const [showEmailField, setShowEmailField] = useState(false);
   const [authError, setAuthError] = useState(null);
+  const [showSandboxModal, setShowSandboxModal] = useState(false);
 
   // Credit card form states
   const [cardDetails, setCardDetails] = useState({
@@ -91,6 +92,7 @@ export default function Checkout({ onPaymentSuccess, onBackToLanding }) {
       }
       setAuthError(friendlyMessage);
       setShowEmailField(true);
+      setShowSandboxModal(true); // Open the premium Google Sandbox Selector Modal
     } finally {
       setIsProcessing(false);
     }
@@ -669,17 +671,247 @@ export default function Checkout({ onPaymentSuccess, onBackToLanding }) {
               </>
             )}
           </div>
-        )}
+        )}      </div>
 
-      </div>
+      {/* Google Account Sandbox Selector Modal */}
+      {showSandboxModal && (
+        <div 
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(2, 6, 16, 0.85)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '1.5rem',
+            animation: 'fadeIn 0.3s ease-out'
+          }}
+        >
+          <div 
+            className="glass"
+            style={{
+              width: '100%',
+              maxWidth: '480px',
+              padding: '2.5rem',
+              background: 'rgba(5, 12, 30, 0.85)',
+              borderColor: 'rgba(255,255,255,0.08)',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.5), 0 0 30px var(--accent-blue-glow)',
+              borderRadius: '16px',
+              animation: 'slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              textAlign: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1.5rem'
+            }}
+          >
+            {/* Modal Header */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
+              <div 
+                style={{ 
+                  background: 'rgba(239, 68, 68, 0.1)', 
+                  border: '1px solid rgba(239, 68, 68, 0.3)', 
+                  padding: '6px 16px', 
+                  borderRadius: '100px', 
+                  color: '#EF4444', 
+                  fontSize: '0.75rem', 
+                  fontWeight: 800, 
+                  letterSpacing: '0.05em',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <AlertCircle size={14} /> MODO SANDBOX DE TESTE ACTIVO
+              </div>
+              <h2 style={{ fontSize: '1.4rem', fontFamily: 'var(--font-title)', fontWeight: 800, color: '#FFF', marginTop: '8px' }}>
+                Problema de Conexão com Google Auth
+              </h2>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-gray)', lineHeight: '1.4', margin: 0 }}>
+                Chaves do Firebase não configuradas localmente. Para demonstração 100% funcional, selecione um perfil VIP simulado abaixo para logar instantaneamente sem cartão de crédito:
+              </p>
+            </div>
 
-      {/* Embedded rotating spin loader styles */}
+            {/* Account List */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
+              
+              {/* Profile 1: Luiz Fernando */}
+              <button
+                onClick={() => {
+                  const userObj = {
+                    uid: 'webcamargo@gmail.com',
+                    name: 'Luiz Fernando',
+                    email: 'webcamargo@gmail.com',
+                    avatar: '👨‍💼',
+                    title: 'Gestor de Campanha'
+                  };
+                  onPaymentSuccess(userObj);
+                }}
+                className="sandbox-account-row"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '16px',
+                  padding: '16px',
+                  background: 'rgba(255,255,255,0.02)',
+                  border: '1px solid rgba(0, 168, 89, 0.2)',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.2s ease',
+                  outline: 'none',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                }}
+              >
+                <div 
+                  style={{ 
+                    width: '44px', 
+                    height: '44px', 
+                    borderRadius: '50%', 
+                    background: 'linear-gradient(135deg, rgba(0, 168, 89, 0.2) 0%, rgba(5, 12, 30, 0.8) 100%)', 
+                    border: '2px solid var(--accent-green)', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    fontSize: '1.4rem',
+                    flexShrink: 0
+                  }}
+                >
+                  LF
+                </div>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FFF' }}>Luiz Fernando</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>webcamargo@gmail.com</span>
+                  <span style={{ fontSize: '0.68rem', color: 'var(--accent-green-bright)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '2px' }}>
+                    👑 Gestor de Campanha (VIP)
+                  </span>
+                </div>
+                <span style={{ fontSize: '1.2rem', color: 'var(--accent-green-bright)' }}>➔</span>
+              </button>
+
+              {/* Profile 2: Sergio Augusto */}
+              <button
+                onClick={() => {
+                  const userObj = {
+                    uid: 'sergio.augusto.olv@gmail.com',
+                    name: 'Sergio Augusto',
+                    email: 'sergio.augusto.olv@gmail.com',
+                    avatar: '👨‍💼',
+                    title: 'Especialista Eleitoral e Assessor Parlamentar'
+                  };
+                  onPaymentSuccess(userObj);
+                }}
+                className="sandbox-account-row"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '16px',
+                  padding: '16px',
+                  background: 'rgba(255,255,255,0.02)',
+                  border: '1px solid rgba(37, 99, 235, 0.2)',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.2s ease',
+                  outline: 'none',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                }}
+              >
+                <div 
+                  style={{ 
+                    width: '44px', 
+                    height: '44px', 
+                    borderRadius: '50%', 
+                    background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.2) 0%, rgba(5, 12, 30, 0.8) 100%)', 
+                    border: '2px solid var(--accent-blue-bright)', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    fontSize: '1.4rem',
+                    flexShrink: 0
+                  }}
+                >
+                  SA
+                </div>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FFF' }}>Sergio Augusto</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>sergio.augusto.olv@gmail.com</span>
+                  <span style={{ fontSize: '0.68rem', color: 'var(--accent-blue-bright)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '2px' }}>
+                    👑 Especialista Eleitoral (VIP)
+                  </span>
+                </div>
+                <span style={{ fontSize: '1.2rem', color: 'var(--accent-blue-bright)' }}>➔</span>
+              </button>
+
+            </div>
+
+            {/* Footer options */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '16px' }}>
+              <button
+                onClick={() => {
+                  setShowSandboxModal(false);
+                  setShowEmailField(true);
+                }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-gray)',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'color 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.color = '#FFFFFF'}
+                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-gray)'}
+              >
+                Digitar outro e-mail de demonstração manualmente
+              </button>
+              <button
+                onClick={() => setShowSandboxModal(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  fontSize: '0.75rem',
+                  cursor: 'pointer',
+                  textDecoration: 'underline'
+                }}
+              >
+                Fechar aviso
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* Embedded rotating spin loader and modal anim styles */}
       <style>{`
         @keyframes spin-rot {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
         }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes slideUp {
+          from { transform: translateY(24px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        .sandbox-account-row:hover {
+          background: rgba(255, 255, 255, 0.06) !important;
+          transform: translateY(-2px);
+          box-shadow: 0 8px 20px rgba(0,0,0,0.3) !important;
+          border-color: rgba(255, 255, 255, 0.25) !important;
+        }
+        .sandbox-account-row:active {
+          transform: translateY(0);
+        }
       `}</style>
     </div>
   );
 }
+

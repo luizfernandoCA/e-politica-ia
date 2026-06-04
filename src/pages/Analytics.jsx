@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
   Filter, 
-  Map, 
-  Table, 
-  Building2, 
-  ChevronRight
+  Map,
+  Building2
 } from 'lucide-react';
 import { 
   CANDIDATES, 
@@ -26,14 +24,13 @@ export default function Analytics({ activeCandidate }) {
   const [hoveredRegion, setHoveredRegion] = useState(null);
 
   // Find candidate details
-  const activeCandObj = CANDIDATES.find(c => c.id === activeCandidate) || CANDIDATES[0];
 
   // Helper: Get voting data based on selected filters
   const getFilteredVotingData = () => {
     const yearData = VOTING_DATA[selectedYear];
     if (!yearData) return [];
 
-    let results = [];
+    let results;
 
     // Filter by Region or Zone
     if (selectedRegion !== 'all') {
@@ -58,8 +55,6 @@ export default function Analytics({ activeCandidate }) {
   };
 
   const currentVotes = getFilteredVotingData();
-  const targetCandVoteObj = currentVotes.find(v => v.candidateId === activeCandidate);
-  
   // Calculate total votes represented
   const totalVotesCount = currentVotes.reduce((acc, curr) => acc + curr.votes, 0);
 
@@ -338,7 +333,7 @@ export default function Analytics({ activeCandidate }) {
             </h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '0.5rem' }}>
-              {currentVotes.map((c, index) => {
+              {currentVotes.map((c) => {
                 const pct = totalVotesCount > 0 ? ((c.votes / totalVotesCount) * 100).toFixed(2) : c.percentage;
                 
                 return (

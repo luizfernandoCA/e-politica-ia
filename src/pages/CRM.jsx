@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
   UserPlus, 
   Search, 
@@ -13,7 +13,7 @@ import {
 import Modal from '../components/Modal';
 import { REGIONS, ZONES } from '../data/electoralMockData';
 
-export default function CRM({ contacts, setContacts, candidates, setCandidates, activeCandidate }) {
+export default function CRM({ contacts, setContacts, setCandidates, activeCandidate }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [zoneFilter, setZoneFilter] = useState('all');

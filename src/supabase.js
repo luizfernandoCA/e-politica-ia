@@ -1,22 +1,20 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Read Vite environment variables
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+// Production Supabase project (e-politica-ia / sa-east-1).
+// The publishable (anon) key is safe to expose client-side: all data access
+// is protected by Row Level Security policies in the database.
+const DEFAULT_SUPABASE_URL = 'https://tlnprjkiydiogrcsruxw.supabase.co';
+const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_RgTl4pl6flsr21DUvzeJkg_GIutzG7b';
 
-// Initialize client (gracefully handle missing credentials for demo mode)
-export const supabase = (supabaseUrl && supabaseAnonKey) 
-  ? createClient(supabaseUrl, supabaseAnonKey) 
-  : null;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
 
-// Health check status helper
-export const isSupabaseConnected = () => {
-  return !!supabase;
-};
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
 
-if (!supabase) {
-  console.warn(
-    'e-politica.ia [Aviso]: Credenciais do Supabase ausentes no arquivo .env. ' +
-    'O aplicativo está rodando em modo DEMO OFFLINE com dados mockados de alta fidelidade.'
-  );
-}
+export const isSupabaseConnected = () => !!supabase;

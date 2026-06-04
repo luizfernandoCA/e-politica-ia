@@ -1,4 +1,3 @@
-import React from 'react';
 import { Menu, Bell, ShieldCheck, ChevronDown } from 'lucide-react';
 import { CANDIDATES } from '../data/electoralMockData';
 
@@ -6,8 +5,6 @@ export default function Header({
   activePage, 
   activeCandidate, 
   setActiveCandidate, 
-  sidebarCollapsed, 
-  setSidebarCollapsed,
   toggleMobileSidebar,
   activeUser,
   candidates

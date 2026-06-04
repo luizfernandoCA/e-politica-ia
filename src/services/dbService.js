@@ -1,181 +1,145 @@
-import { db } from '../firebaseConfig';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { supabase } from '../supabase';
 
 /**
- * Helper to check if Firebase/Firestore is initialized and configured.
+ * dbService - persists per-user application state in Supabase (table: user_state),
+ * protected by Row Level Security (each user only reads/writes their own row).
+ *
+ * Replaces the previous Firebase Firestore + localStorage demo implementation.
+ * localStorage is kept only as a resilience cache for offline scenarios.
  */
-const isFirebaseReady = () => {
-  return !!db;
-};
 
-/**
- * Saves the campaign parameters for a specific user.
- * Falls back to localStorage if Firebase is not configured.
- */
+async function getStateRow(userId) {
+  const { data, error } = await supabase
+    .from('user_state')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+async function upsertStateColumn(userId, column, value) {
+  const { error } = await supabase
+    .from('user_state')
+    .upsert(
+      { user_id: userId, [column]: value, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id' }
+    );
+  if (error) throw error;
+}
+
+function cacheSet(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch { /* storage unavailable */ }
+}
+
+function cacheGet(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+// -------------------------------------------------------------------------
+// Campaign parameters
+// -------------------------------------------------------------------------
 export async function saveCampaignParams(userId, params) {
   if (!userId) return;
-  
-  if (isFirebaseReady()) {
-    try {
-      const userRef = doc(db, 'users', userId);
-      await setDoc(userRef, { campaignParams: params }, { merge: true });
-      console.log('Campaign parameters saved to Firestore.');
-    } catch (error) {
-      console.error('Error saving campaign parameters to Firestore:', error);
-    }
-  } else {
-    localStorage.setItem(`campaignParams_${userId}`, JSON.stringify(params));
-    localStorage.setItem('campaignParams', JSON.stringify(params)); // legacy fallback
+  cacheSet(`campaignParams_${userId}`, params);
+  cacheSet('campaignParams', params); // legacy key still read by some pages
+  try {
+    await upsertStateColumn(userId, 'campaign_params', params);
+  } catch (error) {
+    console.error('[dbService] saveCampaignParams:', error.message);
   }
 }
 
-/**
- * Retrieves the campaign parameters for a specific user.
- */
 export async function getCampaignParams(userId) {
   if (!userId) return null;
-
-  if (isFirebaseReady()) {
-    try {
-      const userRef = doc(db, 'users', userId);
-      const docSnap = await getDoc(userRef);
-      if (docSnap.exists() && docSnap.data().campaignParams) {
-        return docSnap.data().campaignParams;
-      }
-    } catch (error) {
-      console.error('Error getting campaign parameters from Firestore:', error);
+  try {
+    const row = await getStateRow(userId);
+    if (row?.campaign_params) {
+      cacheSet('campaignParams', row.campaign_params);
+      return row.campaign_params;
     }
     return null;
-  } else {
-    const saved = localStorage.getItem(`campaignParams_${userId}`) || localStorage.getItem('campaignParams');
-    return saved ? JSON.parse(saved) : null;
+  } catch (error) {
+    console.error('[dbService] getCampaignParams:', error.message);
+    return cacheGet(`campaignParams_${userId}`);
   }
 }
 
-/**
- * Saves the checklist tasks for a specific user.
- */
+// -------------------------------------------------------------------------
+// Campaign checklist tasks
+// -------------------------------------------------------------------------
 export async function saveTasks(userId, tasks) {
   if (!userId) return;
-
-  if (isFirebaseReady()) {
-    try {
-      const userRef = doc(db, 'users', userId);
-      await setDoc(userRef, { tasks }, { merge: true });
-      console.log('Tasks saved to Firestore.');
-    } catch (error) {
-      console.error('Error saving tasks to Firestore:', error);
-    }
-  } else {
-    localStorage.setItem(`campaignTasks_${userId}`, JSON.stringify(tasks));
-    localStorage.setItem('campaignTasks', JSON.stringify(tasks)); // legacy fallback
+  cacheSet(`campaignTasks_${userId}`, tasks);
+  try {
+    await upsertStateColumn(userId, 'tasks', tasks);
+  } catch (error) {
+    console.error('[dbService] saveTasks:', error.message);
   }
 }
 
-/**
- * Retrieves the checklist tasks for a specific user.
- */
 export async function getTasks(userId) {
   if (!userId) return null;
-
-  if (isFirebaseReady()) {
-    try {
-      const userRef = doc(db, 'users', userId);
-      const docSnap = await getDoc(userRef);
-      if (docSnap.exists() && docSnap.data().tasks) {
-        return docSnap.data().tasks;
-      }
-    } catch (error) {
-      console.error('Error getting tasks from Firestore:', error);
-    }
-    return null;
-  } else {
-    const saved = localStorage.getItem(`campaignTasks_${userId}`) || localStorage.getItem('campaignTasks');
-    return saved ? JSON.parse(saved) : null;
+  try {
+    const row = await getStateRow(userId);
+    return row?.tasks ?? null;
+  } catch (error) {
+    console.error('[dbService] getTasks:', error.message);
+    return cacheGet(`campaignTasks_${userId}`);
   }
 }
 
-/**
- * Saves the CRM contacts list for a specific user.
- */
+// -------------------------------------------------------------------------
+// CRM contacts
+// -------------------------------------------------------------------------
 export async function saveContacts(userId, contacts) {
   if (!userId) return;
-
-  if (isFirebaseReady()) {
-    try {
-      const userRef = doc(db, 'users', userId);
-      await setDoc(userRef, { contacts }, { merge: true });
-      console.log('CRM contacts saved to Firestore.');
-    } catch (error) {
-      console.error('Error saving CRM contacts to Firestore:', error);
-    }
-  } else {
-    localStorage.setItem(`crmContacts_${userId}`, JSON.stringify(contacts));
-    localStorage.setItem('crmContacts', JSON.stringify(contacts)); // legacy fallback
+  cacheSet(`crmContacts_${userId}`, contacts);
+  try {
+    await upsertStateColumn(userId, 'contacts', contacts);
+  } catch (error) {
+    console.error('[dbService] saveContacts:', error.message);
   }
 }
 
-/**
- * Retrieves the CRM contacts list for a specific user.
- */
 export async function getContacts(userId) {
   if (!userId) return null;
-
-  if (isFirebaseReady()) {
-    try {
-      const userRef = doc(db, 'users', userId);
-      const docSnap = await getDoc(userRef);
-      if (docSnap.exists() && docSnap.data().contacts) {
-        return docSnap.data().contacts;
-      }
-    } catch (error) {
-      console.error('Error getting CRM contacts from Firestore:', error);
-    }
-    return null;
-  } else {
-    const saved = localStorage.getItem(`crmContacts_${userId}`) || localStorage.getItem('crmContacts');
-    return saved ? JSON.parse(saved) : null;
+  try {
+    const row = await getStateRow(userId);
+    return row?.contacts ?? null;
+  } catch (error) {
+    console.error('[dbService] getContacts:', error.message);
+    return cacheGet(`crmContacts_${userId}`);
   }
 }
 
-/**
- * Saves subscription payment status.
- */
+// -------------------------------------------------------------------------
+// Subscription / payment status
+// -------------------------------------------------------------------------
 export async function savePaymentStatus(userId, status) {
   if (!userId) return;
-
-  if (isFirebaseReady()) {
-    try {
-      const userRef = doc(db, 'users', userId);
-      await setDoc(userRef, { paymentStatus: status }, { merge: true });
-      console.log('Payment status saved to Firestore.');
-    } catch (error) {
-      console.error('Error saving payment status to Firestore:', error);
-    }
-  } else {
-    localStorage.setItem(`paymentStatus_${userId}`, JSON.stringify(status));
+  cacheSet(`paymentStatus_${userId}`, status);
+  try {
+    await upsertStateColumn(userId, 'payment_status', status);
+  } catch (error) {
+    console.error('[dbService] savePaymentStatus:', error.message);
   }
 }
 
-/**
- * Retrieves subscription payment status.
- */
 export async function getPaymentStatus(userId) {
   if (!userId) return null;
-
-  if (isFirebaseReady()) {
-    try {
-      const userRef = doc(db, 'users', userId);
-      const docSnap = await getDoc(userRef);
-      if (docSnap.exists() && docSnap.data().paymentStatus) {
-        return docSnap.data().paymentStatus;
-      }
-    } catch (error) {
-      console.error('Error getting payment status from Firestore:', error);
-    }
-    return null;
-  } else {
-    const saved = localStorage.getItem(`paymentStatus_${userId}`);
-    return saved ? JSON.parse(saved) : null;
+  try {
+    const row = await getStateRow(userId);
+    return row?.payment_status ?? null;
+  } catch (error) {
+    console.error('[dbService] getPaymentStatus:', error.message);
+    return cacheGet(`paymentStatus_${userId}`);
   }
 }

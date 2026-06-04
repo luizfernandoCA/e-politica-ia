@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 
@@ -15,25 +15,31 @@ import Comparison from './pages/Comparison';
 import CRM from './pages/CRM';
 import Reports from './pages/Reports';
 
-// Import Mock Data
+// Demo electoral dataset (analytics simulations) + empty CRM defaults
 import { CANDIDATES as initialCandidates, reinitializeElectoralMockData } from './data/electoralMockData';
 import { CRM_CONTACTS as initialContacts, CAMPAIGN_CHECKLIST as initialTasks } from './data/crmMockData';
-import { 
-  saveCampaignParams, 
-  getCampaignParams, 
-  saveTasks, 
-  getTasks, 
-  saveContacts, 
-  getContacts 
+
+// Real services (Supabase Auth + Postgres with RLS)
+import { onAuthChange, getSession, mapUser, signOut, isVipEmail } from './services/authService';
+import {
+  saveCampaignParams,
+  getCampaignParams,
+  saveTasks,
+  getTasks,
+  saveContacts,
+  getContacts,
+  getPaymentStatus,
+  savePaymentStatus
 } from './services/dbService';
 
 export default function App() {
   // Authentication & Onboarding States
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
-  const [activeUser, setActiveUser] = useState(null); // Google Profile details
+  const [activeUser, setActiveUser] = useState(null);
+  const [subscriptionActive, setSubscriptionActive] = useState(false);
   const [isCampaignConfigured, setIsCampaignConfigured] = useState(false);
-  const [campaignParams, setCampaignParams] = useState(null);
+  const [, setCampaignParams] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Navigation & UI States
@@ -48,79 +54,61 @@ export default function App() {
   const [tasks, setTasks] = useState([]);
 
   // =========================================================================
-  // 1. Google Authentication State & Session Listener
+  // 1. Supabase Authentication Session Listener
   // =========================================================================
   useEffect(() => {
     let unsubscribe = () => {};
-    async function initAuthListener() {
+
+    async function initAuth() {
+      // Restore existing session first (page reload / OAuth redirect)
       try {
-        const { getAuth, onAuthStateChanged } = await import('firebase/auth');
-        const auth = getAuth();
-        unsubscribe = onAuthStateChanged(auth, (user) => {
-          if (user) {
-            const VIP_EMAILS = ['webcamargo@gmail.com', 'sergio.augusto.olv@gmail.com'];
-            const userObj = {
-              uid: user.uid,
-              name: user.displayName || 'Usuário',
-              email: user.email,
-              avatar: user.photoURL ? null : '👤',
-              photoURL: user.photoURL,
-              title: VIP_EMAILS.includes(user.email) 
-                ? (user.email.includes('webcamargo') ? 'Gestor de Campanha' : 'Especialista Eleitoral e Assessor Parlamentar')
-                : 'Assinante'
-            };
-            setActiveUser(userObj);
-            setIsAuthenticated(true);
-            if (typeof window !== 'undefined') {
-              localStorage.setItem('activeUser', JSON.stringify(userObj));
-            }
-          } else {
-            // Check if there is a local session fallback in case of manual email login
-            if (typeof window !== 'undefined') {
-              const cachedUser = localStorage.getItem('activeUser');
-              if (cachedUser) {
-                const userObj = JSON.parse(cachedUser);
-                setActiveUser(userObj);
-                setIsAuthenticated(true);
-              } else {
-                setIsLoading(false);
-              }
-            } else {
-              setIsLoading(false);
-            }
-          }
-        });
-      } catch (err) {
-        console.warn('Firebase Auth state listener running in fallback mode:', err);
-        // Fallback for manual session restore
-        if (typeof window !== 'undefined') {
-          const cachedUser = localStorage.getItem('activeUser');
-          if (cachedUser) {
-            const userObj = JSON.parse(cachedUser);
-            setActiveUser(userObj);
-            setIsAuthenticated(true);
-          } else {
-            setIsLoading(false);
-          }
+        const session = await getSession();
+        if (session?.user) {
+          setActiveUser(mapUser(session.user));
+          setIsAuthenticated(true);
         } else {
           setIsLoading(false);
         }
+      } catch (err) {
+        console.error('Erro ao restaurar sessão Supabase:', err);
+        setIsLoading(false);
       }
+
+      // Listen for sign-in / sign-out events
+      unsubscribe = onAuthChange((user) => {
+        if (user) {
+          setActiveUser(user);
+          setIsAuthenticated(true);
+        } else {
+          setActiveUser(null);
+          setIsAuthenticated(false);
+          setIsLoading(false);
+        }
+      });
     }
-    initAuthListener();
+
+    initAuth();
     return () => unsubscribe();
   }, []);
 
   // =========================================================================
-  // 2. Fetch User Data (Firestore / Cache fallback) once authenticated
+  // 2. Fetch User Data (Supabase / cache fallback) once authenticated
   // =========================================================================
   useEffect(() => {
     async function loadUserData() {
       if (!activeUser) return;
       setIsLoading(true);
-      const userId = activeUser.uid || activeUser.email;
-      
+      const userId = activeUser.uid;
+
       try {
+        // 0. Subscription status (VIPs always have access)
+        if (isVipEmail(activeUser.email)) {
+          setSubscriptionActive(true);
+        } else {
+          const payment = await getPaymentStatus(userId);
+          setSubscriptionActive(payment?.status === 'active' || payment?.status === 'approved');
+        }
+
         // 1. Load Campaign parameters
         const params = await getCampaignParams(userId);
         if (params) {
@@ -130,8 +118,7 @@ export default function App() {
           reinitializeElectoralMockData();
           setCampaignParams(params);
           setIsCampaignConfigured(true);
-          
-          // Re-hydrate custom candidate list with user candidate
+
           const userCandidateId = 'dr-marcos-silva';
           setCandidates([...initialCandidates]);
           setActiveCandidate(userCandidateId);
@@ -166,7 +153,7 @@ export default function App() {
           }
         }
       } catch (err) {
-        console.error('Error fetching user campaign details from Firestore:', err);
+        console.error('Erro ao carregar dados do usuário no Supabase:', err);
       } finally {
         setIsLoading(false);
       }
@@ -175,19 +162,17 @@ export default function App() {
   }, [activeUser]);
 
   // =========================================================================
-  // 3. Dynamic Real-Time Data Push back to Firestore on state change
+  // 3. Dynamic Real-Time Data Push back to Supabase on state change
   // =========================================================================
   useEffect(() => {
     if (isCampaignConfigured && activeUser && contacts.length >= 0) {
-      const userId = activeUser.uid || activeUser.email;
-      saveContacts(userId, contacts);
+      saveContacts(activeUser.uid, contacts);
     }
   }, [contacts, isCampaignConfigured, activeUser]);
 
   useEffect(() => {
     if (isCampaignConfigured && activeUser && tasks.length >= 0) {
-      const userId = activeUser.uid || activeUser.email;
-      saveTasks(userId, tasks);
+      saveTasks(activeUser.uid, tasks);
     }
   }, [tasks, isCampaignConfigured, activeUser]);
 
@@ -196,20 +181,25 @@ export default function App() {
     setMobileSidebarOpen(!mobileSidebarOpen);
   };
 
-  // Handle successful subscription payment
-  const handlePaymentSuccess = (userObj) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('activeUser', JSON.stringify(userObj));
-    }
+  // Handle successful subscription payment (called by Checkout)
+  const handlePaymentSuccess = async (userObj) => {
     setActiveUser(userObj);
     setIsAuthenticated(true);
+    setSubscriptionActive(true);
+    if (userObj?.uid && !isVipEmail(userObj.email)) {
+      await savePaymentStatus(userObj.uid, {
+        status: 'active',
+        provider: 'mercadopago',
+        activatedAt: new Date().toISOString()
+      });
+    }
   };
 
   // Handle campaign setup wizard completion
   const handleSetupComplete = async (params) => {
     setCampaignParams(params);
 
-    const userCandidateId = 'dr-marcos-silva'; // Preserve key internally
+    const userCandidateId = 'dr-marcos-silva';
     setContacts([]); // Starts with absolutely 0 pre-registered contacts!
 
     const defaultTasks = [
@@ -231,7 +221,7 @@ export default function App() {
     setActiveCandidate(userCandidateId);
 
     if (activeUser) {
-      const userId = activeUser.uid || activeUser.email;
+      const userId = activeUser.uid;
       await saveCampaignParams(userId, params);
       await saveContacts(userId, []);
       await saveTasks(userId, defaultTasks);
@@ -254,16 +244,15 @@ export default function App() {
   // Handle logout
   const handleLogout = async () => {
     try {
-      const { getAuth, signOut } = await import('firebase/auth');
-      const auth = getAuth();
-      await signOut(auth);
+      await signOut();
     } catch (e) {
-      console.warn('Firebase signout fallback:', e);
+      console.warn('Supabase signout warning:', e);
     }
 
     setIsAuthenticated(false);
     setShowCheckout(false);
     setActiveUser(null);
+    setSubscriptionActive(false);
     setIsCampaignConfigured(false);
     setCampaignParams(null);
     if (typeof window !== 'undefined') {
@@ -272,7 +261,7 @@ export default function App() {
       localStorage.removeItem('crmContacts');
       localStorage.removeItem('campaignTasks');
     }
-    window.location.reload(); // Force reload to reinitialize mock databases cleanly!
+    window.location.reload(); // Force reload to reinitialize state cleanly
   };
 
   // Render active dashboard tool view
@@ -280,23 +269,23 @@ export default function App() {
     switch (activePage) {
       case 'dashboard':
         return (
-          <Dashboard 
-            activeCandidate={activeCandidate} 
-            tasks={tasks} 
+          <Dashboard
+            activeCandidate={activeCandidate}
+            tasks={tasks}
             setTasks={setTasks}
             setActivePage={setActivePage}
           />
         );
       case 'analytics':
         return (
-          <Analytics 
-            activeCandidate={activeCandidate} 
+          <Analytics
+            activeCandidate={activeCandidate}
           />
         );
       case 'assistant':
         return (
-          <Assistant 
-            activeCandidate={activeCandidate} 
+          <Assistant
+            activeCandidate={activeCandidate}
           />
         );
       case 'comparison':
@@ -305,25 +294,25 @@ export default function App() {
         );
       case 'crm':
         return (
-          <CRM 
-            contacts={contacts} 
-            setContacts={setContacts} 
+          <CRM
+            contacts={contacts}
+            setContacts={setContacts}
             candidates={candidates}
             setCandidates={setCandidates}
-            activeCandidate={activeCandidate} 
+            activeCandidate={activeCandidate}
           />
         );
       case 'reports':
         return (
-          <Reports 
-            activeCandidate={activeCandidate} 
+          <Reports
+            activeCandidate={activeCandidate}
           />
         );
       default:
         return (
-          <Dashboard 
-            activeCandidate={activeCandidate} 
-            tasks={tasks} 
+          <Dashboard
+            activeCandidate={activeCandidate}
+            tasks={tasks}
             setTasks={setTasks}
             setActivePage={setActivePage}
           />
@@ -332,7 +321,7 @@ export default function App() {
   };
 
   // =========================================================================
-  // Loading Screen (Auth Re-hydration / Loading Firestore)
+  // Loading Screen (Auth Re-hydration / Loading Supabase)
   // =========================================================================
   if (isLoading) {
     return (
@@ -392,15 +381,28 @@ export default function App() {
   if (!isAuthenticated) {
     if (showCheckout) {
       return (
-        <Checkout 
-          onPaymentSuccess={handlePaymentSuccess} 
-          onBackToLanding={() => setShowCheckout(false)} 
+        <Checkout
+          onPaymentSuccess={handlePaymentSuccess}
+          onBackToLanding={() => setShowCheckout(false)}
         />
       );
     }
     return (
-      <LandingPage 
-        onStartCheckout={() => setShowCheckout(true)} 
+      <LandingPage
+        onStartCheckout={() => setShowCheckout(true)}
+      />
+    );
+  }
+
+  // =========================================================================
+  // Authenticated but subscription not active yet -> finish checkout
+  // =========================================================================
+  if (!subscriptionActive) {
+    return (
+      <Checkout
+        initialUser={activeUser}
+        onPaymentSuccess={handlePaymentSuccess}
+        onBackToLanding={handleLogout}
       />
     );
   }
@@ -410,8 +412,8 @@ export default function App() {
   // =========================================================================
   if (!isCampaignConfigured) {
     return (
-      <CampaignSetup 
-        onSetupComplete={handleSetupComplete} 
+      <CampaignSetup
+        onSetupComplete={handleSetupComplete}
       />
     );
   }
@@ -422,10 +424,10 @@ export default function App() {
   return (
     <div className="app-container">
       {/* Sidebar Navigation */}
-      <Sidebar 
-        activePage={activePage} 
-        setActivePage={setActivePage} 
-        collapsed={sidebarCollapsed} 
+      <Sidebar
+        activePage={activePage}
+        setActivePage={setActivePage}
+        collapsed={sidebarCollapsed}
         setCollapsed={setSidebarCollapsed}
         mobileOpen={mobileSidebarOpen}
         setMobileOpen={setMobileSidebarOpen}
@@ -436,7 +438,7 @@ export default function App() {
       {/* Main Content Area */}
       <div className={`main-content ${sidebarCollapsed ? 'collapsed' : ''}`}>
         {/* Top Header */}
-        <Header 
+        <Header
           activePage={activePage}
           activeCandidate={activeCandidate}
           setActiveCandidate={setActiveCandidate}

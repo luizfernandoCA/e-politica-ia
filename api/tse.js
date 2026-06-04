@@ -197,7 +197,7 @@ export default async function handler(req, res) {
     let remainingPercentage = 100.0;
 
     candidates.forEach((c, idx) => {
-      let pct = 0;
+      let pct;
       if (isVereador) {
         // A single Vereador candidate in Porto Velho gets e.g. 0.8% to 1.5% of total votes
         if (c.isWinner) {

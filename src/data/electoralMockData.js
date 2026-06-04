@@ -62,7 +62,6 @@ const getCityRegions = (city) => {
     ];
   } else {
     // Dynamic fallback neighborhoods for any other of the 52 municipalities of Rondônia
-    const cityName = city || "Sua Cidade";
     return [
       { id: "centro", name: "Centro", population: 10000, profile: "Comércio local e prefeitura", issues: "Segurança e iluminação pública", mapX: 50, mapY: 50, colorStrength: 0.8 },
       { id: "vila-nova", name: "Bairro Novo", population: 8000, profile: "Residencial familiar popular", issues: "Saneamento básico e asfalto", mapX: 30, mapY: 35, colorStrength: 0.9 },
@@ -277,7 +276,7 @@ if (campaignParams && tseData2024 && tseData2020) {
     mayorList.forEach(cand => {
       let remainingWeight = 100;
       regionList.forEach((r, idx) => {
-        let weight = 0;
+        let weight;
         if (idx === regionList.length - 1) {
           weight = remainingWeight;
         } else {
@@ -324,7 +323,7 @@ if (campaignParams && tseData2024 && tseData2020) {
     mayorList.forEach(cand => {
       let remainingWeight = 100;
       zoneList.forEach((z, idx) => {
-        let weight = 0;
+        let weight;
         if (idx === zoneList.length - 1) {
           weight = remainingWeight;
         } else {
@@ -809,7 +808,7 @@ export function reinitializeElectoralMockData() {
     mayorList.forEach(cand => {
       let remainingWeight = 100;
       regionList.forEach((r, idx) => {
-        let weight = 0;
+        let weight;
         if (idx === regionList.length - 1) {
           weight = remainingWeight;
         } else {
@@ -841,7 +840,7 @@ export function reinitializeElectoralMockData() {
     mayorList.forEach(cand => {
       let remainingWeight = 100;
       zoneList.forEach((z, idx) => {
-        let weight = 0;
+        let weight;
         if (idx === zoneList.length - 1) {
           weight = remainingWeight;
         } else {

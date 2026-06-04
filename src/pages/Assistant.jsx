@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   Brain, 
   Send, 
@@ -112,7 +112,7 @@ Entendi o seu ponto sobre: *"${userQuery}"*. Para a candidatura de **${candidate
 Deseja detalhar a abordagem para algum bairro específico ou prefere criar um roteiro de postagem para as redes sociais?`;
   };
 
-  const handleSendMessage = (textToSend) => {
+  const handleSendMessage = async (textToSend) => {
     if (!textToSend.trim()) return;
 
     // Add user message
@@ -123,22 +123,51 @@ Deseja detalhar a abordagem para algum bairro específico ou prefere criar um ro
       timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
     };
 
-    setMessages(prev => [...prev, userMsg]);
+    const history = [...messages, userMsg];
+    setMessages(history);
     setInputValue('');
     setIsTyping(true);
 
-    // Simulate strategy compiling delay (feels premium!)
-    setTimeout(() => {
-      const responseText = generateAIResponse(textToSend);
-      const aiMsg = {
-        id: Date.now() + 1,
-        sender: 'assistant',
-        text: responseText,
-        timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-      };
-      setMessages(prev => [...prev, aiMsg]);
-      setIsTyping(false);
-    }, 1800);
+    let responseText = null;
+
+    // 1. Real AI: secure serverless proxy to the Anthropic Claude API
+    try {
+      const response = await fetch('/api/assistant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: history.map(({ sender, text }) => ({ sender, text })),
+          context: {
+            candidateName: campaignParams?.candidateName || candidate.name,
+            candidateParty: campaignParams?.party || candidate.party,
+            city: cityName,
+            role: campaignParams?.role || candidate.role
+          }
+        })
+      });
+      const data = await response.json();
+      if (response.ok && data.success && data.text) {
+        responseText = data.text;
+      } else if (data.code !== 'AI_NOT_CONFIGURED') {
+        console.error('[Assistant API]:', data.message);
+      }
+    } catch (err) {
+      console.warn('[Assistant API] indisponível, usando estrategista local:', err);
+    }
+
+    // 2. Fallback: local strategy compiler (offline / API not configured)
+    if (!responseText) {
+      responseText = generateAIResponse(textToSend);
+    }
+
+    const aiMsg = {
+      id: Date.now() + 1,
+      sender: 'assistant',
+      text: responseText,
+      timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+    };
+    setMessages(prev => [...prev, aiMsg]);
+    setIsTyping(false);
   };
 
   return (
@@ -255,7 +284,7 @@ Deseja detalhar a abordagem para algum bairro específico ou prefere criar um ro
                       return <h4 key={lIdx} style={{ fontSize: '1.05rem', fontFamily: 'var(--font-title)', color: 'var(--accent-yellow)', margin: '12px 0 6px 0', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '4px' }}>{line.replace('###', '').trim()}</h4>;
                     }
                     if (line.startsWith('*   ') || line.startsWith('- ')) {
-                      return <li key={lIdx} style={{ marginLeft: '12px', listStyleType: 'square', margin: '4px 0' }}>{line.replace(/^(\*\s+|\-\s+)/, '')}</li>;
+                      return <li key={lIdx} style={{ marginLeft: '12px', listStyleType: 'square', margin: '4px 0' }}>{line.replace(/^(\*\s+|-\s+)/, '')}</li>;
                     }
                     if (line.startsWith('1. ') || line.startsWith('2. ') || line.startsWith('3. ')) {
                       return <p key={lIdx} style={{ paddingLeft: '12px', margin: '6px 0', textIndent: '-12px' }}>{line}</p>;

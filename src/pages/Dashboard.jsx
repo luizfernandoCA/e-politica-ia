@@ -1,11 +1,9 @@
-import React from 'react';
 import { 
   Users, 
   TrendingUp, 
   MapPin, 
   CheckSquare, 
-  Clock, 
-  CheckCircle2, 
+  Clock,
   ArrowUpRight,
   Target
 } from 'lucide-react';

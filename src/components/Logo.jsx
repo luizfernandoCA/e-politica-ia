@@ -1,4 +1,3 @@
-import React from 'react';
 
 export default function Logo({ size = 36, showText = true }) {
   return (

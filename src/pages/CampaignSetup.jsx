@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ShieldCheck, Sparkles, Loader2, Database, AlertCircle } from 'lucide-react';
 
 export default function CampaignSetup({ onSetupComplete }) {

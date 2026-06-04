@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
   Brain, 
   Map, 
@@ -6,10 +6,8 @@ import {
   FileText, 
   ArrowRight, 
   Check, 
-  X, 
-  Users, 
-  Sparkles, 
-  Lock, 
+  X,
+  Sparkles,
   ChevronDown,
   ShieldCheck
 } from 'lucide-react';

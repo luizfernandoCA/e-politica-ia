@@ -327,7 +327,19 @@ export default async function handler(req, res) {
 
   let tseData;
   try {
-    const tseRes = await fetch(tseUrl);
+    // TSE bloqueia (403) requisições com User-Agent suspeito (default do
+    // Node fetch). Enviar UA + Accept + Referer realistas resolve.
+    const tseRes = await fetch(tseUrl, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) ' +
+          'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+        'Accept': 'application/json, text/plain, */*',
+        'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+        'Referer': 'https://resultados.tse.jus.br/oficial/app/index.html',
+        'Origin': 'https://resultados.tse.jus.br'
+      }
+    });
     if (!tseRes.ok) {
       return res.status(502).json({
         success: false,

@@ -234,7 +234,7 @@ export default function LandingPage({ onStartCheckout }) {
               marginTop: '4px' 
             }}
           >
-            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><ShieldCheck size={14} style={{ color: 'var(--accent-green)' }} /> Homologado pelo TSE</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><ShieldCheck size={14} style={{ color: 'var(--accent-green)' }} /> Integrado a dados públicos do TSE/TRE</span>
             <span>* Sem fidelidade contratual</span>
           </div>
 

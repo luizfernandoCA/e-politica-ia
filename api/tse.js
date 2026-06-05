@@ -88,6 +88,98 @@ const ELECTION_CODES = {
   2020: "2030402020"  // 2020 Municipais RO
 };
 
+// Cache TTL: dados de eleição passada não mudam, mas mantemos refresh
+// quinzenal para captar correções pontuais do TSE em diplomações tardias.
+const CACHE_TTL_MS = 14 * 24 * 60 * 60 * 1000; // 14 dias
+
+// -----------------------------------------------------------------------
+// Cache TSE persistente (public.tse_votes_cache).
+// Escreve via service_role (bypass RLS); lê via PostgREST.
+// -----------------------------------------------------------------------
+function getSupabaseConfig() {
+  const url = process.env.SUPABASE_URL || 'https://tlnprjkiydiogrcsruxw.supabase.co';
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  return { url, serviceKey };
+}
+
+async function fetchFromCache({ electionYear, munCode, roleCode }) {
+  const { url, serviceKey } = getSupabaseConfig();
+  if (!serviceKey) return null;
+
+  const params = new URLSearchParams({
+    election_year: `eq.${electionYear}`,
+    mun_tse_code: `eq.${munCode}`,
+    role_code: `eq.${roleCode}`,
+    select: 'candidate_tse_id,candidate_name,party,number,outcome,is_winner,votes,percentage,fetched_at',
+    order: 'is_winner.desc,candidate_name.asc'
+  });
+
+  const res = await fetch(`${url}/rest/v1/tse_votes_cache?${params.toString()}`, {
+    headers: {
+      apikey: serviceKey,
+      Authorization: `Bearer ${serviceKey}`,
+      Accept: 'application/json'
+    }
+  });
+
+  if (!res.ok) return null;
+  const rows = await res.json();
+  if (!Array.isArray(rows) || rows.length === 0) return null;
+
+  const newest = rows.reduce(
+    (acc, r) => (!acc || new Date(r.fetched_at) > new Date(acc) ? r.fetched_at : acc),
+    null
+  );
+
+  if (newest && Date.now() - new Date(newest).getTime() > CACHE_TTL_MS) {
+    return null;
+  }
+
+  return { rows, lastFetchedAt: newest };
+}
+
+async function saveToCache({ electionYear, munCode, munName, roleCode, candidates, rawPayload }) {
+  const { url, serviceKey } = getSupabaseConfig();
+  if (!serviceKey) return false;
+
+  const records = candidates.map((c) => ({
+    election_year: electionYear,
+    mun_tse_code: munCode,
+    mun_name: munName,
+    role_code: roleCode,
+    candidate_tse_id: c.id,
+    candidate_name: c.name,
+    party: c.party,
+    number: c.number ?? null,
+    outcome: c.outcome,
+    is_winner: c.isWinner,
+    // Apuração desagregada (votes/percentage) ainda não vem do
+    // DivulgaCandContas; fica NULL até integrarmos o boletim de urna.
+    votes: null,
+    percentage: null,
+    raw_payload: rawPayload ?? null,
+    fetched_at: new Date().toISOString()
+  }));
+
+  const res = await fetch(`${url}/rest/v1/tse_votes_cache`, {
+    method: 'POST',
+    headers: {
+      apikey: serviceKey,
+      Authorization: `Bearer ${serviceKey}`,
+      'Content-Type': 'application/json',
+      Prefer: 'resolution=merge-duplicates,return=minimal'
+    },
+    body: JSON.stringify(records)
+  });
+
+  if (!res.ok) {
+    const errBody = await res.text();
+    console.warn('[tse cache] save failed:', res.status, errBody);
+    return false;
+  }
+  return true;
+}
+
 function normalizeString(str) {
   return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim() : "";
 }
@@ -145,6 +237,71 @@ export default async function handler(req, res) {
   const cargoCode = role === 'Vereador' ? '13' : '11'; // Prefeito = 11, Vereador = 13
   const targetUrl = `https://divulgacandcontas.tse.jus.br/divulga/rest/v1/candidatura/listar/${queryYear}/${munCode}/${electCode}/${cargoCode}/candidatos`;
 
+  // ---------------------------------------------------------------------
+  // 1. Cache lookup: se houver linha válida em tse_votes_cache (≤14 dias),
+  //    serve imediatamente. Reduz latência (~50ms vs ~1.5s no TSE) e
+  //    elimina dependência de uptime do DivulgaCandContas.
+  // ---------------------------------------------------------------------
+  try {
+    const cached = await fetchFromCache({
+      electionYear: queryYear,
+      munCode,
+      roleCode: cargoCode
+    });
+
+    if (cached) {
+      const candidates = cached.rows.map((row) => ({
+        id: row.candidate_tse_id,
+        name: row.candidate_name,
+        fullName: row.candidate_name,
+        party: row.party,
+        number: row.number,
+        status: '—',
+        outcome: row.outcome ?? 'Não informado',
+        isWinner: row.is_winner,
+        avatar: '👤',
+        color: getPartyColor(row.party)
+      }));
+
+      return res.status(200).json({
+        success: true,
+        cached: true,
+        lastFetchedAt: cached.lastFetchedAt,
+        city: city.toUpperCase(),
+        tseCode: munCode,
+        electionYear: queryYear,
+        roleName: role || (cargoCode === '13' ? 'Vereador' : 'Prefeito'),
+        candidatesSource: 'TSE DivulgaCandContas (oficial, via cache)',
+        candidates,
+        // Apuração desagregada ainda não vem do DivulgaCandContas.
+        // Quando o boletim de urna for integrado, votes/percentage virão
+        // diretamente do cache (preenchidos pelo job de ingestão).
+        voteDistribution: cached.rows.map((row) => ({
+          candidateId: row.candidate_tse_id,
+          name: row.candidate_name,
+          party: row.party,
+          number: row.number,
+          votes: row.votes,
+          percentage: row.percentage,
+          color: getPartyColor(row.party),
+          outcome: row.outcome,
+          isWinner: row.is_winner
+        })),
+        voteDistributionKind: cached.rows.some((r) => r.votes !== null) ? 'official' : 'pending',
+        disclaimer:
+          'Lista e desfecho (Eleito/Não Eleito) oficiais do TSE. ' +
+          'A apuração desagregada por seção (votos absolutos) ainda não está ' +
+          'disponível neste cache; integração com boletim de urna na Fase ' +
+          'seguinte do roadmap.'
+      });
+    }
+  } catch (cacheErr) {
+    console.warn('[tse cache] lookup failed, proceeding to live TSE fetch:', cacheErr.message);
+  }
+
+  // ---------------------------------------------------------------------
+  // 2. Cache miss → busca direto no TSE.
+  // ---------------------------------------------------------------------
   try {
     const fetchResponse = await fetch(targetUrl);
     
@@ -178,6 +335,20 @@ export default async function handler(req, res) {
       if (!a.isWinner && b.isWinner) return 1;
       return a.name.localeCompare(b.name);
     });
+
+    // -----------------------------------------------------------------------
+    // Persistir no cache em paralelo, sem bloquear a resposta ao usuário.
+    // Falhas são logadas mas não propagadas (cache é melhoria, não req).
+    // -----------------------------------------------------------------------
+    const persistedAt = new Date().toISOString();
+    saveToCache({
+      electionYear: queryYear,
+      munCode,
+      munName: data.unidadeEleitoral?.nome || city.toUpperCase(),
+      roleCode: cargoCode,
+      candidates,
+      rawPayload: { totalRaw: rawCandidates.length }
+    }).catch((err) => console.warn('[tse cache] async save error:', err.message));
 
     // -----------------------------------------------------------------------
     // ATENÇÃO: distribuição de votos abaixo é ESTIMATIVA PROPORCIONAL
@@ -251,12 +422,14 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
+      cached: false,
+      lastFetchedAt: persistedAt,
       city: data.unidadeEleitoral?.nome || city.toUpperCase(),
       tseCode: munCode,
       electionYear: queryYear,
       roleName: data.cargo?.nome || role,
       // Fonte oficial: lista de candidatos e desfecho ("Eleito").
-      candidatesSource: 'TSE DivulgaCandContas (oficial)',
+      candidatesSource: 'TSE DivulgaCandContas (oficial, live)',
       candidates: candidates,
       // Estimativa proporcional — NÃO é apuração oficial.
       voteDistribution: voteDistribution,

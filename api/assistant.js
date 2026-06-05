@@ -1,17 +1,21 @@
 /**
  * Vercel Serverless Function: api/assistant.js
  *
- * REAL AI assistant ("E-Poliana") powered by the Anthropic Claude API.
- * The API key never reaches the browser - this function acts as a
- * secure server-side proxy.
+ * Assistente de IA ("E-Poliana") em Claude Sonnet 4.6.
+ * A API key fica sempre server-side; o frontend só recebe o texto final.
  *
- * Required environment variable (Vercel):
- *   ANTHROPIC_API_KEY - https://console.anthropic.com/settings/keys
- * Optional:
- *   ANTHROPIC_MODEL   - defaults to claude-haiku-4-5-20251001
+ * Variáveis de ambiente (Vercel):
+ *   ANTHROPIC_API_KEY - obrigatório (https://console.anthropic.com/settings/keys)
+ *   ANTHROPIC_MODEL   - opcional, default 'claude-sonnet-4-6'
+ *
+ * Prompt caching:
+ *   O system prompt é marcado com `cache_control: { type: 'ephemeral' }`.
+ *   Como ele só varia por candidato/cidade/cargo, requisições subsequentes
+ *   do MESMO usuário em ≤5min reutilizam o cache (≥90% mais barato).
+ *   Para maximizar hit rate, mantenha a ordem dos campos do contexto estável.
  */
 
-const DEFAULT_MODEL = 'claude-haiku-4-5-20251001';
+const DEFAULT_MODEL = 'claude-sonnet-4-6';
 const MAX_HISTORY = 20;
 
 export default async function handler(req, res) {
@@ -77,7 +81,15 @@ Diretrizes:
       body: JSON.stringify({
         model: process.env.ANTHROPIC_MODEL || DEFAULT_MODEL,
         max_tokens: 1500,
-        system: systemPrompt,
+        // System como array de blocos para habilitar prompt caching ephemeral.
+        // Hit rate alto enquanto contexto do candidato não mudar (5min TTL).
+        system: [
+          {
+            type: 'text',
+            text: systemPrompt,
+            cache_control: { type: 'ephemeral' }
+          }
+        ],
         messages: history
       })
     });

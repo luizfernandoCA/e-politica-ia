@@ -179,65 +179,73 @@ export default async function handler(req, res) {
       return a.name.localeCompare(b.name);
     });
 
-    // Provide total votes and deterministic distribution per city size
-    const basePopulationMap = {
+    // -----------------------------------------------------------------------
+    // ATENÇÃO: distribuição de votos abaixo é ESTIMATIVA PROPORCIONAL
+    // determinística, não o resultado oficial. A API DivulgaCandContas usada
+    // acima retorna a LISTA de candidatos e o desfecho ("Eleito" / não eleito),
+    // mas não a apuração desagregada. Para resultados oficiais por seção,
+    // a Fase D introduz cache real em `public.tse_votes_cache` consumindo
+    // o endpoint de apuração do TSE.
+    //
+    // Esta estimativa serve apenas como visualização ilustrativa do panorama
+    // eleitoral histórico (vencedor vs. demais), nunca como número oficial.
+    // -----------------------------------------------------------------------
+    const estimatedElectoratePerMun = {
       "00035": 380000, // Porto Velho
       "00051": 95000,  // Ji-Paraná
       "00078": 78000,  // Ariquemes
       "00132": 65000,  // Vilhena
       "00094": 62000,  // Cacoal
     };
-
-    const targetTotalVotes = basePopulationMap[munCode] || 25000;
-    
+    const estimatedTotalVotes = estimatedElectoratePerMun[munCode] || 25000;
     const isVereador = cargoCode === '13';
-    
-    // Proportional voting distribution based on outcomes
-    let voteDistribution = [];
+
+    // Distribuição determinística (sem Math.random). Fórmula:
+    //   - Vereador: vencedor 1.35% decrescendo 0.08% por posição; não-eleitos
+    //     começam em 0.45% decrescendo 0.03% por posição (mínimo 0.15%).
+    //   - Prefeito: percentuais fixos por tamanho do pool (1, 2 ou 3+).
+    const voteDistribution = [];
     let remainingPercentage = 100.0;
 
     candidates.forEach((c, idx) => {
       let pct;
       if (isVereador) {
-        // A single Vereador candidate in Porto Velho gets e.g. 0.8% to 1.5% of total votes
         if (c.isWinner) {
-          pct = parseFloat((1.35 - (idx * 0.08) + (Math.random() * 0.2)).toFixed(2));
+          pct = Math.max(0.15, 1.35 - (idx * 0.08));
         } else {
-          pct = parseFloat((0.45 - (idx * 0.03) + (Math.random() * 0.08)).toFixed(2));
+          pct = Math.max(0.15, 0.45 - (idx * 0.03));
         }
-        if (pct < 0.15) pct = 0.15;
+      } else if (c.isWinner) {
+        pct = candidates.length === 1 ? 100.0 : (candidates.length === 2 ? 54.5 : 42.8);
+      } else if (idx === 1) {
+        pct = candidates.length === 2 ? 45.5 : 34.2;
       } else {
-        // Prefeito (Mayor)
-        if (c.isWinner) {
-          pct = candidates.length === 1 ? 100.0 : (candidates.length === 2 ? 54.5 : 42.8);
-        } else if (idx === 1) {
-          pct = candidates.length === 2 ? 45.5 : 34.2;
-        } else {
-          pct = Math.max(2.5, remainingPercentage / (candidates.length - idx) - (Math.random() * 2));
-        }
+        pct = Math.max(2.5, remainingPercentage / Math.max(1, candidates.length - idx));
       }
-      
+
       pct = parseFloat(pct.toFixed(2));
-      
+
       if (!isVereador) {
         if (idx === candidates.length - 1) {
-          pct = parseFloat(remainingPercentage.toFixed(2));
+          pct = parseFloat(Math.max(0, remainingPercentage).toFixed(2));
         }
         remainingPercentage -= pct;
       }
-
-      const votes = Math.round((targetTotalVotes * pct) / 100);
 
       voteDistribution.push({
         candidateId: c.id,
         name: c.name,
         party: c.party,
         number: c.number,
-        votes: votes,
-        percentage: pct,
+        estimatedVotes: Math.round((estimatedTotalVotes * pct) / 100),
+        estimatedPercentage: pct,
         color: c.color,
         outcome: c.outcome,
-        isWinner: c.isWinner
+        isWinner: c.isWinner,
+        // Compatibilidade temporária com componentes legados que leem `votes`/`percentage`.
+        // A UI deve ler `estimatedVotes` e exibir o rótulo "Estimativa".
+        votes: Math.round((estimatedTotalVotes * pct) / 100),
+        percentage: pct
       });
     });
 
@@ -247,9 +255,20 @@ export default async function handler(req, res) {
       tseCode: munCode,
       electionYear: queryYear,
       roleName: data.cargo?.nome || role,
-      totalVotes: targetTotalVotes,
+      // Fonte oficial: lista de candidatos e desfecho ("Eleito").
+      candidatesSource: 'TSE DivulgaCandContas (oficial)',
       candidates: candidates,
-      voteDistribution: voteDistribution
+      // Estimativa proporcional — NÃO é apuração oficial.
+      voteDistribution: voteDistribution,
+      voteDistributionKind: 'estimate',
+      estimatedTotalVotes,
+      disclaimer:
+        'A lista e o desfecho (Eleito/Não Eleito) vêm do TSE. ' +
+        'A distribuição de votos é uma ESTIMATIVA PROPORCIONAL determinística, ' +
+        'não a apuração oficial por seção. Para apuração desagregada, ' +
+        'consulte o boletim de urna oficial em divulga.tse.jus.br.',
+      // Mantido temporariamente para compatibilidade com componentes legados.
+      totalVotes: estimatedTotalVotes
     });
 
   } catch (error) {

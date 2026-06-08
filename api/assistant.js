@@ -159,6 +159,85 @@ async function toolCompareCandidates({ candidate_urn_names, city, role, year = 2
   }));
 }
 
+async function toolGetGastos({ candidate_urn_name, city, role, year = 2024, round = 1 }) {
+  const election_id = mapElectionId(year, round);
+  const role_code = mapRoleCode(role);
+  // Achar o sqcand primeiro
+  const cand = await toolGetCandidate({ candidate_urn_name, city, role, year, round });
+  if (cand?.error || !cand?.candidate_sq) {
+    return { error: `Candidato '${candidate_urn_name}' não encontrado em ${city}.` };
+  }
+  const { url, serviceKey } = getSupabaseConfig();
+  if (!serviceKey) return { error: 'SUPABASE_SERVICE_ROLE_KEY ausente.' };
+  const params = new URLSearchParams({
+    election_id: `eq.${election_id}`,
+    candidate_sq: `eq.${cand.candidate_sq}`,
+    role_code: `eq.${role_code}`,
+    select:
+      'candidate_urn_name,party_abbr,has_data,prestacao_status,total_receita,total_despesa,total_doacoes_proprio,limite_legal,custo_por_voto,taxa_uso_limite',
+    limit: '1'
+  });
+  const r = await fetch(`${url}/rest/v1/tse_gastos?${params.toString()}`, {
+    headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` }
+  });
+  if (!r.ok) return { error: `Supabase ${r.status}` };
+  const rows = await r.json();
+  if (rows.length === 0) {
+    return {
+      error: `Sem prestação de contas cacheada para ${candidate_urn_name}. Rode o script preload-tse-gastos local.`
+    };
+  }
+  return rows[0];
+}
+
+async function toolGetVotosPorZona({ candidate_urn_name, city, role, year = 2024, round = 1 }) {
+  const election_id = mapElectionId(year, round);
+  const cand = await toolGetCandidate({ candidate_urn_name, city, role, year, round });
+  if (cand?.error || !cand?.candidate_sq) {
+    return { error: `Candidato '${candidate_urn_name}' não encontrado.` };
+  }
+  const { url, serviceKey } = getSupabaseConfig();
+  if (!serviceKey) return { error: 'SUPABASE_SERVICE_ROLE_KEY ausente.' };
+  const params = new URLSearchParams({
+    election_id: `eq.${election_id}`,
+    candidate_sq: `eq.${cand.candidate_sq}`,
+    select: 'electoral_zone,electoral_section,votes,polling_place',
+    order: 'electoral_zone.asc,votes.desc'
+  });
+  const r = await fetch(`${url}/rest/v1/tse_secao_resultado?${params.toString()}`, {
+    headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` }
+  });
+  if (!r.ok) return { error: `Supabase ${r.status}` };
+  const rows = await r.json();
+  if (rows.length === 0) {
+    return {
+      error: `Sem boletim de urna cacheado para ${candidate_urn_name}. Rode o script preload-tse-secoes local.`,
+      candidate_total_votes: cand.candidate_votes
+    };
+  }
+  // Agregar por zona
+  const byZone = {};
+  for (const r of rows) {
+    if (!byZone[r.electoral_zone]) byZone[r.electoral_zone] = { zona: r.electoral_zone, votos: 0, secoes: 0 };
+    byZone[r.electoral_zone].votos += r.votes ?? 0;
+    byZone[r.electoral_zone].secoes += 1;
+  }
+  // Top 5 seções
+  const topSecoes = rows.slice(0, 5).map((r) => ({
+    zona: r.electoral_zone,
+    secao: r.electoral_section,
+    local: r.polling_place,
+    votos: r.votes
+  }));
+  return {
+    candidate_urn_name: cand.candidate_urn_name,
+    total_votos: cand.candidate_votes,
+    distribuicao_por_zona: Object.values(byZone).sort((a, b) => b.votos - a.votos),
+    top_5_secoes_mais_votos: topSecoes,
+    total_secoes_com_voto: rows.length
+  };
+}
+
 async function toolListParties({ city, role, year = 2024, round = 1 }) {
   const election_id = mapElectionId(year, round);
   const role_code = mapRoleCode(role);
@@ -201,7 +280,9 @@ const TOOL_REGISTRY = {
   list_candidates: toolListCandidates,
   get_candidate: toolGetCandidate,
   compare_candidates: toolCompareCandidates,
-  list_parties: toolListParties
+  list_parties: toolListParties,
+  get_gastos: toolGetGastos,
+  get_votos_por_zona: toolGetVotosPorZona
 };
 
 // =========================================================================
@@ -290,6 +371,36 @@ const TOOLS = [
       },
       required: ['city', 'role']
     }
+  },
+  {
+    name: 'get_gastos',
+    description:
+      'Retorna a prestação de contas eleitoral de um candidato: total de receitas, despesas, doações próprias, limite legal, custo por voto, taxa de uso do limite. Útil para análise financeira da campanha.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        candidate_urn_name: { type: 'string' },
+        city: { type: 'string' },
+        role: { type: 'string', enum: ['Prefeito', 'Vereador'] },
+        year: { type: 'integer', enum: [2024, 2020] }
+      },
+      required: ['candidate_urn_name', 'city', 'role']
+    }
+  },
+  {
+    name: 'get_votos_por_zona',
+    description:
+      'Retorna a distribuição de votos de um candidato POR ZONA ELEITORAL (boletim de urna). Lista top 5 seções com mais votos e total por zona. Útil para identificar bases geográficas e oportunidades de crescimento.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        candidate_urn_name: { type: 'string' },
+        city: { type: 'string' },
+        role: { type: 'string', enum: ['Prefeito', 'Vereador'] },
+        year: { type: 'integer', enum: [2024, 2020] }
+      },
+      required: ['candidate_urn_name', 'city', 'role']
+    }
   }
 ];
 
@@ -341,6 +452,8 @@ Você tem acesso a TOOLS que consultam dados oficiais do TSE armazenados na plat
 - get_candidate: detalhe de um candidato específico.
 - compare_candidates: comparativo entre 2-5 candidatos.
 - list_parties: partidos do município com votos e eleitos.
+- get_gastos: prestação de contas eleitorais (receitas, despesas, custo/voto, limite legal).
+- get_votos_por_zona: distribuição geográfica do voto (zona eleitoral e top seções).
 
 USE AS TOOLS sempre que a pergunta envolver números, comparações, contexto eleitoral, adversários, partidos ou histórico — não chute, busque. Depois sintetize.
 

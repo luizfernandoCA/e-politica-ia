@@ -191,6 +191,7 @@ function flattenTsePayload({ tseData, queryYear, electionId, munCode, munName, r
           election_id: electionId,
           election_round: electionRound,
           election_date: parseTseDate(tseData?.dt),
+          uf: 'ro',
           mun_tse_code: munCode,
           mun_name: munName,
           role_code: roleCode,

@@ -14,6 +14,7 @@ import Assistant from './pages/Assistant';
 import Comparison from './pages/Comparison';
 import CRM from './pages/CRM';
 import Reports from './pages/Reports';
+import ApuracaoTSE from './pages/ApuracaoTSE';
 
 // Demo electoral dataset (analytics simulations) + empty CRM defaults
 import { CANDIDATES as initialCandidates, reinitializeElectoralMockData } from './data/electoralMockData';
@@ -276,6 +277,8 @@ export default function App() {
             setActivePage={setActivePage}
           />
         );
+      case 'apuracao-tse':
+        return <ApuracaoTSE />;
       case 'analytics':
         return (
           <Analytics

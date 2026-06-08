@@ -63,7 +63,7 @@ pública por design; a segurança vem do RLS).
 |---|---|---|
 | `MP_ACCESS_TOKEN` | [Mercado Pago Developers](https://www.mercadopago.com.br/developers/panel/app) → Credenciais de produção | Pagamentos reais |
 | `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com/settings/keys) | Assistente IA real |
-| `ANTHROPIC_MODEL` | (opcional) | Override do modelo padrão (default: `claude-sonnet-4-6`) |
+| `ANTHROPIC_MODEL` | (opcional) | Override do modelo padrão (default: `claude-opus-4-7`) |
 | `SUPABASE_SERVICE_ROLE_KEY` | [Supabase → Settings → API](https://supabase.com/dashboard/project/tlnprjkiydiogrcsruxw/settings/api) | Webhook MP + cache TSE |
 | `SUPABASE_URL` | `https://tlnprjkiydiogrcsruxw.supabase.co` | Webhook MP + cache TSE |
 | `APP_URL` | URL pública do deploy | Redirects do checkout |

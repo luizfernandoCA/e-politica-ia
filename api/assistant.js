@@ -17,14 +17,17 @@
  *   ANTHROPIC_API_KEY           - obrigatório
  *   SUPABASE_URL                - obrigatório (default fallback)
  *   SUPABASE_SERVICE_ROLE_KEY   - obrigatório para queries server-side
- *   ANTHROPIC_MODEL             - opcional, default claude-sonnet-4-6
+ *   ANTHROPIC_MODEL             - opcional, default claude-opus-4-7
  *
  * Prompt caching:
  *   System prompt + tools são marcados com cache_control ephemeral.
  *   Reuso ≤5min reduz custo em ~90%.
  */
 
-const DEFAULT_MODEL = 'claude-sonnet-4-6';
+// Default: Opus 4.7 — modelo Claude mais capaz disponível na Anthropic API
+// (junho/2026). Override via env ANTHROPIC_MODEL se quiser Sonnet 4.6
+// (mais rápido/barato) ou Haiku 4.5 (mais barato ainda).
+const DEFAULT_MODEL = 'claude-opus-4-7';
 const MAX_HISTORY = 20;
 const MAX_TOOL_ITERATIONS = 5; // safety: limita rodadas de tool use
 

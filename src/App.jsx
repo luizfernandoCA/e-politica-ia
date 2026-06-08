@@ -9,13 +9,14 @@ import CampaignSetup from './pages/CampaignSetup';
 
 // Import Dashboard Tool Pages
 import Dashboard from './pages/Dashboard';
-import Analytics from './pages/Analytics';
 import Assistant from './pages/Assistant';
-import Comparison from './pages/Comparison';
 import CRM from './pages/CRM';
 import Reports from './pages/Reports';
 import ApuracaoTSE from './pages/ApuracaoTSE';
 import ErrorBoundary from './components/ErrorBoundary';
+// Páginas legadas (Analytics/Comparison) foram absorvidas pela ApuracaoTSE
+// (que usa dados reais do TSE em vez do mock). Arquivos permanecem no repo
+// como referência histórica mas não são mais rotas ativas.
 
 // Demo electoral dataset (analytics simulations) + empty CRM defaults
 import { CANDIDATES as initialCandidates, reinitializeElectoralMockData } from './data/electoralMockData';
@@ -278,28 +279,19 @@ export default function App() {
             setActivePage={setActivePage}
           />
         );
+      // Compatibilidade: rotas legadas redirecionam para Apuração TSE.
       case 'apuracao-tse':
+      case 'analytics':
+      case 'comparison':
         return (
           <ErrorBoundary label="Apuração TSE">
             <ApuracaoTSE />
-          </ErrorBoundary>
-        );
-      case 'analytics':
-        return (
-          <ErrorBoundary label="Análise Eleitoral">
-            <Analytics activeCandidate={activeCandidate} />
           </ErrorBoundary>
         );
       case 'assistant':
         return (
           <ErrorBoundary label="E-Poliana AI">
             <Assistant activeCandidate={activeCandidate} />
-          </ErrorBoundary>
-        );
-      case 'comparison':
-        return (
-          <ErrorBoundary label="Comparativo">
-            <Comparison />
           </ErrorBoundary>
         );
       case 'crm':

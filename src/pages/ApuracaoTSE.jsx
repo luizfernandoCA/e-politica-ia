@@ -9,7 +9,9 @@ import {
   Download,
   ExternalLink,
   Award,
-  Vote
+  Vote,
+  GitCompare,
+  X
 } from 'lucide-react';
 
 /**
@@ -28,6 +30,7 @@ const TABS = [
   { id: 'coligacao', label: 'Coligação', icon: Users },
   { id: 'desempenho', label: 'Desempenho', icon: Award },
   { id: 'votacao', label: 'Votação', icon: BarChart3 },
+  { id: 'comparar', label: 'Comparar', icon: GitCompare },
   { id: 'ia', label: 'Análise IA', icon: Brain },
   { id: 'relatorio', label: 'Relatório', icon: FileText }
 ];
@@ -301,6 +304,11 @@ export default function ApuracaoTSE() {
             <TabDesempenho candidate={selectedCandidate} data={data} year={year} role={role} />
           )}
           {activeTab === 'votacao' && <TabVotacao candidates={data.candidates} />}
+          {activeTab === 'comparar' && (
+            // key força re-mount quando troca cargo/ano (evita useEffect+setState
+            // que dispara warning do React 19 sobre cascading renders).
+            <TabComparar key={`${role}-${year}`} candidates={data.candidates} />
+          )}
           {activeTab === 'ia' && <TabIA city={data.municipality?.name} role={role} />}
           {activeTab === 'relatorio' && (
             <TabRelatorio
@@ -521,6 +529,271 @@ function TabVotacao({ candidates }) {
         </tbody>
       </table>
     </div>
+  );
+}
+
+function TabComparar({ candidates }) {
+  // Sugere os 3 mais votados como pré-seleção
+  const top3 = useMemo(
+    () =>
+      [...candidates]
+        .sort((a, b) => (a.candidate_seq ?? 9999) - (b.candidate_seq ?? 9999))
+        .slice(0, 3)
+        .map((c) => c.candidate_sq),
+    [candidates]
+  );
+
+  const [selected, setSelected] = useState(top3);
+
+  const selectedData = useMemo(
+    () => selected.map((sq) => candidates.find((c) => c.candidate_sq === sq)).filter(Boolean),
+    [selected, candidates]
+  );
+
+  const maxVotes = useMemo(
+    () => Math.max(0, ...selectedData.map((c) => c.candidate_votes ?? 0)),
+    [selectedData]
+  );
+
+  const totalVotosSelecionados = useMemo(
+    () => selectedData.reduce((acc, c) => acc + (c.candidate_votes ?? 0), 0),
+    [selectedData]
+  );
+
+  function updateSlot(i, newSq) {
+    const copy = [...selected];
+    copy[i] = newSq;
+    setSelected(copy);
+  }
+
+  function removeSlot(i) {
+    setSelected(selected.filter((_, idx) => idx !== i));
+  }
+
+  function addSlot() {
+    if (selected.length >= 4) return;
+    const next = candidates.find((c) => !selected.includes(c.candidate_sq));
+    if (next) setSelected([...selected, next.candidate_sq]);
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      {/* Controles de seleção */}
+      <div className="glass" style={{ padding: '1rem 1.25rem', borderRadius: 'var(--radius-md)' }}>
+        <h3
+          style={{
+            fontFamily: 'var(--font-title)',
+            fontSize: '1rem',
+            margin: '0 0 0.75rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}
+        >
+          <GitCompare size={16} color="var(--accent-green)" />
+          Selecione candidatos para comparar
+        </h3>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          {selected.map((sq, i) => (
+            <div
+              key={`slot-${i}`}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+            >
+              <select
+                value={sq}
+                onChange={(e) => updateSlot(i, e.target.value)}
+                style={{ ...selectStyle, minWidth: 220 }}
+              >
+                {candidates.map((c) => (
+                  <option key={c.candidate_sq} value={c.candidate_sq}>
+                    {c.candidate_seq ? `${c.candidate_seq}º · ` : ''}
+                    {c.candidate_urn_name || c.candidate_name} ({c.party_abbr})
+                  </option>
+                ))}
+              </select>
+              {selected.length > 1 && (
+                <button
+                  onClick={() => removeSlot(i)}
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid var(--border-gray)',
+                    color: 'var(--text-gray)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.4rem',
+                    cursor: 'pointer'
+                  }}
+                  title="Remover slot"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+          ))}
+          {selected.length < 4 && (
+            <button onClick={addSlot} style={refreshBtnStyle}>
+              + adicionar
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Comparativo em cards */}
+      {selectedData.length === 0 ? (
+        <p style={{ color: 'var(--text-gray)' }}>Selecione ao menos um candidato.</p>
+      ) : (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: `repeat(auto-fit, minmax(220px, 1fr))`,
+            gap: '1rem'
+          }}
+        >
+          {selectedData.map((c) => {
+            const isLeader = (c.candidate_votes ?? 0) === maxVotes && maxVotes > 0;
+            const pctNoTotal =
+              totalVotosSelecionados > 0
+                ? (((c.candidate_votes ?? 0) / totalVotosSelecionados) * 100).toFixed(1)
+                : '0.0';
+            return (
+              <article
+                key={c.candidate_sq}
+                className="glass"
+                style={{
+                  padding: '1.25rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: isLeader
+                    ? '2px solid var(--accent-green)'
+                    : '1px solid var(--border-gray)',
+                  position: 'relative'
+                }}
+              >
+                {isLeader && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: '-12px',
+                      left: '12px',
+                      background: 'var(--accent-green)',
+                      color: 'var(--bg-dark)',
+                      padding: '2px 10px',
+                      borderRadius: '100px',
+                      fontSize: '0.7rem',
+                      fontWeight: 700,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    <Trophy size={12} /> Líder do grupo
+                  </span>
+                )}
+                <div
+                  style={{
+                    fontSize: '0.7rem',
+                    textTransform: 'uppercase',
+                    color: 'var(--text-gray)'
+                  }}
+                >
+                  {c.party_abbr} · {c.candidate_number}
+                </div>
+                <h3
+                  style={{
+                    fontFamily: 'var(--font-title)',
+                    fontSize: '1.1rem',
+                    margin: '0.2rem 0 0.4rem'
+                  }}
+                >
+                  {c.candidate_urn_name || c.candidate_name}
+                </h3>
+                {c.candidate_outcome && (
+                  <span
+                    style={{
+                      fontSize: '0.75rem',
+                      color: c.candidate_is_elected ? 'var(--accent-green)' : 'var(--text-gray)',
+                      fontWeight: 700
+                    }}
+                  >
+                    {c.candidate_outcome.toUpperCase()}
+                  </span>
+                )}
+                <hr style={{ borderColor: 'var(--border-gray)', margin: '0.75rem 0', opacity: 0.3 }} />
+                <CompStat label="Colocação" value={c.candidate_seq ? `${c.candidate_seq}º` : '—'} />
+                <CompStat label="Votos" value={formatNumber(c.candidate_votes)} highlight />
+                <CompStat
+                  label="% dos válidos"
+                  value={formatPercent(c.candidate_percentage)}
+                />
+                <CompStat label="% no comparativo" value={`${pctNoTotal}%`} />
+              </article>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Análise textual */}
+      {selectedData.length >= 2 && maxVotes > 0 && (
+        <div className="glass" style={{ padding: '1.25rem', borderRadius: 'var(--radius-md)' }}>
+          <h3 style={{ fontFamily: 'var(--font-title)', fontSize: '1rem', margin: '0 0 0.75rem' }}>
+            Análise rápida
+          </h3>
+          <ComparAnalysis selectedData={selectedData} maxVotes={maxVotes} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CompStat({ label, value, highlight }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'baseline',
+        padding: '0.3rem 0',
+        fontSize: '0.85rem'
+      }}
+    >
+      <span style={{ color: 'var(--text-gray)' }}>{label}</span>
+      <strong
+        style={{
+          fontSize: highlight ? '1.1rem' : '0.95rem',
+          color: highlight ? 'var(--accent-green)' : 'var(--text-white)'
+        }}
+      >
+        {value}
+      </strong>
+    </div>
+  );
+}
+
+function ComparAnalysis({ selectedData, maxVotes }) {
+  const leader = selectedData.find((c) => (c.candidate_votes ?? 0) === maxVotes);
+  const others = selectedData.filter((c) => c.candidate_sq !== leader.candidate_sq);
+
+  return (
+    <ul style={{ color: 'var(--text-gray)', paddingLeft: '1.25rem', margin: 0, fontSize: '0.85rem' }}>
+      <li style={{ marginBottom: '0.4rem' }}>
+        <strong style={{ color: 'var(--accent-green)' }}>{leader.candidate_urn_name}</strong>{' '}
+        lidera com <strong>{formatNumber(leader.candidate_votes)}</strong> votos (
+        {formatPercent(leader.candidate_percentage)} dos válidos).
+      </li>
+      {others.map((c) => {
+        const diff = (leader.candidate_votes ?? 0) - (c.candidate_votes ?? 0);
+        const pctDiff = c.candidate_votes
+          ? ((diff / c.candidate_votes) * 100).toFixed(1)
+          : '∞';
+        return (
+          <li key={c.candidate_sq} style={{ marginBottom: '0.4rem' }}>
+            <strong>{c.candidate_urn_name}</strong> teve <strong>{formatNumber(c.candidate_votes)}</strong>{' '}
+            votos — {formatNumber(diff)} a menos que {leader.candidate_urn_name} ({pctDiff}%).
+          </li>
+        );
+      })}
+      <li style={{ marginTop: '0.6rem', fontSize: '0.8rem', fontStyle: 'italic' }}>
+        Para análise estratégica avançada com Claude Sonnet 4.6, acesse a aba <strong>Análise IA</strong>.
+      </li>
+    </ul>
   );
 }
 

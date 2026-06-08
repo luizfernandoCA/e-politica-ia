@@ -1,14 +1,15 @@
-import { 
-  LayoutDashboard, 
-  BarChart3, 
-  Brain, 
-  Users, 
-  Target, 
+import {
+  LayoutDashboard,
+  BarChart3,
+  Brain,
+  Users,
+  Target,
   FileText,
   ChevronLeft,
   ChevronRight,
   LogOut,
-  Sliders
+  Sliders,
+  Vote
 } from 'lucide-react';
 import Logo from './Logo';
 
@@ -25,6 +26,7 @@ export default function Sidebar({
 
   const menuItems = [
     { id: 'dashboard', name: 'Painel Geral', icon: LayoutDashboard, color: 'var(--accent-green)' },
+    { id: 'apuracao-tse', name: 'Apuração TSE', icon: Vote, color: 'var(--accent-green)' },
     { id: 'analytics', name: 'Análise Eleitoral', icon: BarChart3, color: 'var(--accent-blue-bright)' },
     { id: 'assistant', name: 'E-Poliana AI', icon: Brain, color: 'var(--accent-yellow)' },
     { id: 'comparison', name: 'Comparativo', icon: Users, color: 'var(--accent-blue-bright)' },

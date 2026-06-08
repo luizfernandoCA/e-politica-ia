@@ -1,11 +1,16 @@
-import { 
-  Users, 
-  TrendingUp, 
-  MapPin, 
-  CheckSquare, 
+import { useState, useEffect } from 'react';
+import {
+  Users,
+  TrendingUp,
+  MapPin,
+  CheckSquare,
   Clock,
   ArrowUpRight,
-  Target
+  Target,
+  Trophy,
+  Vote,
+  Award,
+  RefreshCw
 } from 'lucide-react';
 import { CANDIDATES } from '../data/electoralMockData';
 import { CAMPAIGN_METRICS } from '../data/crmMockData';
@@ -47,7 +52,10 @@ export default function Dashboard({ activeCandidate, tasks, setTasks, setActiveP
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      
+
+      {/* Banner com KPIs REAIS do TSE (dados oficiais) */}
+      <RealApuracaoBanner setActivePage={setActivePage} />
+
       {/* Welcome Banner */}
       <div 
         className="glass" 
@@ -440,8 +448,195 @@ export default function Dashboard({ activeCandidate, tasks, setTasks, setActiveP
               </div>
             </div>
           </div>
-          
+
         </div>
+      </div>
+    </div>
+  );
+}
+
+// =========================================================================
+// RealApuracaoBanner — KPIs com dados oficiais TSE via /api/tse-apuracao.
+// Mostra: posição do candidato (fuzzy match pelo campaign_params), votos,
+// % dos válidos, agregados do município. Renderiza apenas se houver match.
+// =========================================================================
+function RealApuracaoBanner({ setActivePage }) {
+  const params = (() => {
+    try {
+      return typeof window !== 'undefined'
+        ? JSON.parse(localStorage.getItem('campaignParams') || 'null')
+        : null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const city = params?.city || '';
+  const role = params?.role || 'Vereador';
+  const candidateHint = params?.candidateName || '';
+
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (!city) return;
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    const url = `/api/tse-apuracao?city=${encodeURIComponent(city)}&role=${role}&year=2024`;
+    fetch(url)
+      .then((res) => res.json())
+      .then((json) => {
+        if (cancelled) return;
+        if (!json.success) throw new Error(json.error || 'Erro');
+        setData(json);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [city, role]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  // Loading / erro / sem setup
+  if (!city) {
+    return (
+      <div className="glass" style={{ padding: '1.25rem', borderLeft: '4px solid var(--accent-yellow)' }}>
+        <strong>Configure sua campanha</strong>
+        <p style={{ color: 'var(--text-gray)', fontSize: '0.85rem', marginTop: '4px' }}>
+          Defina município e cargo no setup para ver dados reais do TSE.
+        </p>
+      </div>
+    );
+  }
+  if (loading) {
+    return (
+      <div className="glass" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <RefreshCw size={16} style={{ animation: 'spin 1s linear infinite' }} />
+        <span style={{ color: 'var(--text-gray)' }}>Carregando apuração oficial de {city}…</span>
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="glass" style={{ padding: '1.25rem', borderLeft: '4px solid #EF4444' }}>
+        <strong>Não foi possível carregar a apuração</strong>
+        <p style={{ color: 'var(--text-gray)', fontSize: '0.85rem', marginTop: '4px' }}>{error}</p>
+      </div>
+    );
+  }
+  if (!data) return null;
+
+  // Match do candidato do usuário na lista (fuzzy)
+  const candidate = (() => {
+    if (!candidateHint || !data.candidates) return null;
+    const target = candidateHint.toUpperCase();
+    return data.candidates.find(
+      (c) =>
+        c.candidate_urn_name?.toUpperCase().includes(target) ||
+        c.candidate_name?.toUpperCase().includes(target)
+    );
+  })();
+
+  const fmt = (n) => (n == null ? '—' : Number(n).toLocaleString('pt-BR'));
+  const fmtPct = (n) => (n == null ? '—' : `${Number(n).toFixed(2).replace('.', ',')}%`);
+
+  return (
+    <div
+      className="glass"
+      style={{
+        padding: '1.5rem',
+        borderLeft: '4px solid var(--accent-green-bright)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1rem'
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
+        <div>
+          <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.15rem', fontWeight: 700, margin: 0 }}>
+            Apuração oficial TSE · {data.municipality?.name} · {data.role?.name}
+          </h2>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-gray)', margin: '4px 0 0' }}>
+            {data.candidates?.length || 0} candidatos · {data.aggregate?.pctSectionsCounted}% das seções apuradas
+          </p>
+        </div>
+        <button
+          onClick={() => setActivePage('apuracao-tse')}
+          style={{
+            background: 'rgba(0, 168, 89, 0.1)',
+            border: '1px solid rgba(0, 168, 89, 0.2)',
+            color: 'var(--accent-green-bright)',
+            padding: '6px 12px',
+            borderRadius: 'var(--radius-sm)',
+            fontSize: '0.75rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            fontWeight: 600
+          }}
+        >
+          Ver apuração completa <ArrowUpRight size={12} />
+        </button>
+      </div>
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+          gap: '0.75rem'
+        }}
+      >
+        {candidate ? (
+          <>
+            <KPI icon={<Trophy size={18} />} label="Sua colocação" value={`${candidate.candidate_seq ?? '—'}º`} color="var(--accent-green-bright)" />
+            <KPI icon={<Vote size={18} />} label="Seus votos" value={fmt(candidate.candidate_votes)} color="#FFFFFF" />
+            <KPI icon={<Award size={18} />} label="% dos válidos" value={fmtPct(candidate.candidate_percentage)} color="var(--accent-blue-bright)" />
+            <KPI icon={<Target size={18} />} label="Resultado" value={candidate.candidate_is_elected ? 'ELEITO' : 'NÃO ELEITO'} color={candidate.candidate_is_elected ? 'var(--accent-green-bright)' : 'var(--text-gray)'} />
+          </>
+        ) : (
+          <>
+            <KPI icon={<Users size={18} />} label="Eleitorado" value={fmt(data.aggregate?.totalVoters)} color="#FFFFFF" />
+            <KPI icon={<TrendingUp size={18} />} label="Comparecimento" value={`${fmt(data.aggregate?.totalPresent)} (${fmtPct(data.aggregate?.pctPresent)})`} color="var(--accent-blue-bright)" />
+            <KPI icon={<Vote size={18} />} label="Seções apuradas" value={`${data.aggregate?.sectionsCounted}/${data.aggregate?.sectionsTotal}`} color="#FFFFFF" />
+            <KPI icon={<Target size={18} />} label="Vagas em disputa" value={fmt(data.role?.seats)} color="var(--accent-yellow)" />
+          </>
+        )}
+      </div>
+
+      {!candidate && candidateHint && (
+        <p style={{ fontSize: '0.8rem', color: 'var(--text-gray)', margin: 0 }}>
+          ⚠️ Não localizamos <strong>{candidateHint}</strong> na lista oficial de {data.role?.name} de {data.municipality?.name}/2024. Ajuste o nome no setup ou veja a lista completa em <strong>Apuração TSE</strong>.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function KPI({ icon, label, value, color }) {
+  return (
+    <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+      <div
+        style={{
+          background: 'rgba(255,255,255,0.04)',
+          padding: '10px',
+          borderRadius: 'var(--radius-sm)',
+          color: color || 'var(--accent-green-bright)'
+        }}
+      >
+        {icon}
+      </div>
+      <div>
+        <span style={{ fontSize: '0.7rem', color: 'var(--text-gray)', textTransform: 'uppercase', fontWeight: 600 }}>{label}</span>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginTop: '2px', color: color || 'var(--text-white)' }}>{value}</h3>
       </div>
     </div>
   );

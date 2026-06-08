@@ -15,6 +15,7 @@ import Comparison from './pages/Comparison';
 import CRM from './pages/CRM';
 import Reports from './pages/Reports';
 import ApuracaoTSE from './pages/ApuracaoTSE';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Demo electoral dataset (analytics simulations) + empty CRM defaults
 import { CANDIDATES as initialCandidates, reinitializeElectoralMockData } from './data/electoralMockData';
@@ -278,22 +279,28 @@ export default function App() {
           />
         );
       case 'apuracao-tse':
-        return <ApuracaoTSE />;
+        return (
+          <ErrorBoundary label="Apuração TSE">
+            <ApuracaoTSE />
+          </ErrorBoundary>
+        );
       case 'analytics':
         return (
-          <Analytics
-            activeCandidate={activeCandidate}
-          />
+          <ErrorBoundary label="Análise Eleitoral">
+            <Analytics activeCandidate={activeCandidate} />
+          </ErrorBoundary>
         );
       case 'assistant':
         return (
-          <Assistant
-            activeCandidate={activeCandidate}
-          />
+          <ErrorBoundary label="E-Poliana AI">
+            <Assistant activeCandidate={activeCandidate} />
+          </ErrorBoundary>
         );
       case 'comparison':
         return (
-          <Comparison />
+          <ErrorBoundary label="Comparativo">
+            <Comparison />
+          </ErrorBoundary>
         );
       case 'crm':
         return (

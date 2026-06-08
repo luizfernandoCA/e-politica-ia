@@ -14,7 +14,7 @@ export default function Header({
     switch (activePage) {
       case 'dashboard': return 'Painel Geral';
       case 'analytics': return 'Análise Eleitoral';
-      case 'assistant': return 'E-Poliana AI';
+      case 'assistant': return 'Mestre AI';
       case 'comparison': return 'Comparativo de Candidatos';
       case 'crm': return 'Gestão de Base (CRM)';
       case 'reports': return 'Relatórios de Planejamento';

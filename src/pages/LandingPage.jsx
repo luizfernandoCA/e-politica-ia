@@ -35,7 +35,7 @@ export default function LandingPage({ onStartCheckout }) {
     },
     {
       feature: "Estrategista de IA Integrada",
-      ePolitica: "Incluso (E-Poliana AI)",
+      ePolitica: "Incluso (Mestre AI)",
       ePoliticaSub: "SWOT, roteiros e discursos municipais ilimitados",
       politique: "Não Possui",
       politiqueSub: "Sem inteligência artificial nativa",
@@ -57,8 +57,8 @@ export default function LandingPage({ onStartCheckout }) {
       a: "Nossos dados são extraídos de bases de dados públicos oficiais consolidadas do Tribunal Superior Eleitoral (TSE) e dos Tribunais Regionais (TREs). O e-politica.ia organiza e consolida essas informações geograficamente de forma visual e intuitiva."
     },
     {
-      q: "Como funciona a assistente estratégica E-Poliana AI?",
-      a: "A E-Poliana é uma IA treinada especificamente em marketing político, legislação eleitoral e análise estatística. Ela lê os dados de votação do seu município ou zona, detecta as oscilações de votos entre pleitos e sugere discursos, estratégias e roteiros customizados para cada bairro."
+      q: "Como funciona a assistente estratégico Mestre AI?",
+      a: "A Mestre é uma IA treinada especificamente em marketing político, legislação eleitoral e análise estatística. Ela lê os dados de votação do seu município ou zona, detecta as oscilações de votos entre pleitos e sugere discursos, estratégias e roteiros customizados para cada bairro."
     },
     {
       q: "Posso gerenciar equipes de rua com o CRM?",
@@ -148,7 +148,7 @@ export default function LandingPage({ onStartCheckout }) {
         <div style={{ position: 'relative', zIndex: 1, maxWidth: '850px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           
           <div style={{ display: 'inline-flex', alignSelf: 'center', alignItems: 'center', gap: '6px', background: 'rgba(37, 99, 235, 0.12)', border: '1px solid rgba(37, 99, 235, 0.2)', padding: '6px 14px', borderRadius: '100px', color: 'var(--accent-blue-bright)', fontSize: '0.8rem', fontWeight: 600 }} className="pulse-glow-blue">
-            <Sparkles size={14} /> NOVO: E-POLIANA COORDENAÇÃO DE IA 2.0
+            <Sparkles size={14} /> NOVO: MESTRE COORDENAÇÃO DE IA 2.0
           </div>
 
           <h1 
@@ -349,7 +349,7 @@ export default function LandingPage({ onStartCheckout }) {
               <div style={{ background: 'rgba(255, 204, 0, 0.1)', padding: '10px', borderRadius: '50%', color: 'var(--accent-yellow)', alignSelf: 'flex-start' }}>
                 <Brain size={24} />
               </div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>E-Poliana AI</h3>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Mestre AI</h3>
               <p style={{ fontSize: '0.82rem', color: 'var(--text-gray)', lineHeight: 1.5 }}>
                 Inteligência Artificial que analisa seu histórico eleitoral e escreve discursos, SWOTs e roteiros específicos por bairro.
               </p>
@@ -451,7 +451,7 @@ export default function LandingPage({ onStartCheckout }) {
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', fontSize: '0.85rem' }}>
                   <Check size={16} style={{ color: 'var(--accent-green)', flexShrink: 0, marginTop: '2px' }} />
                   <div>
-                    <strong>Estrategista E-Poliana AI</strong>
+                    <strong>Estrategista Mestre AI</strong>
                     <span style={{ display: 'block', color: 'var(--text-gray)', fontSize: '0.75rem' }}>Roteiros de discursos e SWOT municipais inclusos.</span>
                   </div>
                 </div>
@@ -573,7 +573,7 @@ export default function LandingPage({ onStartCheckout }) {
 
             <div className="glass" style={{ padding: '2rem', borderLeft: '4px solid var(--accent-yellow)' }}>
               <p style={{ fontStyle: 'italic', fontSize: '0.9rem', lineHeight: 1.5, color: '#DDD' }}>
-                "A E-Poliana AI superou todas as minhas expectativas no dia a dia parlamentar e de campanha. Poder gerar discursos táticos, análises SWOT e diagnósticos de bairro consolidados em menos de 30 segundos, direto pelo celular, é uma vantagem competitiva inestimável. Um divisor de águas!"
+                "O Mestre AI superou todas as minhas expectativas no dia a dia parlamentar e de campanha. Poder gerar discursos táticos, análises SWOT e diagnósticos de bairro consolidados em menos de 30 segundos, direto pelo celular, é uma vantagem competitiva inestimável. Um divisor de águas!"
               </p>
               <div style={{ marginTop: '1.25rem', display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <span style={{ fontSize: '1.5rem' }}>👨‍💼</span>

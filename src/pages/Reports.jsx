@@ -80,7 +80,7 @@ export default function Reports({ activeCandidate }) {
               onChange={() => setIncludeAI(!includeAI)} 
             />
             <div>
-              <strong style={{ display: 'block', color: '#FFFFFF' }}>Diagnóstico da E-Poliana (IA)</strong>
+              <strong style={{ display: 'block', color: '#FFFFFF' }}>Diagnóstico do Mestre (IA)</strong>
               <span style={{ fontSize: '0.7rem', color: 'var(--text-gray)' }}>Plano tático detalhado de comícios</span>
             </div>
           </label>
@@ -306,11 +306,11 @@ export default function Reports({ activeCandidate }) {
             </div>
           )}
 
-          {/* SECTION 3: Diagnóstico da E-Poliana (IA) */}
+          {/* SECTION 3: Diagnóstico do Mestre (IA) */}
           {includeAI && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <h3 style={{ fontSize: '1.05rem', borderBottom: '1px solid #E2E8F0', paddingBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px', color: '#00A859' }}>
-                <Sparkles size={16} style={{ color: '#FFCC00' }} /> 3. Diagnóstico Estratégico da E-Poliana AI
+                <Sparkles size={16} style={{ color: '#FFCC00' }} /> 3. Diagnóstico Estratégico do Mestre AI
               </h3>
               <p style={{ fontSize: '0.78rem', color: '#444', lineHeight: 1.4 }}>
                 Plano de ação estratégico autogerado a partir das oscilações de votos:

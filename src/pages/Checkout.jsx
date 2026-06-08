@@ -460,7 +460,7 @@ export default function Checkout({ onPaymentSuccess, onBackToLanding, initialUse
                 {[
                   'Dashboards eleitorais com dados oficiais TSE/TRE',
                   'CRM ilimitado de lideranças e eleitores',
-                  'E-Poliana: estrategista com Inteligência Artificial',
+                  'Mestre: estrategista com Inteligência Artificial',
                   'Comparativos, relatórios e mapas de calor'
                 ].map((item) => (
                   <li key={item} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '0.8rem', color: 'var(--text-gray)' }}>

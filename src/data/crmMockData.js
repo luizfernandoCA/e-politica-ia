@@ -135,7 +135,7 @@ export const CAMPAIGN_CHECKLIST = [
   { id: 1, text: "Reunião de alinhamento com Clara Mendes (Jardins)", done: true, category: "alta", page: "CRM" },
   { id: 2, text: "Revisar relatório eleitoral da Zona 12 com marqueteiro", done: false, category: "alta", page: "Analytics" },
   { id: 3, text: "Distribuir materiais de panfletagem para Felipe Santos", done: false, category: "media", page: "CRM" },
-  { id: 4, text: "Fazer simulação de plano de ação na IA Poliana sobre Segurança", done: false, category: "media", page: "Assistant" },
+  { id: 4, text: "Fazer simulação de plano de ação na IA Mestre sobre Segurança", done: false, category: "media", page: "Assistant" },
   { id: 5, text: "Verificar lideranças inativas no distrito industrial", done: true, category: "baixa", page: "CRM" },
   { id: 6, text: "Exportar PDF analítico do comparativo de candidatos", done: false, category: "baixa", page: "Comparison" }
 ];

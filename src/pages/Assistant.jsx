@@ -18,7 +18,7 @@ export default function Assistant({ activeCandidate }) {
     {
       id: 1,
       sender: 'assistant',
-      text: `Olá! Eu sou a **E-Poliana**, sua estrategista em inteligência política da plataforma **e-politica.ia**. 🇧🇷\n\nAnalisei os dados de votação das seções eleitorais de ${cityName} para a sua candidatura do **${candidate.party}**. Como posso ajudar você a otimizar a sua campanha hoje?`,
+      text: `Olá! Eu sou o **Mestre**, seu estrategista em inteligência política da plataforma **e-politica.ia**. 🇧🇷\n\nAnalisei os dados de votação das seções eleitorais de ${cityName} para a sua candidatura do **${candidate.party}**. Como posso ajudar você a otimizar a sua campanha hoje?`,
       timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
     }
   ]);
@@ -34,7 +34,7 @@ export default function Assistant({ activeCandidate }) {
   // Pre-configured expert prompt suggestions
   const suggestions = [
     { id: 1, label: 'Como crescer na Zona 12?', query: 'Como posso expandir minha votação e consolidar minha força na Zona 12?' },
-    { id: 2, label: 'Estratégia para os Jardins', query: 'Minha oponente do PL lidera nos Jardins com 65%. Qual plano de contra-ataque a Poliana sugere?' },
+    { id: 2, label: 'Estratégia para os Jardins', query: 'Minha oponente do PL lidera nos Jardins com 65%. Qual plano de contra-ataque o Mestre sugere?' },
     { id: 3, label: 'Roteiro de Discurso', query: 'Crie um roteiro de discurso voltado para saúde e saneamento para usar em Vila Nova.' },
     { id: 4, label: 'Análise SWOT da Campanha', query: 'Faça uma matriz SWOT rápida comparando minha força com a oponente do PL e o oponente do PT.' }
   ];
@@ -101,7 +101,7 @@ Manter o tom propositivo na Saúde Pública para isolar o oponente do PT e inici
     }
 
     // Default Fallback strategic generator
-    return `### 💡 Insight Geral da Estrategista E-Poliana
+    return `### 💡 Insight Geral da Estrategista Mestre
 
 Entendi o seu ponto sobre: *"${userQuery}"*. Para a candidatura de **${candidate.name} (${candidate.party})**, elaborei as seguintes diretrizes:
 
@@ -206,7 +206,7 @@ Deseja detalhar a abordagem para algum bairro específico ou prefere criar um ro
             </div>
             <div>
               <strong style={{ fontSize: '0.95rem', color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                Poliana Inteligência Artificial <Sparkles size={14} style={{ color: 'var(--accent-yellow)' }} />
+                Mestre Inteligência Artificial <Sparkles size={14} style={{ color: 'var(--accent-yellow)' }} />
               </strong>
               <span style={{ fontSize: '0.7rem', color: 'var(--text-gray)', display: 'block' }}>Mentora Estratégica Eleitoral</span>
             </div>
@@ -329,7 +329,7 @@ Deseja detalhar a abordagem para algum bairro específico ou prefere criar um ro
                 <div style={{ width: '6px', height: '6px', background: 'var(--accent-green-bright)', borderRadius: '50%', animation: 'bounce 0.8s infinite 0.1s' }} />
                 <div style={{ width: '6px', height: '6px', background: 'var(--accent-yellow)', borderRadius: '50%', animation: 'bounce 0.8s infinite 0.3s' }} />
                 <div style={{ width: '6px', height: '6px', background: 'var(--accent-blue-bright)', borderRadius: '50%', animation: 'bounce 0.8s infinite 0.5s' }} />
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)', marginLeft: '6px', fontWeight: 500 }}>Poliana compilando plano tático...</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)', marginLeft: '6px', fontWeight: 500 }}>Mestre compilando plano tático...</span>
               </div>
             </div>
           )}
@@ -355,7 +355,7 @@ Deseja detalhar a abordagem para algum bairro específico ou prefere criar um ro
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Pergunte à Poliana sobre bairros, seções ou discursos de campanha..."
+            placeholder="Pergunte ao Mestre sobre bairros, seções ou discursos de campanha..."
             style={{ flexGrow: 1, borderRadius: 'var(--radius-sm)' }}
             disabled={isTyping}
           />
@@ -391,7 +391,7 @@ Deseja detalhar a abordagem para algum bairro específico ou prefere criar um ro
           </div>
           
           <p style={{ fontSize: '0.8rem', color: 'var(--text-gray)' }}>
-            Clique em uma das consultas recomendadas para que a Poliana analise os cenários eleitorais:
+            Clique em uma das consultas recomendadas para que o Mestre analise os cenários eleitorais:
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '0.5rem' }}>

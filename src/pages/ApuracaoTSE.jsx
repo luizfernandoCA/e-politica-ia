@@ -22,7 +22,7 @@ import {
  *   1. Coligação  — agregados de eleição + tabela de partidos
  *   2. Desempenho — card do candidato selecionado
  *   3. Votação    — ranking de todos os candidatos
- *   4. Análise IA — handoff para a E-Poliana
+ *   4. Análise IA — handoff para o Mestre
  *   5. Relatório  — exportação CSV
  */
 
@@ -803,11 +803,11 @@ function TabIA({ city, role }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
         <Brain size={24} color="var(--accent-yellow)" />
         <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.25rem', margin: 0 }}>
-          Análise IA — E-Poliana
+          Análise IA — Mestre
         </h2>
       </div>
       <p style={{ color: 'var(--text-gray)', marginBottom: '1rem' }}>
-        A E-Poliana (Claude Sonnet 4.6) pode analisar este resultado eleitoral e gerar:
+        A Mestre (Claude Sonnet 4.6) pode analisar este resultado eleitoral e gerar:
       </p>
       <ul style={{ color: 'var(--text-gray)', paddingLeft: '1.25rem', marginBottom: '1rem' }}>
         <li>SWOT estratégico baseado nesse cenário de {city} ({role})</li>
@@ -816,7 +816,7 @@ function TabIA({ city, role }) {
         <li>Comparativo com ciclo eleitoral anterior</li>
       </ul>
       <p style={{ color: 'var(--text-gray)', fontSize: '0.85rem' }}>
-        Clique em <strong>E-Poliana AI</strong> no menu lateral para conversar com a IA — o
+        Clique em <strong>Mestre AI</strong> no menu lateral para conversar com a IA — o
         contexto da campanha já é injetado automaticamente no prompt.
       </p>
     </div>

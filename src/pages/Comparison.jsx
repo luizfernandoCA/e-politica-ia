@@ -301,7 +301,7 @@ export default function Comparison() {
       {/* Strategic Analytical Insights footer card */}
       <div className="glass" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <h3 style={{ fontSize: '1.15rem', fontFamily: 'var(--font-title)', fontWeight: 700 }}>
-          Análise Comparativa Geral (Poliana Insight)
+          Análise Comparativa Geral (Mestre Insight)
         </h3>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.85rem', color: 'var(--text-gray)' }}>

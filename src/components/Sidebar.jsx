@@ -25,7 +25,7 @@ export default function Sidebar({
   const menuItems = [
     { id: 'dashboard', name: 'Painel Geral', icon: LayoutDashboard, color: 'var(--accent-green)' },
     { id: 'apuracao-tse', name: 'Apuração TSE', icon: Vote, color: 'var(--accent-green)' },
-    { id: 'assistant', name: 'E-Poliana AI', icon: Brain, color: 'var(--accent-yellow)' },
+    { id: 'assistant', name: 'Mestre AI', icon: Brain, color: 'var(--accent-yellow)' },
     { id: 'crm', name: 'Gestão de Base', icon: Target, color: 'var(--accent-green)' },
     { id: 'reports', name: 'Relatórios', icon: FileText, color: 'var(--text-white)' }
   ];

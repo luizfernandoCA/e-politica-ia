@@ -148,7 +148,7 @@ export default function App() {
             setTasks([
               { id: 1, text: `Registrar comitê central em ${params.city}`, done: false, category: 'Administrativo' },
               { id: 2, text: `Cadastrar as primeiras 50 lideranças no CRM`, done: false, category: 'Lideranças' },
-              { id: 3, text: `Gerar SWOT tático com a E-Poliana AI`, done: false, category: 'Estratégia' },
+              { id: 3, text: `Gerar SWOT tático com o Mestre AI`, done: false, category: 'Estratégia' },
               { id: 4, text: `Cruzar seções eleitorais de ${params.city} do TRE-RO`, done: false, category: 'Análise' }
             ]);
           } else {
@@ -208,7 +208,7 @@ export default function App() {
     const defaultTasks = [
       { id: 1, text: `Registrar comitê central em ${params.city}`, done: false, category: 'Administrativo' },
       { id: 2, text: `Cadastrar as primeiras 50 lideranças no CRM`, done: false, category: 'Lideranças' },
-      { id: 3, text: `Gerar SWOT tático com a E-Poliana AI`, done: false, category: 'Estratégia' },
+      { id: 3, text: `Gerar SWOT tático com o Mestre AI`, done: false, category: 'Estratégia' },
       { id: 4, text: `Cruzar seções eleitorais de ${params.city} do TRE-RO`, done: false, category: 'Análise' }
     ];
     setTasks(defaultTasks);
@@ -290,7 +290,7 @@ export default function App() {
         );
       case 'assistant':
         return (
-          <ErrorBoundary label="E-Poliana AI">
+          <ErrorBoundary label="Mestre AI">
             <Assistant activeCandidate={activeCandidate} />
           </ErrorBoundary>
         );

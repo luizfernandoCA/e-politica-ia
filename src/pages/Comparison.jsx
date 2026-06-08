@@ -18,17 +18,20 @@ export default function Comparison() {
   const [candidate3, setCandidate3] = useState('roberto-lima');
   const [compYear, setCompYear] = useState(2024);
 
-  // Get election data for the selected year
-  const yearData = VOTING_DATA[compYear] || VOTING_DATA[2024];
+  // Get election data for the selected year (defensivo: pode não existir
+  // se electoralMockData falhar em popular dynamicVotingData)
+  const yearData = VOTING_DATA?.[compYear] || VOTING_DATA?.[2024] || { mayor: [] };
+  const mayorList = Array.isArray(yearData.mayor) ? yearData.mayor : [];
 
   // Helper to compile all candidate comparison data
   const getCandidateData = (candId) => {
     if (!candId) return null;
+    if (!Array.isArray(CANDIDATES)) return null;
     const info = CANDIDATES.find(c => c.id === candId);
     if (!info) return null;
 
     // Find voting details in active year
-    const voteDetails = yearData.mayor.find(v => v.candidateId === candId) || { votes: 0, percentage: 0 };
+    const voteDetails = mayorList.find(v => v.candidateId === candId) || { votes: 0, percentage: 0 };
     
     // Find financial summary parameters
     const finSummary = COMPARATIVE_YEARS_SUMMARY[candId] || { spend: {}, leadersCount: {}, costPerVote: {} };

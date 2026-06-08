@@ -300,7 +300,7 @@ export default function Analytics({ activeCandidate }) {
                   {REGIONS.find(r => r.id === hoveredRegion)?.name}
                 </strong>
                 <span style={{ fontSize: '0.7rem', color: 'var(--text-gray)' }}>
-                  População: {REGIONS.find(r => r.id === hoveredRegion)?.population.toLocaleString()}
+                  População: {Number(REGIONS.find(r => r.id === hoveredRegion)?.population ?? 0).toLocaleString('pt-BR')}
                 </span>
               </div>
             )}
@@ -357,7 +357,7 @@ export default function Analytics({ activeCandidate }) {
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <strong style={{ fontSize: '0.9rem', color: c.isTarget ? 'var(--accent-green-bright)' : '#FFFFFF' }}>
-                          {c.votes.toLocaleString()}
+                          {Number(c.votes ?? 0).toLocaleString('pt-BR')}
                         </strong>
                         <span style={{ fontSize: '0.7rem', color: 'var(--text-gray)', display: 'block' }}>{pct}%</span>
                       </div>

@@ -235,7 +235,7 @@ export default function Comparison() {
                     <span style={{ fontSize: '0.8rem' }}>Votos Obtidos</span>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <strong style={{ fontSize: '0.95rem', color: '#FFFFFF', display: 'block' }}>{cand.votes.toLocaleString()}</strong>
+                    <strong style={{ fontSize: '0.95rem', color: '#FFFFFF', display: 'block' }}>{Number(cand.votes ?? 0).toLocaleString('pt-BR')}</strong>
                     <span style={{ fontSize: '0.7rem', color: 'var(--text-gray)' }}>{cand.percentage}%</span>
                   </div>
                 </div>
@@ -248,7 +248,7 @@ export default function Comparison() {
                   </div>
                   <div>
                     <strong style={{ fontSize: '0.95rem', color: '#FFFFFF' }}>
-                      R$ {cand.spend.toLocaleString('pt-BR')}
+                      R$ {Number(cand.spend ?? 0).toLocaleString('pt-BR')}
                     </strong>
                   </div>
                 </div>
@@ -261,7 +261,7 @@ export default function Comparison() {
                   </div>
                   <div>
                     <strong style={{ fontSize: '0.95rem', color: 'var(--accent-yellow)' }}>
-                      R$ {cand.costPerVote.toFixed(2)}
+                      R$ {Number(cand.costPerVote ?? 0).toFixed(2)}
                     </strong>
                   </div>
                 </div>
@@ -307,9 +307,9 @@ export default function Comparison() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.85rem', color: 'var(--text-gray)' }}>
           <p>
             *   <strong>Eficiência Financeira:</strong> {c1Data && c2Data && c1Data.costPerVote < c2Data.costPerVote ? (
-              <span>A campanha de <strong>{c1Data.name}</strong> está rodando de forma mais eficiente (R$ {c1Data.costPerVote.toFixed(2)}/voto) comparada à de <strong>{c2Data.name}</strong> (R$ {c2Data.costPerVote.toFixed(2)}/voto).</span>
+              <span>A campanha de <strong>{c1Data.name}</strong> está rodando de forma mais eficiente (R$ {Number(c1Data.costPerVote ?? 0).toFixed(2)}/voto) comparada à de <strong>{c2Data.name}</strong> (R$ {Number(c2Data.costPerVote ?? 0).toFixed(2)}/voto).</span>
             ) : c2Data ? (
-              <span>A campanha de <strong>{c2Data.name}</strong> está gastando menos por voto obtido (R$ {c2Data.costPerVote.toFixed(2)}/voto) comparado a <strong>{c1Data?.name}</strong>. Ajuste de alocação de verbas digitais é recomendado.</span>
+              <span>A campanha de <strong>{c2Data.name}</strong> está gastando menos por voto obtido (R$ {Number(c2Data.costPerVote ?? 0).toFixed(2)}/voto) comparado a <strong>{c1Data?.name}</strong>. Ajuste de alocação de verbas digitais é recomendado.</span>
             ) : 'Selecione mais candidatos para comparar o custo por voto.'}
           </p>
           <p>

@@ -500,3 +500,49 @@ input[type="checkbox"] {
 }
 .consultoria-scope .md-table td { padding: 0.7rem 1rem; border-bottom: 1px solid var(--cs-line); color: #3a3a3c; vertical-align: top; }
 .consultoria-scope .md-table tr:last-child td { border-bottom: none; }
+
+/* =========================================================================
+   PREMIUM MOTION POLISH (global) — entrada de página, elevação e foco
+   Inspiração: fluidez de transições da Apple. Seguro para o tema escuro.
+   ========================================================================= */
+@media (prefers-reduced-motion: no-preference) {
+  /* Transição suave ao trocar de página no painel */
+  @keyframes page-enter {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: none; }
+  }
+  .main-content > main {
+    animation: page-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Cards de vidro ganham elevação física no hover */
+  .glass {
+    transition:
+      border-color var(--transition-fast),
+      background-color var(--transition-fast),
+      box-shadow var(--transition-normal),
+      transform var(--transition-normal);
+  }
+  .glass:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 44px 0 rgba(0, 0, 0, 0.45);
+  }
+}
+
+/* Botões: resposta tátil consistente em todo o painel */
+button {
+  transition: transform var(--transition-fast), filter var(--transition-fast), opacity var(--transition-fast);
+}
+button:not(:disabled):hover { filter: brightness(1.06); }
+button:not(:disabled):active { transform: scale(0.97); }
+
+/* Acessibilidade: anel de foco visível e elegante */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-blue-glow);
+  border-radius: var(--radius-sm);
+}

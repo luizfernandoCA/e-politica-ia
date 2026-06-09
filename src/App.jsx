@@ -13,6 +13,7 @@ import Assistant from './pages/Assistant';
 import CRM from './pages/CRM';
 import Reports from './pages/Reports';
 import ApuracaoTSE from './pages/ApuracaoTSE';
+import Consultoria from './pages/Consultoria';
 import ErrorBoundary from './components/ErrorBoundary';
 // Páginas legadas (Analytics/Comparison) foram absorvidas pela ApuracaoTSE
 // (que usa dados reais do TSE em vez do mock). Arquivos permanecem no repo
@@ -286,6 +287,12 @@ export default function App() {
         return (
           <ErrorBoundary label="Apuração TSE">
             <ApuracaoTSE />
+          </ErrorBoundary>
+        );
+      case 'consultoria':
+        return (
+          <ErrorBoundary label="Consultoria IA">
+            <Consultoria />
           </ErrorBoundary>
         );
       case 'assistant':

@@ -17,6 +17,7 @@ const Assistant = lazy(() => import('./pages/Assistant'));
 const CRM = lazy(() => import('./pages/CRM'));
 const Reports = lazy(() => import('./pages/Reports'));
 const ApuracaoTSE = lazy(() => import('./pages/ApuracaoTSE'));
+const Consultoria = lazy(() => import('./pages/Consultoria'));
 // Páginas legadas (Analytics/Comparison) foram absorvidas pela ApuracaoTSE
 // (que usa dados reais do TSE em vez do mock). Arquivos permanecem no repo
 // como referência histórica mas não são mais rotas ativas.
@@ -404,6 +405,12 @@ export default function App() {
         return (
           <ErrorBoundary label="Apuração TSE">
             <ApuracaoTSE />
+          </ErrorBoundary>
+        );
+      case 'consultoria':
+        return (
+          <ErrorBoundary label="Consultoria IA">
+            <Consultoria />
           </ErrorBoundary>
         );
       case 'assistant':

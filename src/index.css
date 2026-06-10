@@ -299,3 +299,250 @@ input[type="checkbox"] {
     padding: 1rem !important;
   }
 }
+
+/* =========================================================================
+   MOTION & SCROLL REVEAL (Apple-style) — reutilizável em todo o app
+   ========================================================================= */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: opacity, transform;
+  }
+  .reveal.is-visible { opacity: 1; transform: none; }
+  .reveal-delay-1 { transition-delay: 0.08s; }
+  .reveal-delay-2 { transition-delay: 0.16s; }
+  .reveal-delay-3 { transition-delay: 0.24s; }
+  .reveal-delay-4 { transition-delay: 0.32s; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; }
+}
+
+@keyframes cs-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes cs-spin { to { transform: rotate(360deg); } }
+.cs-spin { animation: cs-spin 0.9s linear infinite; }
+
+/* =========================================================================
+   CONSULTORIA — tema claro premium (referência Apple), escopado
+   ========================================================================= */
+.consultoria-scope {
+  --cs-bg: #f5f5f7;
+  --cs-surface: #ffffff;
+  --cs-ink: #1d1d1f;
+  --cs-ink-soft: #6e6e73;
+  --cs-line: #e5e5ea;
+  --cs-blue: #0071e3;
+  --cs-blue-ink: #0066cc;
+  --cs-grad-a: #0071e3;
+  --cs-grad-b: #00a86b;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--cs-bg);
+  color: var(--cs-ink);
+  min-height: calc(100vh - var(--header-height));
+  padding: clamp(1.5rem, 4vw, 4rem) clamp(1rem, 4vw, 3rem) 5rem;
+  border-radius: 18px;
+  margin: 1rem;
+}
+
+.consultoria-scope .cs-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(0,113,227,0.1); color: var(--cs-blue-ink);
+  font-size: 0.78rem; font-weight: 600; letter-spacing: 0.01em;
+  padding: 6px 14px; border-radius: 100px; margin-bottom: 1.25rem;
+}
+
+/* Hero */
+.consultoria-scope .cs-hero { max-width: 920px; margin: 0 auto; text-align: center; }
+.consultoria-scope .cs-hero h1 {
+  font-size: clamp(2.1rem, 5vw, 3.4rem); line-height: 1.05; letter-spacing: -0.03em;
+  color: var(--cs-ink); font-weight: 700; margin-bottom: 0.5rem;
+}
+.consultoria-scope .cs-grad {
+  background: linear-gradient(120deg, var(--cs-grad-a), var(--cs-grad-b));
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.consultoria-scope .cs-sub { color: var(--cs-ink-soft); font-weight: 500; font-size: 1rem; }
+.consultoria-scope .cs-lead {
+  color: var(--cs-ink-soft); font-size: clamp(1rem, 2.2vw, 1.2rem);
+  max-width: 680px; margin: 1.25rem auto 0; line-height: 1.6;
+}
+
+/* Pilares */
+.consultoria-scope .cs-pillars {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px; margin: 2.5rem 0;
+}
+.consultoria-scope .cs-pillar {
+  background: var(--cs-surface); border: 1px solid var(--cs-line);
+  border-radius: 18px; padding: 1.5rem; text-align: left;
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+.consultoria-scope .cs-pillar:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 40px rgba(0,0,0,0.08);
+}
+.consultoria-scope .cs-pillar-icon {
+  width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center;
+  background: linear-gradient(135deg, var(--cs-grad-a), var(--cs-grad-b)); color: #fff;
+  margin-bottom: 0.9rem;
+}
+.consultoria-scope .cs-pillar strong { display: block; font-size: 1rem; color: var(--cs-ink); margin-bottom: 4px; }
+.consultoria-scope .cs-pillar span { color: var(--cs-ink-soft); font-size: 0.88rem; line-height: 1.5; }
+
+/* Form */
+.consultoria-scope .cs-form {
+  background: var(--cs-surface); border: 1px solid var(--cs-line); border-radius: 20px;
+  padding: 1.75rem; max-width: 640px; margin: 0 auto; text-align: left;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+}
+.consultoria-scope .cs-form label { display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.5rem; }
+.consultoria-scope .cs-form textarea {
+  width: 100%; border: 1px solid var(--cs-line); border-radius: 12px; padding: 0.85rem 1rem;
+  font-family: inherit; font-size: 0.95rem; color: var(--cs-ink); resize: vertical; background: #fbfbfd;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.consultoria-scope .cs-form textarea:focus {
+  outline: none; border-color: var(--cs-blue); box-shadow: 0 0 0 4px rgba(0,113,227,0.12);
+}
+.consultoria-scope .cs-cta {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; margin-top: 1rem; padding: 1rem 1.5rem; border: none; cursor: pointer;
+  background: var(--cs-blue); color: #fff; font-weight: 600; font-size: 1rem;
+  border-radius: 100px; transition: transform var(--transition-fast), background var(--transition-fast);
+}
+.consultoria-scope .cs-cta:hover:not(:disabled) { transform: scale(1.02); background: var(--cs-blue-ink); }
+.consultoria-scope .cs-cta:disabled { opacity: 0.7; cursor: wait; }
+.consultoria-scope .cs-error {
+  margin-top: 1rem; background: #fff3f3; border: 1px solid #ffd4d4; color: #c0322b;
+  padding: 0.85rem 1rem; border-radius: 12px; font-size: 0.88rem; line-height: 1.5;
+}
+
+/* Loading premium */
+.consultoria-scope .cs-loading { text-align: center; padding: 4rem 1rem; max-width: 520px; margin: 0 auto; }
+.consultoria-scope .cs-loading-orb {
+  width: 84px; height: 84px; border-radius: 24px; display: grid; place-items: center; color: #fff;
+  background: linear-gradient(135deg, var(--cs-grad-a), var(--cs-grad-b)); margin: 0 auto 1.5rem;
+  animation: cs-float 3s ease-in-out infinite; box-shadow: 0 20px 50px rgba(0,113,227,0.25);
+}
+.consultoria-scope .cs-loading-text { font-size: 1.15rem; font-weight: 600; color: var(--cs-ink); transition: opacity 0.4s; }
+.consultoria-scope .cs-loading-note { display: block; color: var(--cs-ink-soft); font-size: 0.85rem; margin-top: 0.5rem; }
+
+/* Relatório */
+.consultoria-scope .cs-report { max-width: 880px; margin: 0 auto; }
+.consultoria-scope .cs-report-head {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;
+  flex-wrap: wrap; margin-bottom: 1.5rem;
+}
+.consultoria-scope .cs-report-head h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); letter-spacing: -0.03em; }
+.consultoria-scope .cs-report-actions { display: flex; gap: 8px; }
+.consultoria-scope .cs-btn-ghost {
+  display: inline-flex; align-items: center; gap: 6px; background: var(--cs-surface);
+  border: 1px solid var(--cs-line); color: var(--cs-ink); border-radius: 100px;
+  padding: 0.55rem 1rem; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+  transition: background var(--transition-fast), transform var(--transition-fast);
+}
+.consultoria-scope .cs-btn-ghost:hover { background: #ececf0; transform: translateY(-1px); }
+.consultoria-scope .cs-paper {
+  background: var(--cs-surface); border: 1px solid var(--cs-line); border-radius: 22px;
+  padding: clamp(1.5rem, 4vw, 3rem); box-shadow: 0 12px 40px rgba(0,0,0,0.05);
+}
+
+/* Fontes */
+.consultoria-scope .cs-sources { margin-top: 1.75rem; }
+.consultoria-scope .cs-sources h3 {
+  display: flex; align-items: center; gap: 8px; font-size: 1.05rem; margin-bottom: 1rem; color: var(--cs-ink);
+}
+.consultoria-scope .cs-sources-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.consultoria-scope .cs-source {
+  display: flex; align-items: center; gap: 8px; background: var(--cs-surface);
+  border: 1px solid var(--cs-line); border-radius: 12px; padding: 0.7rem 0.9rem;
+  color: var(--cs-blue-ink); text-decoration: none; font-size: 0.82rem;
+  transition: background var(--transition-fast), transform var(--transition-fast);
+}
+.consultoria-scope .cs-source:hover { background: #f0f6ff; transform: translateY(-2px); }
+.consultoria-scope .cs-source span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.consultoria-scope .cs-disclaimer { color: var(--cs-ink-soft); font-size: 0.8rem; margin-top: 1.5rem; line-height: 1.5; text-align: center; }
+.consultoria-scope .cs-empty {
+  background: var(--cs-surface); border: 1px solid var(--cs-line); border-radius: 22px;
+  padding: 3rem 2rem; text-align: center; max-width: 560px; margin: 2rem auto; color: var(--cs-ink);
+}
+.consultoria-scope .cs-empty h2 { margin: 1rem 0 0.5rem; }
+.consultoria-scope .cs-empty p { color: var(--cs-ink-soft); line-height: 1.6; }
+
+/* Markdown (dentro do papel claro) */
+.consultoria-scope .md-root { color: var(--cs-ink); line-height: 1.7; }
+.consultoria-scope .md-h2 { font-size: 1.7rem; margin: 2rem 0 0.75rem; letter-spacing: -0.02em; }
+.consultoria-scope .md-h3 {
+  font-size: 1.3rem; margin: 1.75rem 0 0.6rem; padding-top: 1.25rem;
+  border-top: 1px solid var(--cs-line); letter-spacing: -0.01em;
+}
+.consultoria-scope .md-h3:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+.consultoria-scope .md-h4 { font-size: 1.05rem; margin: 1.25rem 0 0.5rem; color: var(--cs-ink); }
+.consultoria-scope .md-p { margin: 0.7rem 0; color: #3a3a3c; }
+.consultoria-scope .md-list { margin: 0.7rem 0 0.7rem 1.25rem; color: #3a3a3c; }
+.consultoria-scope .md-list li { margin: 0.35rem 0; }
+.consultoria-scope .md-link { color: var(--cs-blue-ink); text-decoration: none; border-bottom: 1px solid rgba(0,102,204,0.3); }
+.consultoria-scope .md-cite {
+  background: rgba(0,113,227,0.08); color: var(--cs-blue-ink); font-size: 0.82em;
+  font-weight: 600; padding: 1px 7px; border-radius: 6px; white-space: nowrap;
+}
+.consultoria-scope .md-table-wrap { overflow-x: auto; margin: 1rem 0; border: 1px solid var(--cs-line); border-radius: 14px; }
+.consultoria-scope .md-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.consultoria-scope .md-table th {
+  background: #fbfbfd; text-align: left; padding: 0.75rem 1rem; font-weight: 600;
+  color: var(--cs-ink); border-bottom: 1px solid var(--cs-line);
+}
+.consultoria-scope .md-table td { padding: 0.7rem 1rem; border-bottom: 1px solid var(--cs-line); color: #3a3a3c; vertical-align: top; }
+.consultoria-scope .md-table tr:last-child td { border-bottom: none; }
+
+/* =========================================================================
+   PREMIUM MOTION POLISH (global) — entrada de página, elevação e foco
+   Inspiração: fluidez de transições da Apple. Seguro para o tema escuro.
+   ========================================================================= */
+@media (prefers-reduced-motion: no-preference) {
+  /* Transição suave ao trocar de página no painel */
+  @keyframes page-enter {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: none; }
+  }
+  .main-content > main {
+    animation: page-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Cards de vidro ganham elevação física no hover */
+  .glass {
+    transition:
+      border-color var(--transition-fast),
+      background-color var(--transition-fast),
+      box-shadow var(--transition-normal),
+      transform var(--transition-normal);
+  }
+  .glass:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 44px 0 rgba(0, 0, 0, 0.45);
+  }
+}
+
+/* Botões: resposta tátil consistente em todo o painel */
+button {
+  transition: transform var(--transition-fast), filter var(--transition-fast), opacity var(--transition-fast);
+}
+button:not(:disabled):hover { filter: brightness(1.06); }
+button:not(:disabled):active { transform: scale(0.97); }
+
+/* Acessibilidade: anel de foco visível e elegante */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-blue-glow);
+  border-radius: var(--radius-sm);
+}

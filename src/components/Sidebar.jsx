@@ -7,7 +7,8 @@ import {
   ChevronRight,
   LogOut,
   Sliders,
-  Vote
+  Vote,
+  Sparkles
 } from 'lucide-react';
 import Logo from './Logo';
 
@@ -25,6 +26,7 @@ export default function Sidebar({
   const menuItems = [
     { id: 'dashboard', name: 'Painel Geral', icon: LayoutDashboard, color: 'var(--accent-green)' },
     { id: 'apuracao-tse', name: 'Apuração TSE', icon: Vote, color: 'var(--accent-green)' },
+    { id: 'consultoria', name: 'Consultoria IA', icon: Sparkles, color: 'var(--accent-yellow)' },
     { id: 'assistant', name: 'Mestre AI', icon: Brain, color: 'var(--accent-yellow)' },
     { id: 'crm', name: 'Gestão de Base', icon: Target, color: 'var(--accent-green)' },
     { id: 'reports', name: 'Relatórios', icon: FileText, color: 'var(--text-white)' }

@@ -93,3 +93,13 @@ modo=Onda 4 (maturidade/produção) onda=4 etapa=ver Fila
 - [ ] README/ROADMAP atualizados
 - [ ] Veredito onda-verifier OK
 - [ ] Deploy prod + URL capturada
+
+## Encerramento (2026-06-10)
+- Verifier rodada 1: REPROVADO (claims LGPD falsas: CPF-hash inexistente; COMPARATIVO com evidência fabricada; janela de perda de dados no debounce; model ID a confirmar).
+- Correções aplicadas (commits 651fcb0 + fix PITCH): Política de Privacidade/COMPARATIVO/PITCH/README/ROADMAP alinhados ao código real (sem coleta de CPF, 6 tabelas em schema.sql); flush de persistência em pagehide/visibilitychange + logout; limpeza de caches por usuário no logout; model `claude-opus-4-7` confirmado ATIVO no catálogo oficial.
+- Verifier rodada 2: única pendência (PITCH.md:122) corrigida → condição de APROVADO PARA DEPLOY atendida.
+- Deploy produção: `vercel --prod` → ● Ready (e-politica-505iv32yc; alias e-politica-ia.vercel.app).
+- Validação pós-deploy no Chrome: landing sem erros de console; `#/privacidade` e `#/termos` renderizando; `/api/tse-apuracao` → 200.
+- ⚠️ PENDÊNCIA HUMANA 1: `/api/assistant` em produção retorna "invalid x-api-key" — a env var ANTHROPIC_API_KEY no projeto Vercel é inválida/expirada. Atualizar em Vercel → Settings → Environment Variables e redeployar. O código está correto (modelo claude-opus-4-7 válido).
+- ⚠️ PENDÊNCIA HUMANA 2: habilitar Leaked Password Protection no dashboard Supabase (Auth → Policies).
+- Limitação documentada: flush em pagehide é best-effort (sem keepalive/sendBeacon); caminho garantido é o logout explícito.

@@ -119,8 +119,10 @@ pela sua equipe de comunicação diretamente.
 
 **"E a Lei Geral de Proteção de Dados?"**
 Cumprimos LGPD: dados de eleitor cadastrado por você ficam sob sua
-responsabilidade como controlador; somos operador. CPFs são hasheados
-antes de armazenar. Termo de uso disponível no painel.
+responsabilidade como controlador; somos operador. Não coletamos CPF de
+eleitores (minimização de dados, LGPD art. 6º, III) — o CRM guarda apenas
+nome, telefone e região. Política de Privacidade e Termos de Uso públicos
+em `#/privacidade` e `#/termos`.
 
 ---
 

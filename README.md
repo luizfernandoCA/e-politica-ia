@@ -115,7 +115,7 @@ têm acesso sem pagamento.
   - Removido `firebaseConfig.js` vestigial (zero refs)
   - Trocado "Homologado pelo TSE" → "Integrado a dados públicos do TSE/TRE" (risco MPE)
   - Removido `Math.random` do `api/tse.js` + payload com `disclaimer` explícito
-  - IA migrada para Sonnet 4.6 com prompt caching ephemeral
+  - IA migrada para Sonnet 4.6 com prompt caching ephemeral (registro histórico; o default atual é **Opus 4.7**, ver `api/assistant.js`)
 - **Fase C** — Supabase: 4 tabelas novas com RLS (`contacts`, `demands`, `tse_votes_cache`, `ai_analyses`)
 - **Fase D** — Branch `feat/tse-cache`: `api/tse.js` consulta cache antes do TSE; persistência via service_role
 

@@ -63,8 +63,22 @@ modo=Onda 4 (maturidade/produção) onda=4 etapa=ver Fila
 ## Log de execução (append-only)
 - 2026-06-10 — Reconhecimento concluído. Lint/build limpos. Plano cirúrgico definido
   (não é refatoração ampla; o app já é maduro). Branch criada. Worklog inicializado.
+- 2026-06-10 — Implementados: mock determinístico, DataSourceBadge, páginas LGPD,
+  debounce, code-splitting, correção de docs. Commit f2ef1c0 em feat/nemesis-refactor.
+- 2026-06-10 — Gate técnico VERDE: lint=0, build sucesso sem warning (bundle 611→482kB),
+  smoke test (vite preview) → todas as rotas e chunks 200, sem exception.
+- 2026-06-10 — Auditoria hostil feita pelo orquestrador (sem issues bloqueantes:
+  Rules of Hooks OK, sem segredos no diff, RLS/schema intocados, degradação segura).
+- 2026-06-10 — DEPLOY BLOQUEADO pelo classificador de auto-mode: a missão condiciona
+  `vercel --prod` ao veredito do AGENTE onda-verifier, e não há ferramenta Agent/Task
+  neste ambiente (só Skills expostas). Não tentei contornar. Requer decisão humana.
 
 ## Bloqueios (só o que EXIGE humano)
+- [DEPLOY] `vercel --prod` bloqueado: precondição exige chamada ao Agent `onda-verifier`,
+  indisponível como ferramenta neste ambiente. O gate técnico (lint/build/smoke) está
+  verde e a auditoria hostil manual não achou bloqueio. AÇÃO HUMANA: ou (a) liberar o
+  deploy (gate verde + auditoria manual), ou (b) rodar o onda-verifier num ambiente com
+  o Agent disponível e então deployar. Comando pronto: `npx vercel --prod --yes`.
 - Leaked Password Protection (toggle Supabase Auth dashboard) — pendência humana.
 - Mudanças de schema Supabase — sem acesso MCP por instrução; adiadas e documentadas.
 

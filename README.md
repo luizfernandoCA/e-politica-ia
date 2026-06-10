@@ -2,7 +2,7 @@
 
 Plataforma SaaS de inteligência política para campanhas eleitorais.
 Dashboards com dados públicos do TSE/TRE, CRM de lideranças, comparativos
-históricos e a **Mestre**, estrategista com IA (Claude Sonnet 4.6).
+históricos e a **Mestre**, estrategista com IA (Claude Opus 4.7).
 
 > **Arquitetura.** Este repositório contém o **painel autenticado** (SPA Vite + React 19). A landing pública é separada em [`luizfernandoCA/e-politica-ia-landing`](https://github.com/luizfernandoCA/e-politica-ia-landing) (Next.js). O domínio `e-politica.ia` serve a landing; `painel.e-politica.ia` (a ser configurado) serve este painel.
 
@@ -16,7 +16,9 @@ históricos e a **Mestre**, estrategista com IA (Claude Sonnet 4.6).
 | Autenticação | Supabase Auth (email/senha + Google OAuth) | ✅ ativo |
 | Banco | Supabase Postgres com RLS (projeto `tlnprjkiydiogrcsruxw`, sa-east-1) | ✅ 10 tabelas |
 | Pagamentos | Mercado Pago Checkout Pro (Pix, cartão, boleto) | ⚙️ requer `MP_ACCESS_TOKEN` |
-| IA (Mestre) | Claude Sonnet 4.6 via proxy serverless + prompt caching | ⚙️ requer `ANTHROPIC_API_KEY` |
+| IA (Mestre) | Claude Opus 4.7 via proxy serverless + prompt caching (override por `ANTHROPIC_MODEL`) | ⚙️ requer `ANTHROPIC_API_KEY` |
+| Roteamento legal | Páginas LGPD públicas em `#/privacidade` e `#/termos` | ✅ ativo |
+| Procedência de dados | `<DataSourceBadge>` (Oficial TSE / Estimativa / Demonstração) | ✅ ativo |
 | Dados eleitorais | TSE DivulgaCandContas + cache em `tse_votes_cache` | ✅ ativo (Fase D) |
 | Hospedagem | Vercel (SPA + serverless functions) | ✅ configurado |
 
@@ -86,7 +88,7 @@ têm acesso sem pagamento.
 | Endpoint | Método | Função |
 |---|---|---|
 | `/api/tse?city=&year=&role=` | GET | **Lista de candidatos** TSE com cache em `tse_votes_cache` (TTL 14d). Retorna `cached: bool`, `lastFetchedAt: ISO`, `voteDistributionKind: 'official' \| 'estimate' \| 'pending'` |
-| `/api/assistant` | POST | **Mestre** em Claude Sonnet 4.6 com prompt caching ephemeral. Aceita `messages[]` + `context{}` |
+| `/api/assistant` | POST | **Mestre** em Claude Opus 4.7 (env `ANTHROPIC_MODEL` faz override) com prompt caching ephemeral. Aceita `messages[]` + `context{}` |
 | `/api/checkout` | POST | Cria preference Mercado Pago (Pix/cartão/boleto). Retorna `init_point` |
 | `/api/mp-webhook` | POST | Recebe notificação MP, persiste em `payments` e ativa assinatura |
 
@@ -97,7 +99,9 @@ têm acesso sem pagamento.
 - ✅ RLS em todas as 10 tabelas (`auth.uid() = user_id`).
 - ✅ Trigger `handle_new_user` com `SECURITY DEFINER` + `REVOKE` no PUBLIC.
 - ✅ Função `touch_updated_at` com `SET search_path = public` (advisor 0011).
-- ⚠️ **Pendente**: habilitar Leaked Password Protection no [Supabase Auth dashboard](https://supabase.com/dashboard/project/tlnprjkiydiogrcsruxw/auth/policies) (1 toggle, sem código).
+- ✅ **Páginas LGPD**: Política de Privacidade (`#/privacidade`) e Termos de Uso (`#/termos`), públicas e linkadas no footer da landing e na sidebar.
+- ✅ **Procedência de dados**: `<DataSourceBadge>` distingue Oficial TSE × Estimativa × Demonstração nas telas, evitando que dado de demo seja lido como resultado oficial.
+- ⚠️ **Pendente (humano)**: habilitar Leaked Password Protection no [Supabase Auth dashboard](https://supabase.com/dashboard/project/tlnprjkiydiogrcsruxw/auth/policies) (1 toggle, sem código).
 
 ## Histórico de hardening (auditoria 2026-06-05)
 

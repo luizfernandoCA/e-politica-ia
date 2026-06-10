@@ -1,31 +1,39 @@
 # Roadmap
 
-Estado em **2026-06-05**, após auditoria completa (FASE 0) e hardening
-inicial (Fases A→D). Itens estão agrupados por prioridade e cada item
-indica esforço estimado em horas. Estimativas assumem 1 dev sênior.
+Estado em **2026-06-10**, após a iteração NEMESIS (refatoração + hardening
+de produção + paridade LGPD/export). Itens agrupados por prioridade; esforço
+em horas assume 1 dev sênior.
 
 ---
 
-## 🔴 P0 — Risco residual (resolver antes de venda em escala)
+## ✅ P0 — RESOLVIDO na iteração NEMESIS (2026-06-10)
 
-### 1. Habilitar Leaked Password Protection no Supabase Auth — **5 min**
+### 1. Leaked Password Protection no Supabase Auth — **PENDÊNCIA HUMANA**
 Toggle no [Auth dashboard](https://supabase.com/dashboard/project/tlnprjkiydiogrcsruxw/auth/policies)
-(checa senhas vazadas no HaveIBeenPwned). Único achado do `get_advisors`
-não resolvido pela Fase A→D.
+(checa senhas vazadas no HaveIBeenPwned). É um toggle de dashboard, **sem código**.
+Não há acesso MCP ao Supabase nesta iteração — fica como ação manual do operador.
 
-### 2. UI: badge "Estimativa" nos componentes que renderizam `votes`/`percentage` — **2h**
-O payload de `/api/tse` já marca `voteDistributionKind`. Falta refletir
-isso em:
-- `src/pages/Comparison.jsx` (linhas que leem `voteDistribution`)
-- `src/pages/Analytics.jsx`
-- `src/pages/Reports.jsx`
-Adicionar componente reutilizável `<DataSourceBadge kind="estimate" />`
-que mostra um chip de cor/aviso ao lado do número.
+### 2. ✅ Badge de procedência de dados — FEITO
+Criado `src/components/DataSourceBadge.jsx` com 3 kinds: `official` (Oficial TSE),
+`estimate` (Estimativa) e `demo` (Demonstração). Aplicado em:
+- `ApuracaoTSE.jsx` e `Reports.jsx` → `official` (votos oficiais do TSE).
+- `Dashboard.jsx` → `official` no banner TSE + `demo` nos cards ilustrativos.
+- `Comparison.jsx` e `Analytics.jsx` (telas legadas) → `estimate`.
+> Correção de premissa do roadmap antigo: as telas ATIVAS (ApuracaoTSE/Reports)
+> usam votos **oficiais** do TSE, não estimativa — o badge reflete a fonte real.
 
-### 3. Limpar `Math.random` residual em `src/data/electoralMockData.js` — **3h**
-10 ocorrências geram variação cosmética em dados de demo. Não engana
-o candidato em produção (só carrega pré-setup), mas deve ser substituído
-por dados determinísticos ou removido junto com o resto do mock dataset.
+### 3. ✅ `Math.random` no mock — FEITO
+As 9 ocorrências em `electoralMockData.js` foram trocadas por variância
+determinística (hash FNV-1a com seed estável), de modo que os dados de demo não
+mudam a cada render. O jitter de pin do mapa no `CRM.jsx` também foi tornado
+determinístico (seed por id+nome do contato).
+
+### Itens extras entregues nesta iteração
+- ✅ Páginas LGPD públicas (`#/privacidade`, `#/termos`) linkadas no footer e sidebar.
+- ✅ Export CSV nos Reports — já existia (dados TSE reais, BOM UTF-8); validado.
+- ✅ Debounce (700ms) nas saves automáticas de contacts/tasks no `App.jsx`.
+- ✅ Code-splitting (React.lazy/Suspense) — bundle inicial 611kB → 482kB, sem warning.
+- ✅ Docs corrigidos: modelo IA = Opus 4.7 (era citado "Sonnet 4.6" em PITCH/README).
 
 ---
 

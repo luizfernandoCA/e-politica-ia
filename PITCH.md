@@ -20,7 +20,7 @@ Concorrente referência: **Politique.com.br**. Comparativo objetivo:
 |---|---|---|
 | Assinatura mensal | **R$ 99,90** sem fidelidade | Mensalidade elevada com fidelidade |
 | Custo por relatório PDF | **R$ 500,00** (no plano executivo) | até R$ 2.000,00 |
-| IA estrategista integrada | **Mestre (Claude Sonnet 4.6)** com SWOT/discursos | Não possui |
+| IA estrategista integrada | **Mestre (Claude Opus 4.7)** com SWOT/discursos | Não possui |
 | Mapa de calor de lideranças | Coordenadas reais cruzadas com CRM | Mapa genérico, sem foco tático |
 | Dados TSE/TRE | Oficiais + cache resiliente (Fase D) | Oficiais |
 | Foco regional | **Rondônia (52 municípios pré-mapeados)** + expansão BR | Brasil genérico |
@@ -32,8 +32,8 @@ Concorrente referência: **Politique.com.br**. Comparativo objetivo:
 ## 💡 Os 3 diferenciais que fecham venda
 
 ### 1. Mestre: IA Estrategista que entende eleição brasileira
-Não é "ChatGPT genérico" — o Mestre roda em **Claude Sonnet 4.6**
-(modelo top de linha da Anthropic, 2026) com prompt cacheado pelo
+Não é "ChatGPT genérico" — o Mestre roda em **Claude Opus 4.7**
+(modelo de ponta da Anthropic, 2026) com prompt cacheado pelo
 contexto da sua campanha (candidato, partido, município, cargo).
 
 Pergunte coisas como:

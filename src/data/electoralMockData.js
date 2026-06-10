@@ -11,6 +11,23 @@ const campaignParams = (() => {
 const tseData2024 = campaignParams?.tseData2024;
 const tseData2020 = campaignParams?.tseData2020;
 
+// Deterministic pseudo-variance (replaces Math.random in demo data so that
+// numbers are STABLE across renders — a moving demo erodes trust and was a
+// known risk flagged in the roadmap). Hashes a seed string into [-1, 1).
+const seededUnit = (seed) => {
+  const str = String(seed);
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  // map uint32 -> [0, 1)
+  const u = (h >>> 0) / 4294967296;
+  return u * 2 - 1; // [-1, 1)
+};
+// amp-scaled deterministic variance around 0
+const seededVariance = (seed, amp) => seededUnit(seed) * amp;
+
 // Helper to determine real neighborhood names based on selected city
 const getCityRegions = (city) => {
   const c = city ? city.toUpperCase().trim() : "";
@@ -286,13 +303,13 @@ if (campaignParams && tseData2024 && tseData2020) {
                          : (r.id === "vila-nova" && cand.candidateId === "dr-marcos-silva") ? 8
                          : (r.id === "jardins" && cand.candidateId === "ana-souza") ? 15
                          : (r.id === "floresta" && cand.candidateId === "roberto-lima") ? 10
-                         : (Math.random() * 8 - 4);
+                         : seededVariance(`${cand.candidateId}|${r.id}|${idx}`, 4);
           weight = Math.max(5, Math.round(baseWeight + variance));
           remainingWeight -= weight;
         }
-        
+
         const regionCandVotes = Math.round((cand.votes * weight) / 100);
-        
+
         result[r.id].push({
           candidateId: cand.candidateId,
           votes: regionCandVotes,
@@ -330,7 +347,7 @@ if (campaignParams && tseData2024 && tseData2020) {
           const baseWeight = 100 / zoneList.length;
           const variance = (z.id === "zone-12" && cand.candidateId === "dr-marcos-silva") ? 12
                          : (z.id === "zone-56" && cand.candidateId === "ana-souza") ? 8
-                         : (Math.random() * 10 - 5);
+                         : seededVariance(`${cand.candidateId}|${z.id}|${idx}`, 5);
           weight = Math.max(10, Math.round(baseWeight + variance));
           remainingWeight -= weight;
         }
@@ -383,7 +400,7 @@ if (campaignParams && tseData2024 && tseData2020) {
       mayor: mayor2024.map(c => ({
         ...c,
         votes: Math.round(c.votes * 0.92),
-        percentage: parseFloat(Math.max(1, c.percentage + (Math.random() * 3 - 1.5)).toFixed(2))
+        percentage: parseFloat(Math.max(1, c.percentage + seededVariance(`2022|${c.candidateId || c.name}`, 1.5)).toFixed(2))
       })),
       byRegion: byRegion2024,
       byZone: byZone2024
@@ -643,7 +660,7 @@ export function reinitializeElectoralMockData() {
     if (localTse2024.candidates) {
       localTse2024.candidates.forEach((c, idx) => {
         if (c.votes > 15000) {
-          c.percentage = parseFloat((1.35 - (idx * 0.08) + (Math.random() * 0.2)).toFixed(2));
+          c.percentage = parseFloat((1.35 - (idx * 0.08) + (seededUnit(`ver24c|${c.name || idx}`) + 1) * 0.1).toFixed(2));
           if (c.percentage < 0.15) c.percentage = 0.15;
           c.votes = Math.round((localTse2024.totalVotes * c.percentage) / 100);
         }
@@ -652,7 +669,7 @@ export function reinitializeElectoralMockData() {
     if (localTse2024.voteDistribution) {
       localTse2024.voteDistribution.forEach((item, idx) => {
         if (item.votes > 15000) {
-          item.percentage = parseFloat((1.35 - (idx * 0.08) + (Math.random() * 0.2)).toFixed(2));
+          item.percentage = parseFloat((1.35 - (idx * 0.08) + (seededUnit(`ver24d|${item.name || idx}`) + 1) * 0.1).toFixed(2));
           if (item.percentage < 0.15) item.percentage = 0.15;
           item.votes = Math.round((localTse2024.totalVotes * item.percentage) / 100);
         }
@@ -663,7 +680,7 @@ export function reinitializeElectoralMockData() {
     if (localTse2020.candidates) {
       localTse2020.candidates.forEach((c, idx) => {
         if (c.votes > 15000) {
-          c.percentage = parseFloat((1.2 - (idx * 0.08) + (Math.random() * 0.2)).toFixed(2));
+          c.percentage = parseFloat((1.2 - (idx * 0.08) + (seededUnit(`ver20c|${c.name || idx}`) + 1) * 0.1).toFixed(2));
           if (c.percentage < 0.15) c.percentage = 0.15;
           c.votes = Math.round((localTse2020.totalVotes * c.percentage) / 100);
         }
@@ -672,7 +689,7 @@ export function reinitializeElectoralMockData() {
     if (localTse2020.voteDistribution) {
       localTse2020.voteDistribution.forEach((item, idx) => {
         if (item.votes > 15000) {
-          item.percentage = parseFloat((1.2 - (idx * 0.08) + (Math.random() * 0.2)).toFixed(2));
+          item.percentage = parseFloat((1.2 - (idx * 0.08) + (seededUnit(`ver20d|${item.name || idx}`) + 1) * 0.1).toFixed(2));
           if (item.percentage < 0.15) item.percentage = 0.15;
           item.votes = Math.round((localTse2020.totalVotes * item.percentage) / 100);
         }
@@ -817,7 +834,7 @@ export function reinitializeElectoralMockData() {
                          : (r.id === "vila-nova" && cand.candidateId === "dr-marcos-silva") ? 8
                          : (r.id === "jardins" && cand.candidateId === "ana-souza") ? 15
                          : (r.id === "floresta" && cand.candidateId === "roberto-lima") ? 10
-                         : (Math.random() * 8 - 4);
+                         : seededVariance(`${cand.candidateId}|${r.id}|${idx}`, 4);
           weight = Math.max(5, Math.round(baseWeight + variance));
           remainingWeight -= weight;
         }
@@ -848,7 +865,7 @@ export function reinitializeElectoralMockData() {
           const variance = (z.id === "zone-34" && cand.candidateId === "dr-marcos-silva") ? 12 
                          : (z.id === "zone-12" && cand.candidateId === "dr-marcos-silva") ? -5
                          : (z.id === "zone-12" && cand.candidateId === "ana-souza") ? 10
-                         : (Math.random() * 10 - 5);
+                         : seededVariance(`${cand.candidateId}|${z.id}|${idx}`, 5);
           weight = Math.max(10, Math.round(baseWeight + variance));
           remainingWeight -= weight;
         }

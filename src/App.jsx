@@ -1,19 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
-
-// Import Public Onboarding Pages
-import LandingPage from './pages/LandingPage';
-import Checkout from './pages/Checkout';
-import CampaignSetup from './pages/CampaignSetup';
-
-// Import Dashboard Tool Pages
-import Dashboard from './pages/Dashboard';
-import Assistant from './pages/Assistant';
-import CRM from './pages/CRM';
-import Reports from './pages/Reports';
-import ApuracaoTSE from './pages/ApuracaoTSE';
 import ErrorBoundary from './components/ErrorBoundary';
+
+// Landing é eager (primeira pintura do funil público).
+import LandingPage from './pages/LandingPage';
+
+// Demais telas são code-split (React.lazy) para reduzir o bundle inicial:
+// o visitante da landing não baixa o painel autenticado inteiro de uma vez.
+const Checkout = lazy(() => import('./pages/Checkout'));
+const CampaignSetup = lazy(() => import('./pages/CampaignSetup'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const TermsOfUse = lazy(() => import('./pages/TermsOfUse'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Assistant = lazy(() => import('./pages/Assistant'));
+const CRM = lazy(() => import('./pages/CRM'));
+const Reports = lazy(() => import('./pages/Reports'));
+const ApuracaoTSE = lazy(() => import('./pages/ApuracaoTSE'));
 // Páginas legadas (Analytics/Comparison) foram absorvidas pela ApuracaoTSE
 // (que usa dados reais do TSE em vez do mock). Arquivos permanecem no repo
 // como referência histórica mas não são mais rotas ativas.
@@ -35,6 +38,35 @@ import {
   savePaymentStatus
 } from './services/dbService';
 
+// Fallback minimalista enquanto um chunk lazy carrega.
+function SuspenseFallback() {
+  return (
+    <div
+      style={{
+        minHeight: '60vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'var(--text-gray)',
+        fontFamily: 'var(--font-body)',
+        fontSize: '0.85rem',
+        letterSpacing: '0.05em',
+        fontWeight: 600
+      }}
+    >
+      Carregando…
+    </div>
+  );
+}
+
+// Mapeia o hash da URL para uma rota jurídica pública (ou null).
+function parseLegalHash(hash) {
+  const h = (hash || '').toLowerCase();
+  if (h.includes('privacidade') || h.includes('privacy')) return 'privacidade';
+  if (h.includes('termos') || h.includes('terms')) return 'termos';
+  return null;
+}
+
 export default function App() {
   // Authentication & Onboarding States
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -44,6 +76,33 @@ export default function App() {
   const [isCampaignConfigured, setIsCampaignConfigured] = useState(false);
   const [, setCampaignParams] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Public legal route (hash-based, linkable, reachable without login):
+  // #/privacidade  e  #/termos
+  const [legalRoute, setLegalRoute] = useState(() =>
+    typeof window !== 'undefined' ? parseLegalHash(window.location.hash) : null
+  );
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onHash = () => setLegalRoute(parseLegalHash(window.location.hash));
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
+  const goLegal = (route) => {
+    if (typeof window !== 'undefined') {
+      window.location.hash = route === 'privacidade' ? '#/privacidade' : '#/termos';
+    }
+    setLegalRoute(route);
+  };
+  const closeLegal = () => {
+    if (typeof window !== 'undefined') {
+      // limpa o hash sem recarregar
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+    setLegalRoute(null);
+  };
 
   // Navigation & UI States
   const [activePage, setActivePage] = useState('dashboard');
@@ -166,17 +225,24 @@ export default function App() {
 
   // =========================================================================
   // 3. Dynamic Real-Time Data Push back to Supabase on state change
+  //    Debounced (700ms): edição em massa no CRM disparava um upsert por
+  //    keystroke. O debounce agrupa as alterações e envia só o estado final,
+  //    reduzindo drasticamente a carga de escrita no Supabase.
   // =========================================================================
   useEffect(() => {
-    if (isCampaignConfigured && activeUser && contacts.length >= 0) {
+    if (!(isCampaignConfigured && activeUser && contacts.length >= 0)) return;
+    const t = setTimeout(() => {
       saveContacts(activeUser.uid, contacts);
-    }
+    }, 700);
+    return () => clearTimeout(t);
   }, [contacts, isCampaignConfigured, activeUser]);
 
   useEffect(() => {
-    if (isCampaignConfigured && activeUser && tasks.length >= 0) {
+    if (!(isCampaignConfigured && activeUser && tasks.length >= 0)) return;
+    const t = setTimeout(() => {
       saveTasks(activeUser.uid, tasks);
-    }
+    }, 700);
+    return () => clearTimeout(t);
   }, [tasks, isCampaignConfigured, activeUser]);
 
   // Helper to toggle mobile sidebar
@@ -323,6 +389,24 @@ export default function App() {
   };
 
   // =========================================================================
+  // Public legal pages — reachable without login, before any auth/loading gate.
+  // =========================================================================
+  if (legalRoute === 'privacidade') {
+    return (
+      <Suspense fallback={<SuspenseFallback />}>
+        <PrivacyPolicy onBack={closeLegal} />
+      </Suspense>
+    );
+  }
+  if (legalRoute === 'termos') {
+    return (
+      <Suspense fallback={<SuspenseFallback />}>
+        <TermsOfUse onBack={closeLegal} />
+      </Suspense>
+    );
+  }
+
+  // =========================================================================
   // Loading Screen (Auth Re-hydration / Loading Supabase)
   // =========================================================================
   if (isLoading) {
@@ -383,15 +467,18 @@ export default function App() {
   if (!isAuthenticated) {
     if (showCheckout) {
       return (
-        <Checkout
-          onPaymentSuccess={handlePaymentSuccess}
-          onBackToLanding={() => setShowCheckout(false)}
-        />
+        <Suspense fallback={<SuspenseFallback />}>
+          <Checkout
+            onPaymentSuccess={handlePaymentSuccess}
+            onBackToLanding={() => setShowCheckout(false)}
+          />
+        </Suspense>
       );
     }
     return (
       <LandingPage
         onStartCheckout={() => setShowCheckout(true)}
+        onShowLegal={goLegal}
       />
     );
   }
@@ -401,11 +488,13 @@ export default function App() {
   // =========================================================================
   if (!subscriptionActive) {
     return (
-      <Checkout
-        initialUser={activeUser}
-        onPaymentSuccess={handlePaymentSuccess}
-        onBackToLanding={handleLogout}
-      />
+      <Suspense fallback={<SuspenseFallback />}>
+        <Checkout
+          initialUser={activeUser}
+          onPaymentSuccess={handlePaymentSuccess}
+          onBackToLanding={handleLogout}
+        />
+      </Suspense>
     );
   }
 
@@ -414,9 +503,11 @@ export default function App() {
   // =========================================================================
   if (!isCampaignConfigured) {
     return (
-      <CampaignSetup
-        onSetupComplete={handleSetupComplete}
-      />
+      <Suspense fallback={<SuspenseFallback />}>
+        <CampaignSetup
+          onSetupComplete={handleSetupComplete}
+        />
+      </Suspense>
     );
   }
 
@@ -453,7 +544,9 @@ export default function App() {
 
         {/* Selected Page view */}
         <main style={{ width: '100%' }}>
-          {renderActivePage()}
+          <Suspense fallback={<SuspenseFallback />}>
+            {renderActivePage()}
+          </Suspense>
         </main>
       </div>
     </div>

@@ -6,7 +6,8 @@ import {
   MapPin, 
   Award
 } from 'lucide-react';
-import { 
+import DataSourceBadge from '../components/DataSourceBadge';
+import {
   CANDIDATES, 
   VOTING_DATA, 
   COMPARATIVE_YEARS_SUMMARY 
@@ -103,11 +104,12 @@ export default function Comparison() {
           justifyContent: 'space-between' 
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <Users size={20} style={{ color: 'var(--accent-blue-bright)' }} />
           <h3 style={{ fontSize: '1.1rem', fontFamily: 'var(--font-title)', fontWeight: 700 }}>
             Configuração da Comparação
           </h3>
+          <DataSourceBadge kind="estimate" />
         </div>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>

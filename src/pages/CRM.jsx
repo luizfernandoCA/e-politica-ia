@@ -56,16 +56,26 @@ export default function CRM({ contacts, setContacts, setCandidates, activeCandid
 
     // Pick region details
     const regionObj = REGIONS.find(r => r.id === newContact.regionId) || REGIONS[0];
-    
-    // Create new contact with random relative coordinates on the map
+
+    // Deterministic jitter around the region centroid so pins cluster without
+    // overlapping. Seeded by id+name so the same contact always lands on the
+    // same spot (stable map, computed once and persisted with the contact).
+    const id = Date.now();
+    const jitter = (salt) => {
+      const str = `${id}|${newContact.name}|${salt}`;
+      let h = 2166136261;
+      for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+      return ((h >>> 0) / 4294967296) * 12 - 6; // [-6, 6)
+    };
+
     const createdContact = {
       ...newContact,
-      id: Date.now(),
+      id,
       regionName: regionObj.name,
       lastContact: new Date().toISOString().split('T')[0],
       // Pick coordinates close to their region coordinates for visualization clustering
-      mapX: Math.min(Math.max(regionObj.mapX + (Math.random() * 12 - 6), 5), 95),
-      mapY: Math.min(Math.max(regionObj.mapY + (Math.random() * 12 - 6), 5), 95),
+      mapX: Math.min(Math.max(regionObj.mapX + jitter('x'), 5), 95),
+      mapY: Math.min(Math.max(regionObj.mapY + jitter('y'), 5), 95),
       subscribers: parseInt(newContact.subscribers) || 0
     };
 

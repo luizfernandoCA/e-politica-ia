@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   Sparkles
 } from 'lucide-react';
+import DataSourceBadge from '../components/DataSourceBadge';
 
 /**
  * Relatórios — cruzamento de dados oficiais TSE + dados internos.
@@ -273,10 +274,15 @@ export default function Reports() {
                 fontFamily: 'var(--font-title)',
                 fontSize: '1.5rem',
                 fontWeight: 800,
-                margin: 0
+                margin: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.6rem',
+                flexWrap: 'wrap'
               }}
             >
               📊 Relatório Executivo
+              <DataSourceBadge kind="official" size="lg" />
             </h1>
             <p style={{ color: 'var(--text-gray)', fontSize: '0.85rem', margin: '4px 0 0' }}>
               {myCandidate?.candidate_urn_name || candidateHint} ·{' '}

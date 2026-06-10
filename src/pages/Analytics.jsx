@@ -4,6 +4,7 @@ import {
   Map,
   Building2
 } from 'lucide-react';
+import DataSourceBadge from '../components/DataSourceBadge';
 import { 
   CANDIDATES, 
   YEARS, 
@@ -94,9 +95,10 @@ export default function Analytics({ activeCandidate }) {
           justifyContent: 'space-between' 
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <Filter size={18} style={{ color: 'var(--accent-green-bright)' }} />
           <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>Filtros de Pesquisa</h3>
+          <DataSourceBadge kind="estimate" />
         </div>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>

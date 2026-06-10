@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import Logo from '../components/Logo';
 
-export default function LandingPage({ onStartCheckout }) {
+export default function LandingPage({ onStartCheckout, onShowLegal }) {
   const [activeFaq, setActiveFaq] = useState(null);
 
   const compareList = [
@@ -654,7 +654,29 @@ export default function LandingPage({ onStartCheckout }) {
       </section>
 
       {/* Footer */}
-      <footer style={{ padding: '2rem', borderTop: '1px solid var(--border-color)', textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+      <footer style={{ padding: '2rem', borderTop: '1px solid var(--border-color)', textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '0.75rem', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <a
+            href="#/privacidade"
+            onClick={(e) => { e.preventDefault(); onShowLegal && onShowLegal('privacidade'); }}
+            style={{ color: 'var(--text-gray)', textDecoration: 'none', fontWeight: 600 }}
+          >
+            Política de Privacidade
+          </a>
+          <a
+            href="#/termos"
+            onClick={(e) => { e.preventDefault(); onShowLegal && onShowLegal('termos'); }}
+            style={{ color: 'var(--text-gray)', textDecoration: 'none', fontWeight: 600 }}
+          >
+            Termos de Uso
+          </a>
+          <a
+            href="mailto:contato@e-politica.ia"
+            style={{ color: 'var(--text-gray)', textDecoration: 'none', fontWeight: 600 }}
+          >
+            Contato
+          </a>
+        </div>
         <span>© {new Date().getFullYear()} e-politica.ia. Plataforma privada de inteligência de dados eleitorais. Sem vínculo com o governo federal ou TSE.</span>
       </footer>
 

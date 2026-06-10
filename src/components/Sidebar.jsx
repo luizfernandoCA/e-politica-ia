@@ -207,6 +207,26 @@ export default function Sidebar({
           </div>
         )}
 
+        {/* Legal links (LGPD) — visíveis quando expandido */}
+        {!collapsed && (
+          <div
+            style={{
+              padding: '0.5rem 1rem',
+              borderTop: '1px solid var(--border-color)',
+              display: 'flex',
+              gap: '0.75rem',
+              flexWrap: 'wrap'
+            }}
+          >
+            <a href="#/privacidade" style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textDecoration: 'none' }}>
+              Privacidade
+            </a>
+            <a href="#/termos" style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textDecoration: 'none' }}>
+              Termos
+            </a>
+          </div>
+        )}
+
         {/* Logout Button */}
         <div style={{ padding: '0.5rem 0.75rem', borderTop: '1px solid var(--border-color)' }}>
           <button

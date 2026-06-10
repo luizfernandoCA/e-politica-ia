@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { CANDIDATES } from '../data/electoralMockData';
 import { CAMPAIGN_METRICS } from '../data/crmMockData';
+import DataSourceBadge from '../components/DataSourceBadge';
 
 export default function Dashboard({ activeCandidate, tasks, setTasks, setActivePage }) {
   // Find current candidate parameters
@@ -80,12 +81,20 @@ export default function Dashboard({ activeCandidate, tasks, setTasks, setActiveP
         </div>
       </div>
 
+      {/* Rótulo de procedência dos cards ilustrativos abaixo */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '-0.5rem' }}>
+        <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)', fontWeight: 600 }}>
+          Indicadores de campanha
+        </span>
+        <DataSourceBadge kind="demo" />
+      </div>
+
       {/* KPI Cards Grid */}
-      <div 
-        style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', 
-          gap: '1.25rem' 
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: '1.25rem'
         }}
       >
         {/* KPI 1: Base de Apoio */}
@@ -561,8 +570,9 @@ function RealApuracaoBanner({ setActivePage }) {
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div>
-          <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.15rem', fontWeight: 700, margin: 0 }}>
+          <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.15rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
             Apuração oficial TSE · {data.municipality?.name} · {data.role?.name}
+            <DataSourceBadge kind="official" />
           </h2>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-gray)', margin: '4px 0 0' }}>
             {data.candidates?.length || 0} candidatos · {data.aggregate?.pctSectionsCounted}% das seções apuradas

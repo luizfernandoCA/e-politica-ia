@@ -13,6 +13,7 @@ import {
   GitCompare,
   X
 } from 'lucide-react';
+import DataSourceBadge from '../components/DataSourceBadge';
 
 /**
  * Apuração TSE — paridade com o Politique mobile.
@@ -188,10 +189,15 @@ export default function ApuracaoTSE() {
               fontFamily: 'var(--font-title)',
               fontSize: '1.5rem',
               fontWeight: 800,
-              margin: 0
+              margin: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.6rem',
+              flexWrap: 'wrap'
             }}
           >
             Apuração Oficial TSE
+            <DataSourceBadge kind="official" size="lg" />
           </h1>
           <p style={{ color: 'var(--text-gray)', margin: '0.25rem 0 0', fontSize: '0.85rem' }}>
             Dados de {data?.source ?? 'resultados.tse.jus.br'} ·{' '}

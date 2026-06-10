@@ -1,7 +1,7 @@
 /**
  * Vercel Serverless Function: api/assistant.js
  *
- * Assistente "Mestre" — Claude Sonnet 4.6 com Tool Use.
+ * Assistente "Mestre" — Claude Opus 4.7 (DEFAULT_MODEL) com Tool Use.
  * O Mestre tem acesso a 5 tools que consultam a tabela `public.tse_apuracao`
  * (dados oficiais TSE) durante a conversa, permitindo respostas baseadas em
  * fatos reais e não em opinião genérica.

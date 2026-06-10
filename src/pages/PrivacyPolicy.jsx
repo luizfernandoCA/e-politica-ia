@@ -3,8 +3,10 @@ import LegalLayout from './LegalLayout';
 /**
  * Política de Privacidade — conforme LGPD (Lei 13.709/2018).
  * O conteúdo descreve PRÁTICAS REAIS implementadas no código:
- * Supabase Auth + Postgres com RLS, hash SHA-256 de CPF, Mercado Pago (PCI),
+ * Supabase Auth + Postgres com RLS, Mercado Pago (PCI),
  * proxy serverless para a IA, dados públicos do TSE. Nada aqui é inventado.
+ * IMPORTANTE: não afirmar aqui nenhuma medida de segurança que não exista
+ * de fato no código (ex.: não prometer hash de CPF — a Plataforma não coleta CPF).
  *
  * Aviso: este texto é um modelo informativo e não substitui revisão jurídica
  * por advogado especializado antes de uso comercial em escala.
@@ -39,9 +41,14 @@ export default function PrivacyPolicy({ onBack }) {
       <ul>
         <li>Nome, telefone, região e demais campos que você optar por cadastrar.</li>
         <li>
-          <strong>CPF não é armazenado em texto puro.</strong> Quando informado, é convertido em
-          um resumo criptográfico (hash <strong>SHA-256</strong>) antes de ser gravado, de modo que
-          o número original não pode ser recuperado a partir do banco.
+          <strong>A Plataforma não solicita nem coleta CPF de eleitores.</strong> Recomendamos
+          não inserir números de documentos em campos de texto livre; cadastre apenas os dados
+          necessários à finalidade da campanha (princípio da minimização, LGPD art. 6º, III).
+        </li>
+        <li>
+          Para agilizar o uso, uma cópia dos contatos pode ser mantida em cache local no seu
+          navegador (<code>localStorage</code>), associada à sua conta. Use a Plataforma apenas
+          em dispositivos de sua confiança e encerre a sessão em computadores compartilhados.
         </li>
       </ul>
       <h3>2.3. Dados de uso e auditoria</h3>
@@ -84,8 +91,8 @@ export default function PrivacyPolicy({ onBack }) {
       <ul>
         <li><strong>Row Level Security (RLS)</strong> em todas as tabelas: cada usuário só acessa os próprios dados, validado por <code>auth.uid()</code>.</li>
         <li>Segredos (chaves de API, tokens) existem apenas como variáveis de ambiente em funções serverless, nunca no navegador.</li>
-        <li>CPF armazenado apenas como hash SHA-256.</li>
         <li>Comunicação criptografada em trânsito (HTTPS/TLS).</li>
+        <li>Senhas tratadas exclusivamente pelo Supabase Auth, com armazenamento em formato irreversível (hash).</li>
       </ul>
 
       <h2>7. Seus direitos como titular (LGPD art. 18)</h2>

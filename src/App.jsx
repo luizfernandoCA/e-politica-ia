@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -229,21 +229,59 @@ export default function App() {
   //    keystroke. O debounce agrupa as alterações e envia só o estado final,
   //    reduzindo drasticamente a carga de escrita no Supabase.
   // =========================================================================
+  // Estado ainda não persistido (null = nada pendente). Permite flush imediato
+  // no logout / fechamento da aba, sem perder a janela do debounce.
+  const pendingContactsRef = useRef(null);
+  const pendingTasksRef = useRef(null);
+
+  const flushPendingSaves = useCallback(() => {
+    const userId = activeUser?.uid;
+    if (!userId) return Promise.resolve();
+    const jobs = [];
+    if (pendingContactsRef.current) {
+      jobs.push(saveContacts(userId, pendingContactsRef.current));
+      pendingContactsRef.current = null;
+    }
+    if (pendingTasksRef.current) {
+      jobs.push(saveTasks(userId, pendingTasksRef.current));
+      pendingTasksRef.current = null;
+    }
+    return jobs.length ? Promise.allSettled(jobs) : Promise.resolve();
+  }, [activeUser]);
+
   useEffect(() => {
-    if (!(isCampaignConfigured && activeUser && contacts.length >= 0)) return;
+    if (!(isCampaignConfigured && activeUser)) return;
+    pendingContactsRef.current = contacts;
     const t = setTimeout(() => {
+      pendingContactsRef.current = null;
       saveContacts(activeUser.uid, contacts);
     }, 700);
     return () => clearTimeout(t);
   }, [contacts, isCampaignConfigured, activeUser]);
 
   useEffect(() => {
-    if (!(isCampaignConfigured && activeUser && tasks.length >= 0)) return;
+    if (!(isCampaignConfigured && activeUser)) return;
+    pendingTasksRef.current = tasks;
     const t = setTimeout(() => {
+      pendingTasksRef.current = null;
       saveTasks(activeUser.uid, tasks);
     }, 700);
     return () => clearTimeout(t);
   }, [tasks, isCampaignConfigured, activeUser]);
+
+  // Best-effort: descarrega o save pendente quando a aba é ocultada/fechada.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') flushPendingSaves();
+    };
+    window.addEventListener('pagehide', flushPendingSaves);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('pagehide', flushPendingSaves);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [flushPendingSaves]);
 
   // Helper to toggle mobile sidebar
   const toggleMobileSidebar = () => {
@@ -313,6 +351,12 @@ export default function App() {
   // Handle logout
   const handleLogout = async () => {
     try {
+      // Persiste qualquer edição dentro da janela do debounce antes de derrubar a sessão.
+      await flushPendingSaves();
+    } catch (e) {
+      console.warn('Flush pendente no logout falhou:', e);
+    }
+    try {
       await signOut();
     } catch (e) {
       console.warn('Supabase signout warning:', e);
@@ -329,6 +373,14 @@ export default function App() {
       localStorage.removeItem('campaignParams');
       localStorage.removeItem('crmContacts');
       localStorage.removeItem('campaignTasks');
+      // Remove também os caches por usuário (PII de contatos não deve
+      // sobreviver ao logout em máquina compartilhada).
+      const uid = activeUser?.uid;
+      if (uid) {
+        ['crmContacts', 'campaignTasks', 'campaignParams', 'paymentStatus'].forEach((k) =>
+          localStorage.removeItem(`${k}_${uid}`)
+        );
+      }
     }
     window.location.reload(); // Force reload to reinitialize state cleanly
   };

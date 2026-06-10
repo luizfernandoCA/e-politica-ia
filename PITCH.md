@@ -83,9 +83,10 @@ a decidir mais rápido = menos energia desperdiçada com palpite.
 ## 🛡️ Por que é seguro confiar dados sensíveis aqui
 
 1. **Sem cartão na aplicação**. Pagamento 100% no Mercado Pago (PCI).
-2. **Row Level Security** em todas as 10 tabelas: outro candidato
+2. **Row Level Security** em todas as tabelas: outro candidato
    **nunca** vê seus dados, nem por bug, nem por SQL injection.
-3. **CPF nunca em plaintext** — armazenamos só o SHA-256 (LGPD art. 11).
+3. **Minimização de dados (LGPD art. 6º, III)** — não coletamos CPF de
+   eleitores; o CRM guarda apenas nome, telefone e região.
 4. **Chave da IA nunca chega no browser** — proxy serverless.
 5. **Auditoria de uso da IA** registrada em `ai_analyses` (você pode
    exigir relatório de uso por dia/semana).

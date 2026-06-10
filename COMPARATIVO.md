@@ -20,12 +20,12 @@ como ausências confirmadas.
 | Página de Termos de Uso | ✅ | ✅ | `src/pages/TermsOfUse.jsx` (`#/termos`) |
 | Contato | ✅ (e-mail) | ✅ (WhatsApp) | links no footer/landing |
 | **IA estrategista integrada (Mestre)** | ✅ **(Claude Opus 4.7 + tool calling)** | ❌ não possui | `api/assistant.js` com 5 tools sobre dados TSE |
-| **CRM de lideranças** | ✅ | não anunciado | `CRM.jsx`, tabela `contacts` com RLS |
+| **CRM de lideranças** | ✅ | não anunciado | `CRM.jsx` + persistência em `user_state` (RLS por dono) via `dbService.js` |
 | **SaaS self-service com checkout** | ✅ (Pix/cartão/boleto via Mercado Pago) | ✅ | `api/checkout.js`, `api/mp-webhook.js` |
 | **Cache TSE resiliente** | ✅ (Supabase, TTL 14d) | não anunciado | `api/tse.js` consulta cache antes do TSE |
 | **Procedência de dados explícita** | ✅ (Oficial/Estimativa/Demo) | não anunciado | `DataSourceBadge.jsx` |
-| Segurança RLS por usuário | ✅ (10 tabelas) | não anunciado | `supabase/schema.sql` |
-| CPF apenas em hash SHA-256 | ✅ | não anunciado | coluna `cpf_hash` em `contacts` |
+| Segurança RLS por usuário | ✅ (todas as tabelas do `schema.sql`) | não anunciado | `supabase/schema.sql` (políticas `auth.uid() = user_id`) |
+| Minimização de dados (sem coleta de CPF de eleitor) | ✅ | não anunciado | `CRM.jsx` coleta apenas nome/telefone/região |
 
 ## Onde de fato somos superiores (afirmações verdadeiras)
 

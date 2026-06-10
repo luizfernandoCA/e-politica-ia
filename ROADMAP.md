@@ -131,8 +131,9 @@ não absorvível no plano de R$ 99/mês.
 ### 17. Compliance LGPD / TSE — **10h**
 - Página `/politica-de-privacidade` (LGPD art. 9)
 - Página `/termos-de-uso`
-- `cpf_hash` (SHA-256) **já está** na tabela `contacts` — falta usar
-  no client (`contactService` deve hashear antes de gravar)
+- hash de CPF (SHA-256): a Plataforma hoje **não coleta CPF** (minimização de
+  dados, refletida na Política de Privacidade). Se um dia coletar, implementar
+  o hash no client **antes** de atualizar a Política — nunca o contrário
 - Banner de cookies (mesmo que só haja essenciais)
 - Alertas de prazos eleitorais TSE 2026 (calendário oficial)
 

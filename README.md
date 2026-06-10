@@ -14,7 +14,7 @@ históricos e a **Mestre**, estrategista com IA (Claude Opus 4.7).
 | Roteamento | `useState activePage` (sem React Router) | ⚠️ legado, ver ROADMAP |
 | Estilo | CSS-in-JS inline + variáveis CSS | ⚠️ legado, ver ROADMAP |
 | Autenticação | Supabase Auth (email/senha + Google OAuth) | ✅ ativo |
-| Banco | Supabase Postgres com RLS (projeto `tlnprjkiydiogrcsruxw`, sa-east-1) | ✅ 10 tabelas |
+| Banco | Supabase Postgres com RLS (projeto `tlnprjkiydiogrcsruxw`, sa-east-1) | ✅ 6 tabelas em `schema.sql` + 4 gerenciadas fora do repo |
 | Pagamentos | Mercado Pago Checkout Pro (Pix, cartão, boleto) | ⚙️ requer `MP_ACCESS_TOKEN` |
 | IA (Mestre) | Claude Opus 4.7 via proxy serverless + prompt caching (override por `ANTHROPIC_MODEL`) | ⚙️ requer `ANTHROPIC_API_KEY` |
 | Roteamento legal | Páginas LGPD públicas em `#/privacidade` e `#/termos` | ✅ ativo |
@@ -26,7 +26,13 @@ históricos e a **Mestre**, estrategista com IA (Claude Opus 4.7).
 referência já são reais (Supabase); o assistente usa fallback local e o
 checkout exibe aviso de gateway pendente.
 
-## Esquema do banco (10 tabelas)
+## Esquema do banco
+
+> As 6 primeiras tabelas estão versionadas em `supabase/schema.sql`. As 4 da
+> Fase C foram aplicadas via MCP Supabase e **não estão versionadas neste
+> repositório** — o client atual ainda persiste contatos em `user_state.contacts`
+> (JSONB), não na tabela `contacts`. Verifique o estado real no dashboard antes
+> de depender delas.
 
 | Tabela | Tipo | Origem | RLS |
 |---|---|---|---|
@@ -96,7 +102,7 @@ têm acesso sem pagamento.
 
 - ✅ Nenhum dado de cartão passa pela aplicação (PCI fica 100% no MP).
 - ✅ Chaves secretas só existem como vars de ambiente nas serverless.
-- ✅ RLS em todas as 10 tabelas (`auth.uid() = user_id`).
+- ✅ RLS em todas as tabelas do `schema.sql` (`auth.uid() = user_id`).
 - ✅ Trigger `handle_new_user` com `SECURITY DEFINER` + `REVOKE` no PUBLIC.
 - ✅ Função `touch_updated_at` com `SET search_path = public` (advisor 0011).
 - ✅ **Páginas LGPD**: Política de Privacidade (`#/privacidade`) e Termos de Uso (`#/termos`), públicas e linkadas no footer da landing e na sidebar.

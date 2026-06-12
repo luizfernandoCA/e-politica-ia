@@ -119,7 +119,7 @@ export default function CampaignSetup({ onSetupComplete }) {
           position: 'relative', 
           zIndex: 1,
           background: 'rgba(5, 12, 30, 0.85)',
-          borderColor: 'rgba(255,255,255,0.08)',
+          borderColor: 'rgba(20,30,60,0.08)',
           boxShadow: '0 25px 60px rgba(0,0,0,0.6), 0 0 40px var(--accent-blue-glow)'
         }}
       >
@@ -260,7 +260,7 @@ export default function CampaignSetup({ onSetupComplete }) {
                     style={{
                       width: '100%',
                       padding: '12px',
-                      background: 'rgba(255,255,255,0.03)',
+                      background: 'rgba(20,30,60,0.03)',
                       border: '1px solid var(--border-color)',
                       borderRadius: 'var(--radius-sm)',
                       color: 'var(--accent-yellow)',
@@ -278,7 +278,7 @@ export default function CampaignSetup({ onSetupComplete }) {
               </div>
 
               {/* Security info note */}
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', fontSize: '0.72rem', color: 'var(--text-gray)', background: 'rgba(255,255,255,0.01)', padding: '10px 14px', borderRadius: '6px', border: '1px solid var(--border-color)', marginTop: '6px' }}>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', fontSize: '0.72rem', color: 'var(--text-gray)', background: 'rgba(20,30,60,0.01)', padding: '10px 14px', borderRadius: '6px', border: '1px solid var(--border-color)', marginTop: '6px' }}>
                 <Database size={16} style={{ color: 'var(--accent-blue-bright)', flexShrink: 0 }} />
                 <span>O cruzamento com os dados públicos do TSE e TRE-RO levará alguns segundos. A inteligência artificial criará automaticamente o SWOT e as regras de bairros sob medida.</span>
               </div>

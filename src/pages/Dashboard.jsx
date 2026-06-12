@@ -73,10 +73,10 @@ export default function Dashboard({ activeCandidate, tasks, setTasks, setActiveP
             Olá, Comandante da Campanha! 🇧🇷
           </h1>
           <p style={{ color: 'var(--text-gray)', fontSize: '0.9rem', marginTop: '4px' }}>
-            Aqui está o diagnóstico atualizado para <strong style={{ color: '#FFFFFF' }}>{candidate.name} ({candidate.party})</strong>.
+            Aqui está o diagnóstico atualizado para <strong style={{ color: 'var(--text-white)' }}>{candidate.name} ({candidate.party})</strong>.
           </p>
         </div>
-        <div style={{ fontSize: '2.5rem', filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.15))' }} className="animate-float">
+        <div style={{ fontSize: '2.5rem', filter: 'drop-shadow(0 0 10px rgba(20,30,60,0.15))' }} className="animate-float">
           📈
         </div>
       </div>
@@ -141,7 +141,7 @@ export default function Dashboard({ activeCandidate, tasks, setTasks, setActiveP
 
         {/* KPI 4: Taxa de Engajamento */}
         <div className="glass" style={{ padding: '1.25rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '12px', borderRadius: 'var(--radius-sm)', color: '#FFFFFF' }}>
+          <div style={{ background: 'rgba(20, 30, 60, 0.05)', padding: '12px', borderRadius: 'var(--radius-sm)', color: '#FFFFFF' }}>
             <TrendingUp size={24} />
           </div>
           <div>
@@ -197,10 +197,10 @@ export default function Dashboard({ activeCandidate, tasks, setTasks, setActiveP
                 style={{ width: '100%', height: '180px', overflow: 'visible' }}
               >
                 {/* Grid Lines */}
-                <line x1="0" y1="0" x2={chartWidth} y2="0" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-                <line x1="0" y1="33" x2={chartWidth} y2="33" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-                <line x1="0" y1="66" x2={chartWidth} y2="66" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-                <line x1="0" y1="100" x2={chartWidth} y2="100" stroke="rgba(255,255,255,0.1)" strokeWidth="1.5" />
+                <line x1="0" y1="0" x2={chartWidth} y2="0" stroke="rgba(20,30,60,0.05)" strokeWidth="1" />
+                <line x1="0" y1="33" x2={chartWidth} y2="33" stroke="rgba(20,30,60,0.05)" strokeWidth="1" />
+                <line x1="0" y1="66" x2={chartWidth} y2="66" stroke="rgba(20,30,60,0.05)" strokeWidth="1" />
+                <line x1="0" y1="100" x2={chartWidth} y2="100" stroke="rgba(20,30,60,0.1)" strokeWidth="1.5" />
 
                 {/* Line Path Area (Green glow fill) */}
                 <path
@@ -276,15 +276,15 @@ export default function Dashboard({ activeCandidate, tasks, setTasks, setActiveP
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     padding: '12px 16px',
-                    background: task.done ? 'rgba(255,255,255,0.01)' : 'rgba(255,255,255,0.02)',
-                    border: '1px solid rgba(255,255,255,0.05)',
+                    background: task.done ? 'rgba(20,30,60,0.01)' : 'rgba(20,30,60,0.02)',
+                    border: '1px solid rgba(20,30,60,0.05)',
                     borderRadius: 'var(--radius-sm)',
                     cursor: 'pointer',
                     opacity: task.done ? 0.6 : 1,
                     transition: 'all var(--transition-fast)'
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'}
-                  onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)'}
+                  onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(20,30,60,0.1)'}
+                  onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(20,30,60,0.05)'}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <input 
@@ -348,7 +348,7 @@ export default function Dashboard({ activeCandidate, tasks, setTasks, setActiveP
                 <path
                   d="M20,80 A40,40 0 1,1 80,80"
                   fill="none"
-                  stroke="rgba(255,255,255,0.05)"
+                  stroke="rgba(20,30,60,0.05)"
                   strokeWidth="8"
                   strokeLinecap="round"
                 />
@@ -428,13 +428,13 @@ export default function Dashboard({ activeCandidate, tasks, setTasks, setActiveP
                   top: '5px', 
                   bottom: '15px', 
                   width: '2px', 
-                  background: 'rgba(255,255,255,0.06)' 
+                  background: 'rgba(20,30,60,0.06)' 
                 }} 
               />
 
               {/* Activity 1 */}
               <div style={{ position: 'relative' }}>
-                <div style={{ position: 'absolute', left: '-20px', top: '3px', width: '10px', height: '10px', borderRadius: '50%', background: 'var(--accent-green)', border: '2px solid var(--bg-dark)' }} />
+                <div style={{ position: 'absolute', left: '-20px', top: '3px', width: '10px', height: '10px', borderRadius: '50%', background: 'var(--accent-green)', border: '2px solid var(--dot-border)' }} />
                 <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', fontWeight: 500 }}>Recentemente</span>
                 <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-white)' }}>Reunião Geral em Vila Nova</span>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-gray)', marginTop: '2px' }}>Nova liderança cadastrou 85 apoiadores locais.</p>
@@ -442,7 +442,7 @@ export default function Dashboard({ activeCandidate, tasks, setTasks, setActiveP
 
               {/* Activity 2 */}
               <div style={{ position: 'relative' }}>
-                <div style={{ position: 'absolute', left: '-20px', top: '3px', width: '10px', height: '10px', borderRadius: '50%', background: 'var(--accent-blue-bright)', border: '2px solid var(--bg-dark)' }} />
+                <div style={{ position: 'absolute', left: '-20px', top: '3px', width: '10px', height: '10px', borderRadius: '50%', background: 'var(--accent-blue-bright)', border: '2px solid var(--dot-border)' }} />
                 <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', fontWeight: 500 }}>Há 2 dias</span>
                 <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-white)' }}>Atualização de Dados do TSE</span>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-gray)', marginTop: '2px' }}>Histórico eleitoral consolidado do pleito de 2024 importado.</p>
@@ -450,7 +450,7 @@ export default function Dashboard({ activeCandidate, tasks, setTasks, setActiveP
 
               {/* Activity 3 */}
               <div style={{ position: 'relative' }}>
-                <div style={{ position: 'absolute', left: '-20px', top: '3px', width: '10px', height: '10px', borderRadius: '50%', background: 'var(--accent-yellow)', border: '2px solid var(--bg-dark)' }} />
+                <div style={{ position: 'absolute', left: '-20px', top: '3px', width: '10px', height: '10px', borderRadius: '50%', background: 'var(--accent-yellow)', border: '2px solid var(--dot-border)' }} />
                 <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', fontWeight: 500 }}>Há 4 dias</span>
                 <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-white)' }}>Simulação de IA Concluída</span>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-gray)', marginTop: '2px' }}>IA Mestre traçou plano de marketing para bairro estratégico.</p>
@@ -636,7 +636,7 @@ function KPI({ icon, label, value, color }) {
     <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
       <div
         style={{
-          background: 'rgba(255,255,255,0.04)',
+          background: 'rgba(20,30,60,0.04)',
           padding: '10px',
           borderRadius: 'var(--radius-sm)',
           color: color || 'var(--accent-green-bright)'

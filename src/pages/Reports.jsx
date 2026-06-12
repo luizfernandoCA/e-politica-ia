@@ -413,7 +413,7 @@ export default function Reports() {
           <div style={{ overflowX: 'auto' }}>
             <table style={tableStyle}>
               <thead>
-                <tr style={{ background: 'rgba(255,255,255,0.04)' }}>
+                <tr style={{ background: 'rgba(20,30,60,0.04)' }}>
                   <th style={thStyle}>Zona</th>
                   <th style={thStyle}>Votos</th>
                   <th style={thStyle}>% do total</th>

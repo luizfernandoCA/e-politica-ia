@@ -12,10 +12,10 @@ import {
 } from 'lucide-react';
 import Logo from './Logo';
 
-export default function Sidebar({ 
-  activePage, 
-  setActivePage, 
-  collapsed, 
+export default function Sidebar({
+  activePage,
+  setActivePage,
+  collapsed,
   setCollapsed,
   mobileOpen,
   setMobileOpen,
@@ -24,17 +24,17 @@ export default function Sidebar({
 }) {
 
   const menuItems = [
-    { id: 'dashboard', name: 'Painel Geral', icon: LayoutDashboard, color: 'var(--accent-green)' },
-    { id: 'apuracao-tse', name: 'Apuração TSE', icon: Vote, color: 'var(--accent-green)' },
-    { id: 'consultoria', name: 'Consultoria IA', icon: Sparkles, color: 'var(--accent-yellow)' },
-    { id: 'assistant', name: 'Mestre AI', icon: Brain, color: 'var(--accent-yellow)' },
-    { id: 'crm', name: 'Gestão de Base', icon: Target, color: 'var(--accent-green)' },
-    { id: 'reports', name: 'Relatórios', icon: FileText, color: 'var(--text-white)' }
+    { id: 'dashboard', name: 'Painel Geral', icon: LayoutDashboard },
+    { id: 'apuracao-tse', name: 'Apuração TSE', icon: Vote },
+    { id: 'consultoria', name: 'Consultoria IA', icon: Sparkles },
+    { id: 'assistant', name: 'Mestre AI', icon: Brain },
+    { id: 'crm', name: 'Gestão de Base', icon: Target },
+    { id: 'reports', name: 'Relatórios', icon: FileText }
   ];
 
   const handleNavClick = (pageId) => {
     setActivePage(pageId);
-    setMobileOpen(false); // Close mobile drawer when clicking navigation
+    setMobileOpen(false);
   };
 
   return (
@@ -46,8 +46,8 @@ export default function Sidebar({
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0,0,0,0.6)',
-            backdropFilter: 'blur(4px)',
+            background: 'rgba(20,30,60,0.35)',
+            backdropFilter: 'blur(2px)',
             zIndex: 998,
           }}
           className="no-print"
@@ -56,7 +56,7 @@ export default function Sidebar({
 
       {/* Sidebar Container */}
       <aside
-        className="no-print"
+        className={`no-print app-sidebar${mobileOpen ? ' is-open' : ''}`}
         style={{
           position: 'fixed',
           top: 0,
@@ -69,18 +69,6 @@ export default function Sidebar({
           flexDirection: 'column',
           zIndex: 999,
           transition: 'width var(--transition-normal), transform var(--transition-normal)',
-          transform: mobileOpen ? 'translateX(0)' : undefined,
-        }}
-        // Apply responsive mobile drawer classes
-        ref={(el) => {
-          if (el) {
-            if (window.innerWidth <= 768) {
-              el.style.transform = mobileOpen ? 'translateX(0)' : 'translateX(-100%)';
-              el.style.width = 'var(--sidebar-width)';
-            } else {
-              el.style.transform = 'none';
-            }
-          }
         }}
       >
         {/* Header/Logo section */}
@@ -89,7 +77,7 @@ export default function Sidebar({
             height: 'var(--header-height)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: collapsed ? 'center' : 'space-between',
+            justifyContent: collapsed ? 'center' : 'flex-start',
             padding: collapsed ? '0' : '0 1.5rem',
             borderBottom: '1px solid var(--border-color)',
             overflow: 'hidden'
@@ -99,7 +87,7 @@ export default function Sidebar({
         </div>
 
         {/* Navigation Items */}
-        <nav style={{ flexGrow: 1, padding: '1.5rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <nav style={{ flexGrow: 1, padding: '1.25rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto' }}>
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = activePage === item.id;
@@ -108,25 +96,26 @@ export default function Sidebar({
               <button
                 key={item.id}
                 onClick={() => handleNavClick(item.id)}
+                title={collapsed ? item.name : undefined}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: collapsed ? '0' : '12px',
                   justifyContent: collapsed ? 'center' : 'flex-start',
-                  padding: '12px',
+                  padding: '12px 14px',
                   width: '100%',
                   borderRadius: 'var(--radius-sm)',
-                  background: isActive ? 'rgba(255, 255, 255, 0.05)' : 'transparent',
-                  border: isActive ? '1px solid var(--border-color)' : '1px solid transparent',
+                  background: isActive ? 'var(--accent-blue)' : 'transparent',
+                  border: '1px solid transparent',
                   color: isActive ? '#FFFFFF' : 'var(--text-gray)',
+                  boxShadow: isActive ? '0 8px 18px rgba(72,128,255,0.30)' : 'none',
                   transition: 'all var(--transition-fast)',
                   position: 'relative',
-                  overflow: 'hidden'
                 }}
                 onMouseEnter={(e) => {
                   if (!isActive) {
-                    e.currentTarget.style.color = '#FFFFFF';
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.02)';
+                    e.currentTarget.style.color = 'var(--text-white)';
+                    e.currentTarget.style.background = 'var(--row-alt)';
                   }
                 }}
                 onMouseLeave={(e) => {
@@ -136,29 +125,14 @@ export default function Sidebar({
                   }
                 }}
               >
-                {/* Left Active highlight border bar */}
-                {isActive && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      left: 0,
-                      top: '20%',
-                      bottom: '20%',
-                      width: '4px',
-                      background: 'linear-gradient(to bottom, var(--accent-green), var(--accent-yellow))',
-                      borderRadius: '0 4px 4px 0',
-                    }}
-                  />
-                )}
-
-                <Icon 
-                  size={20} 
-                  style={{ 
-                    color: isActive ? item.color : 'var(--text-gray)', 
-                    transition: 'color var(--transition-fast)' 
-                  }} 
+                <Icon
+                  size={20}
+                  style={{
+                    color: isActive ? '#FFFFFF' : 'var(--text-muted)',
+                    transition: 'color var(--transition-fast)',
+                    flexShrink: 0
+                  }}
                 />
-
                 {!collapsed && (
                   <span style={{ fontSize: '0.9rem', fontWeight: isActive ? 600 : 500 }}>
                     {item.name}
@@ -174,42 +148,39 @@ export default function Sidebar({
           <div style={{ padding: '0.25rem 0.75rem', marginBottom: '0.25rem' }}>
             <button
               onClick={onReconfigure}
+              title={collapsed ? 'Ajustar Campanha' : undefined}
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: collapsed ? '0' : '12px',
                 justifyContent: collapsed ? 'center' : 'flex-start',
-                padding: '12px',
+                padding: '12px 14px',
                 width: '100%',
                 borderRadius: 'var(--radius-sm)',
-                background: 'rgba(255, 255, 255, 0.03)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
+                background: 'var(--row-alt)',
+                border: '1px solid var(--border-color)',
                 color: 'var(--text-gray)',
                 transition: 'all var(--transition-fast)',
                 cursor: 'pointer'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.07)';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-                e.currentTarget.style.color = '#FFFFFF';
+                e.currentTarget.style.borderColor = 'var(--accent-blue)';
+                e.currentTarget.style.color = 'var(--accent-blue-bright)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                e.currentTarget.style.borderColor = 'var(--border-color)';
                 e.currentTarget.style.color = 'var(--text-gray)';
               }}
             >
-              <Sliders size={20} style={{ color: 'var(--accent-blue-bright)' }} />
+              <Sliders size={20} style={{ color: 'var(--accent-blue)', flexShrink: 0 }} />
               {!collapsed && (
-                <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>
-                  Ajustar Campanha
-                </span>
+                <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Ajustar Campanha</span>
               )}
             </button>
           </div>
         )}
 
-        {/* Legal links (LGPD) — visíveis quando expandido */}
+        {/* Legal links (LGPD) */}
         {!collapsed && (
           <div
             style={{
@@ -232,42 +203,35 @@ export default function Sidebar({
         {/* Logout Button */}
         <div style={{ padding: '0.5rem 0.75rem', borderTop: '1px solid var(--border-color)' }}>
           <button
-            onClick={() => {
-              if (onLogout) onLogout();
-            }}
+            onClick={() => { if (onLogout) onLogout(); }}
+            title={collapsed ? 'Sair' : undefined}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: collapsed ? '0' : '12px',
               justifyContent: collapsed ? 'center' : 'flex-start',
-              padding: '12px',
+              padding: '12px 14px',
               width: '100%',
               borderRadius: 'var(--radius-sm)',
               background: 'transparent',
               border: '1px solid transparent',
-              color: '#EF4444',
+              color: 'var(--danger)',
               transition: 'all var(--transition-fast)',
               cursor: 'pointer'
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)';
-              e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.2)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = 'transparent';
-              e.currentTarget.style.borderColor = 'transparent';
             }}
           >
-            <LogOut size={20} />
-            {!collapsed && (
-              <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>
-                Sair
-              </span>
-            )}
+            <LogOut size={20} style={{ flexShrink: 0 }} />
+            {!collapsed && <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Sair</span>}
           </button>
         </div>
 
-        {/* Collapsed Expand Toggle Footer (Desktop only) */}
+        {/* Collapse Toggle (Desktop only) */}
         <div
           style={{
             padding: '1rem',
@@ -280,7 +244,7 @@ export default function Sidebar({
           <button
             onClick={() => setCollapsed(!collapsed)}
             style={{
-              background: 'rgba(255,255,255,0.03)',
+              background: 'var(--row-alt)',
               border: '1px solid var(--border-color)',
               color: 'var(--text-gray)',
               padding: '6px',
@@ -289,20 +253,22 @@ export default function Sidebar({
               alignItems: 'center',
               justifyContent: 'center',
             }}
-            onMouseEnter={(e) => e.currentTarget.style.color = '#FFFFFF'}
-            onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-gray)'}
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent-blue-bright)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-gray)')}
           >
             {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
           </button>
         </div>
       </aside>
 
-      {/* Modern styles to toggle mobile sidebar transitions & display */}
       <style>{`
+        @media (min-width: 769px) {
+          .app-sidebar { transform: none !important; }
+        }
         @media (max-width: 768px) {
-          .desktop-only {
-            display: none !important;
-          }
+          .desktop-only { display: none !important; }
+          .app-sidebar { transform: translateX(-100%); width: var(--sidebar-width) !important; }
+          .app-sidebar.is-open { transform: translateX(0); }
         }
       `}</style>
     </>

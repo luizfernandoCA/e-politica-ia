@@ -186,8 +186,8 @@ Deseja detalhar a abordagem para algum bairro específico ou prefere criar um ro
           flexDirection: 'column', 
           height: '100%',
           overflow: 'hidden',
-          background: 'rgba(7, 31, 19, 0.7)',
-          border: '1px solid rgba(255,255,255,0.06)'
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border-color)'
         }}
       >
         {/* Chat Header */}
@@ -205,7 +205,7 @@ Deseja detalhar a abordagem para algum bairro específico ou prefere criar um ro
               <Brain size={20} />
             </div>
             <div>
-              <strong style={{ fontSize: '0.95rem', color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <strong style={{ fontSize: '0.95rem', color: 'var(--text-white)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 Mestre Inteligência Artificial <Sparkles size={14} style={{ color: 'var(--accent-yellow)' }} />
               </strong>
               <span style={{ fontSize: '0.7rem', color: 'var(--text-gray)', display: 'block' }}>Mentora Estratégica Eleitoral</span>
@@ -247,7 +247,7 @@ Deseja detalhar a abordagem para algum bairro específico ou prefere criar um ro
                 <div 
                   style={{ 
                     fontSize: '1.25rem',
-                    background: isUser ? 'var(--accent-blue)' : 'var(--bg-dark)',
+                    background: isUser ? 'var(--accent-blue)' : 'var(--row-alt)',
                     border: isUser ? 'none' : '1px solid var(--border-color)',
                     width: '36px',
                     height: '36px',
@@ -267,9 +267,9 @@ Deseja detalhar a abordagem para algum bairro específico ou prefere criar um ro
                     maxWidth: '80%',
                     padding: '1rem',
                     borderRadius: 'var(--radius-sm)',
-                    background: isUser ? 'rgba(37, 99, 235, 0.15)' : 'rgba(255,255,255,0.03)',
-                    border: isUser ? '1px solid rgba(37, 99, 235, 0.3)' : '1px solid rgba(255,255,255,0.05)',
-                    color: '#FFFFFF',
+                    background: isUser ? 'var(--accent-blue)' : '#ffffff',
+                    border: isUser ? 'none' : '1px solid var(--border-color)',
+                    color: isUser ? '#FFFFFF' : 'var(--text-white)',
                     fontSize: '0.88rem',
                     lineHeight: 1.5,
                     whiteSpace: 'pre-wrap'
@@ -281,7 +281,7 @@ Deseja detalhar a abordagem para algum bairro específico ou prefere criar um ro
                       return <h5 key={lIdx} style={{ fontSize: '0.9rem', color: 'var(--accent-green-bright)', margin: '10px 0 4px 0' }}>{line.replace('####', '').trim()}</h5>;
                     }
                     if (line.startsWith('###')) {
-                      return <h4 key={lIdx} style={{ fontSize: '1.05rem', fontFamily: 'var(--font-title)', color: 'var(--accent-yellow)', margin: '12px 0 6px 0', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '4px' }}>{line.replace('###', '').trim()}</h4>;
+                      return <h4 key={lIdx} style={{ fontSize: '1.05rem', fontFamily: 'var(--font-title)', color: isUser ? '#FFFFFF' : 'var(--accent-blue-bright)', margin: '12px 0 6px 0', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>{line.replace('###', '').trim()}</h4>;
                     }
                     if (line.startsWith('*   ') || line.startsWith('- ')) {
                       return <li key={lIdx} style={{ marginLeft: '12px', listStyleType: 'square', margin: '4px 0' }}>{line.replace(/^(\*\s+|-\s+)/, '')}</li>;
@@ -294,7 +294,7 @@ Deseja detalhar a abordagem para algum bairro específico ou prefere criar um ro
                       const parts = line.split('**');
                       return (
                         <p key={lIdx} style={{ margin: '6px 0' }}>
-                          {parts.map((p, pIdx) => pIdx % 2 === 1 ? <strong key={pIdx} style={{ color: 'var(--accent-yellow)' }}>{p}</strong> : p)}
+                          {parts.map((p, pIdx) => pIdx % 2 === 1 ? <strong key={pIdx} style={{ color: isUser ? '#FFFFFF' : 'var(--accent-blue-bright)' }}>{p}</strong> : p)}
                         </p>
                       );
                     }
@@ -312,7 +312,7 @@ Deseja detalhar a abordagem para algum bairro específico ou prefere criar um ro
           {/* Glowing Animated Typing State */}
           {isTyping && (
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <div style={{ fontSize: '1.25rem', background: 'var(--bg-dark)', border: '1px solid var(--border-color)', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="flex-center">
+              <div style={{ fontSize: '1.25rem', background: 'var(--row-alt)', border: '1px solid var(--border-color)', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="flex-center">
                 🤖
               </div>
               <div 
@@ -323,7 +323,7 @@ Deseja detalhar a abordagem para algum bairro específico ou prefere criar um ro
                   display: 'flex', 
                   alignItems: 'center', 
                   gap: '6px',
-                  background: 'rgba(255,255,255,0.02)'
+                  background: 'rgba(20,30,60,0.02)'
                 }}
               >
                 <div style={{ width: '6px', height: '6px', background: 'var(--accent-green-bright)', borderRadius: '50%', animation: 'bounce 0.8s infinite 0.1s' }} />
@@ -363,7 +363,7 @@ Deseja detalhar a abordagem para algum bairro específico ou prefere criar um ro
             type="submit"
             disabled={!inputValue.trim() || isTyping}
             style={{
-              background: inputValue.trim() && !isTyping ? 'linear-gradient(to right, var(--accent-green), var(--accent-green-bright))' : 'rgba(255,255,255,0.04)',
+              background: inputValue.trim() && !isTyping ? 'linear-gradient(to right, var(--accent-green), var(--accent-green-bright))' : 'rgba(20,30,60,0.04)',
               color: inputValue.trim() && !isTyping ? '#FFFFFF' : 'var(--text-muted)',
               padding: '12px',
               borderRadius: 'var(--radius-sm)',
@@ -403,8 +403,8 @@ Deseja detalhar a abordagem para algum bairro específico ou prefere criar um ro
                 style={{
                   textAlign: 'left',
                   padding: '12px',
-                  background: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid rgba(255, 255, 255, 0.05)',
+                  background: 'rgba(20, 30, 60, 0.02)',
+                  border: '1px solid rgba(20, 30, 60, 0.05)',
                   borderRadius: 'var(--radius-sm)',
                   fontSize: '0.8rem',
                   color: '#FFFFFF',
@@ -423,8 +423,8 @@ Deseja detalhar a abordagem para algum bairro específico ou prefere criar um ro
                 }}
                 onMouseLeave={(e) => {
                   if (!isTyping) {
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)';
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)';
+                    e.currentTarget.style.borderColor = 'rgba(20, 30, 60, 0.05)';
+                    e.currentTarget.style.background = 'rgba(20, 30, 60, 0.02)';
                   }
                 }}
               >

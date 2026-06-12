@@ -34,7 +34,7 @@ export default function Logo({ size = 36, showText = true }) {
           cx="50"
           cy="50"
           r="24"
-          fill="var(--bg-dark)"
+          fill="var(--accent-blue)"
           stroke="var(--accent-blue)"
           strokeWidth="4"
         />
@@ -42,7 +42,7 @@ export default function Logo({ size = 36, showText = true }) {
         {/* Central Globe Lines */}
         <path
           d="M27 50H73M50 27V73M32.5 32.5C40 37.5 40 62.5 32.5 67.5M67.5 32.5C60 37.5 60 62.5 67.5 67.5"
-          stroke="rgba(37, 99, 235, 0.4)"
+          stroke="rgba(255, 255, 255, 0.55)"
           strokeWidth="2"
         />
 
@@ -50,7 +50,7 @@ export default function Logo({ size = 36, showText = true }) {
         <circle cx="50" cy="14" r="4" fill="var(--accent-yellow)" />
         <circle cx="86" cy="50" r="4" fill="var(--accent-green-bright)" />
         <circle cx="50" cy="86" r="4" fill="var(--accent-blue-bright)" />
-        <circle cx="14" cy="50" r="4" fill="#FFFFFF" />
+        <circle cx="14" cy="50" r="4" fill="var(--accent-blue-bright)" />
 
         {/* Stylized Core 'eP' lettermark */}
         <path

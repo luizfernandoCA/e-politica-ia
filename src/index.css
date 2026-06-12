@@ -6,33 +6,51 @@
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-title: 'Outfit', var(--font-sans);
 
-  /* Primary Tech Navy & Deep Space Blue Hues */
-  --blue-hue: 222;
-  --bg-dark: hsl(var(--blue-hue), 55%, 5%);            /* Deep night navy background */
-  --bg-dark-sidebar: hsl(var(--blue-hue), 50%, 3%);    /* Near-black deep navy sidebar */
-  --bg-card: hsla(var(--blue-hue), 45%, 8%, 0.65);     /* Semitransparent glass card */
-  --bg-card-hover: hsla(var(--blue-hue), 45%, 12%, 0.85);
-  
-  /* Brand Accents */
-  --accent-blue: hsl(221, 83%, 53%);                   /* Primary Royal/Cobalt Blue */
-  --accent-blue-glow: hsla(221, 83%, 53%, 0.35);
-  --accent-blue-bright: hsl(221, 83%, 60%);
+  /* ───────────────────────────────────────────────────────────────────
+     TEMA CLARO "DashStack" (azul/branco + acento Brasil).
+     NOTA: por compatibilidade, os NOMES dos tokens foram mantidos
+     (ex.: --bg-dark agora é um cinza claro; --text-white agora é a tinta
+     escura). Isso evita reescrever ~40 telas que já referenciam estes
+     nomes. Pense neles como "fundo base" / "tinta principal".
+     ─────────────────────────────────────────────────────────────────── */
+  --blue-hue: 221;
+  --bg-dark: #f5f6fa;            /* Fundo base do app (cinza-azulado claro) */
+  --bg-dark-sidebar: #ffffff;   /* Sidebar branca */
+  --bg-card: #ffffff;           /* Cards brancos */
+  --bg-card-hover: #ffffff;
 
-  --accent-green: hsl(152, 100%, 33%);                 /* Secondary Emerald Green */
-  --accent-green-glow: hsla(152, 100%, 33%, 0.25);
-  --accent-green-bright: hsl(152, 100%, 43%);
+  /* Brand Accents — azul DashStack como primário, verde/amarelo como acento */
+  --accent-blue: hsl(221, 100%, 64%);                  /* #4880FF — primário DashStack */
+  --accent-blue-glow: hsla(221, 100%, 64%, 0.30);
+  --accent-blue-bright: hsl(221, 83%, 53%);            /* #2563EB — azul de texto/links (contraste no branco) */
 
-  --accent-yellow: hsl(45, 100%, 50%);                 /* Golden Yellow Highlight */
-  --accent-yellow-glow: hsla(45, 100%, 50%, 0.25);
-  --accent-yellow-bright: hsl(45, 100%, 55%);
+  --accent-green: hsl(152, 70%, 38%);                  /* Verde acento */
+  --accent-green-glow: hsla(152, 70%, 38%, 0.22);
+  --accent-green-bright: hsl(152, 65%, 42%);
 
-  /* Neutrals */
-  --text-white: hsl(210, 40%, 98%);                     /* Ice White */
-  --text-gray: hsl(215, 15%, 70%);                      /* Cool Silver Gray */
-  --text-muted: hsl(215, 10%, 45%);
-  --border-color: rgba(255, 255, 255, 0.08);
-  --border-color-hover: rgba(255, 255, 255, 0.16);
-  --glass-reflection: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 100%);
+  --accent-yellow: hsl(43, 96%, 52%);                  /* Amarelo acento */
+  --accent-yellow-glow: hsla(43, 96%, 52%, 0.22);
+  --accent-yellow-bright: hsl(38, 95%, 50%);
+
+  /* Neutrals (tinta escura sobre claro) */
+  --text-white: #202224;                                /* Tinta principal (quase preto) */
+  --text-gray: #5b6b79;                                 /* Texto secundário */
+  --text-muted: #8a97a8;                                /* Texto terciário */
+  --border-color: #e6e9f0;                              /* Bordas claras */
+  --border-color-hover: #d3d9e4;
+  --glass-reflection: none;
+
+  /* Tokens semânticos do tema claro (extraídos de cores antes hardcoded) */
+  --header-bg: rgba(255, 255, 255, 0.85);
+  --modal-bg: #ffffff;
+  --modal-border: #e6e9f0;
+  --chart-grid: rgba(20, 30, 60, 0.07);
+  --row-alt: #f7f8fb;                                   /* linha alternada / hover de lista */
+  --list-border: #eef0f5;
+  --dot-border: #ffffff;
+  --danger: #ef4444;
+  --shadow-card: 0 4px 16px rgba(20, 30, 60, 0.05);
+  --shadow-card-hover: 0 10px 28px rgba(20, 30, 60, 0.10);
   
   /* Layout Constants */
   --sidebar-width: 260px;
@@ -83,7 +101,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(20, 30, 60, 0.18);
   border-radius: var(--radius-sm);
 }
 
@@ -94,18 +112,15 @@ h1, h2, h3, h4, h5, h6 {
 /* Utility Classes */
 .glass {
   background: var(--bg-card);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  background-image: var(--glass-reflection);
+  box-shadow: var(--shadow-card);
   transition: border-color var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .glass:hover {
   border-color: var(--border-color-hover);
-  background-color: var(--bg-card-hover);
+  box-shadow: var(--shadow-card-hover);
 }
 
 .glow-green { box-shadow: var(--shadow-glow-green); }
@@ -197,9 +212,16 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+/* DashStack shell: header starts after the sidebar; hamburger only on mobile */
+.mobile-only { display: none !important; }
+@media (max-width: 768px) {
+  .app-header { left: 0 !important; }
+  .mobile-only { display: inline-flex !important; }
+}
+
 /* Custom interactive input elements */
 input, select, textarea {
-  background: rgba(255, 255, 255, 0.05);
+  background: #ffffff;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   color: var(--text-white);
@@ -210,10 +232,12 @@ input, select, textarea {
   outline: none;
 }
 
+input::placeholder, textarea::placeholder { color: var(--text-muted); }
+
 input:focus, select:focus, textarea:focus {
-  border-color: var(--accent-blue-bright);
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 0 10px rgba(37, 99, 235, 0.2);
+  border-color: var(--accent-blue);
+  background: #ffffff;
+  box-shadow: 0 0 0 3px var(--accent-blue-glow);
 }
 
 button {
@@ -524,8 +548,8 @@ input[type="checkbox"] {
       transform var(--transition-normal);
   }
   .glass:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 16px 44px 0 rgba(0, 0, 0, 0.45);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card-hover);
   }
 }
 

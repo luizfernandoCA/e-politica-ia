@@ -353,7 +353,7 @@ function TabColigacao({ partidos }) {
     <div style={{ overflowX: 'auto' }}>
       <table style={tableStyle}>
         <thead>
-          <tr style={{ background: 'rgba(255,255,255,0.04)' }}>
+          <tr style={{ background: 'rgba(20,30,60,0.04)' }}>
             <th style={thStyle}>Partido</th>
             <th style={thStyle}>Votos nominais</th>
             <th style={thStyle}>Legenda</th>
@@ -466,7 +466,7 @@ function BigStat({ icon, label, value, sub }) {
   return (
     <div
       style={{
-        background: 'rgba(255,255,255,0.03)',
+        background: 'rgba(20,30,60,0.03)',
         padding: '1rem',
         borderRadius: 'var(--radius-sm)',
         border: '1px solid var(--border-gray)'
@@ -497,7 +497,7 @@ function TabVotacao({ candidates }) {
     <div style={{ overflowX: 'auto' }}>
       <table style={tableStyle}>
         <thead>
-          <tr style={{ background: 'rgba(255,255,255,0.04)' }}>
+          <tr style={{ background: 'rgba(20,30,60,0.04)' }}>
             <th style={thStyle}>#</th>
             <th style={thStyle}>Candidato</th>
             <th style={thStyle}>Partido</th>

@@ -253,14 +253,14 @@ export default function CRM({ contacts, setContacts, setCandidates, activeCandid
                     key={c.id} 
                     onClick={() => setSelectedContactId(c.id === selectedContactId ? null : c.id)}
                     style={{ 
-                      borderBottom: '1px solid rgba(255,255,255,0.03)',
+                      borderBottom: '1px solid rgba(20,30,60,0.03)',
                       background: c.id === selectedContactId ? 'rgba(0,168,89,0.08)' : 'transparent',
                       cursor: 'pointer',
                       transition: 'background var(--transition-fast)'
                     }}
                     className="crm-row"
                   >
-                    <td style={{ padding: '12px 10px', fontWeight: 600, color: '#FFFFFF' }}>{c.name}</td>
+                    <td style={{ padding: '12px 10px', fontWeight: 600, color: 'var(--text-white)' }}>{c.name}</td>
                     <td style={{ padding: '12px 10px' }}>
                       <span
                         style={{
@@ -270,13 +270,13 @@ export default function CRM({ contacts, setContacts, setCandidates, activeCandid
                           borderRadius: '100px',
                           background: 
                             c.role === 'Liderança' ? 'rgba(255,204,0,0.1)' : 
-                            c.role === 'Voluntário' ? 'rgba(37,99,235,0.1)' : 'rgba(255,255,255,0.05)',
+                            c.role === 'Voluntário' ? 'rgba(37,99,235,0.1)' : 'rgba(20,30,60,0.05)',
                           color: 
                             c.role === 'Liderança' ? 'var(--accent-yellow)' : 
                             c.role === 'Voluntário' ? 'var(--accent-blue-bright)' : 'var(--text-white)',
                           border: 
                             c.role === 'Liderança' ? '1px solid rgba(255,204,0,0.2)' : 
-                            c.role === 'Voluntário' ? '1px solid rgba(37,99,235,0.2)' : '1px solid rgba(255,255,255,0.1)'
+                            c.role === 'Voluntário' ? '1px solid rgba(37,99,235,0.2)' : '1px solid rgba(20,30,60,0.1)'
                         }}
                       >
                         {c.role}
@@ -333,13 +333,13 @@ export default function CRM({ contacts, setContacts, setCandidates, activeCandid
                 width: '100%', 
                 height: '240px', 
                 background: 'rgba(0,0,0,0.3)', 
-                border: '1px solid rgba(255,255,255,0.06)',
+                border: '1px solid rgba(20,30,60,0.06)',
                 borderRadius: 'var(--radius-sm)',
                 overflow: 'hidden'
               }}
             >
               {/* Map grid lines */}
-              <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+              <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(20,30,60,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(20,30,60,0.02) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
 
               {/* Mapped Coordinates points */}
               {contacts.map((c) => {
@@ -379,11 +379,11 @@ export default function CRM({ contacts, setContacts, setCandidates, activeCandid
             const selectedContact = contacts.find(c => c.id === selectedContactId);
             return (
               <div className="glass" style={{ padding: '1.25rem', borderLeft: `4px solid ${selectedContact.role === 'Liderança' ? 'var(--accent-yellow)' : 'var(--accent-green)'}` }}>
-                <strong style={{ fontSize: '0.9rem', color: '#FFFFFF', display: 'block' }}>{selectedContact.name}</strong>
+                <strong style={{ fontSize: '0.9rem', color: 'var(--text-white)', display: 'block' }}>{selectedContact.name}</strong>
                 <span style={{ fontSize: '0.7rem', color: 'var(--text-gray)', display: 'block', margin: '2px 0 8px 0' }}>
                   {selectedContact.role} em {selectedContact.regionName} ({selectedContact.zone})
                 </span>
-                <p style={{ fontSize: '0.8rem', color: '#FFFFFF', fontStyle: 'italic', background: 'rgba(255,255,255,0.02)', padding: '8px', borderRadius: '4px' }}>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-white)', fontStyle: 'italic', background: 'rgba(20,30,60,0.02)', padding: '8px', borderRadius: '4px' }}>
                   "{selectedContact.notes || 'Sem observações adicionais.'}"
                 </p>
                 <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'block', marginTop: '8px', textAlign: 'right' }}>
@@ -505,7 +505,7 @@ export default function CRM({ contacts, setContacts, setCandidates, activeCandid
               type="button"
               onClick={() => setIsModalOpen(false)}
               style={{
-                background: 'rgba(255,255,255,0.05)',
+                background: 'rgba(20,30,60,0.05)',
                 border: '1px solid var(--border-color)',
                 color: 'var(--text-white)',
                 padding: '10px 20px',
@@ -533,7 +533,7 @@ export default function CRM({ contacts, setContacts, setCandidates, activeCandid
       {/* Embedded CSS for table row actions hover */}
       <style>{`
         .crm-row:hover {
-          background: rgba(255,255,255,0.015) !important;
+          background: rgba(20,30,60,0.015) !important;
         }
       `}</style>
     </div>

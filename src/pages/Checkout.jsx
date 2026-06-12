@@ -183,7 +183,7 @@ export default function Checkout({ onPaymentSuccess, onBackToLanding, initialUse
 
   const inputStyle = {
     width: '100%',
-    background: 'rgba(255,255,255,0.04)',
+    background: 'rgba(20,30,60,0.04)',
     border: '1px solid var(--border-color)',
     borderRadius: 'var(--radius-sm)',
     padding: '12px 14px',
@@ -222,7 +222,7 @@ export default function Checkout({ onPaymentSuccess, onBackToLanding, initialUse
           position: 'relative',
           zIndex: 1,
           background: 'rgba(5, 12, 30, 0.75)',
-          borderColor: 'rgba(255,255,255,0.08)',
+          borderColor: 'rgba(20,30,60,0.08)',
           boxShadow: '0 20px 50px rgba(0,0,0,0.5), 0 0 30px var(--accent-blue-glow)'
         }}
       >
@@ -296,7 +296,7 @@ export default function Checkout({ onPaymentSuccess, onBackToLanding, initialUse
             </div>
 
             {/* Mode tabs */}
-            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.04)', borderRadius: 'var(--radius-sm)', padding: '4px', gap: '4px' }}>
+            <div style={{ display: 'flex', background: 'rgba(20,30,60,0.04)', borderRadius: 'var(--radius-sm)', padding: '4px', gap: '4px' }}>
               {[{ id: 'signup', label: 'Criar conta' }, { id: 'login', label: 'Entrar' }].map((t) => (
                 <button
                   key={t.id}
@@ -434,7 +434,7 @@ export default function Checkout({ onPaymentSuccess, onBackToLanding, initialUse
                 {isVIP ? 'Acesso VIP Liberado' : 'Ativar Assinatura'}
               </h2>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-gray)' }}>
-                Conectado como <strong style={{ color: '#FFFFFF' }}>{user.email}</strong>
+                Conectado como <strong style={{ color: 'var(--text-white)' }}>{user.email}</strong>
               </p>
             </div>
 

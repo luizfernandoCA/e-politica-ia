@@ -105,6 +105,10 @@ export default function App() {
     setLegalRoute(null);
   };
 
+  // DEV-ONLY: pré-visualização do shell autenticado para QA visual do redesign.
+  // Ativa com #__preview no hash, só em dev. (remover antes do deploy final)
+  const FORCE_PREVIEW = import.meta.env.DEV && typeof window !== 'undefined' && window.location.hash.includes('__preview');
+
   // Navigation & UI States
   const [activePage, setActivePage] = useState('dashboard');
   const [activeCandidate, setActiveCandidate] = useState('dr-marcos-silva');
@@ -466,6 +470,42 @@ export default function App() {
   }
 
   // =========================================================================
+  // DEV-ONLY preview do shell (sem auth) para QA visual do redesign.
+  // =========================================================================
+  if (FORCE_PREVIEW) {
+    const mockUser = activeUser || { uid: 'preview', name: 'Moni Roy', email: 'preview@e-politica.ia', title: 'Admin', avatar: '🧑‍💼' };
+    return (
+      <div className="app-container">
+        <Sidebar
+          activePage={activePage}
+          setActivePage={setActivePage}
+          collapsed={sidebarCollapsed}
+          setCollapsed={setSidebarCollapsed}
+          mobileOpen={mobileSidebarOpen}
+          setMobileOpen={setMobileSidebarOpen}
+          onLogout={() => {}}
+          onReconfigure={() => {}}
+        />
+        <div className={`main-content ${sidebarCollapsed ? 'collapsed' : ''}`}>
+          <Header
+            activePage={activePage}
+            activeCandidate={activeCandidate}
+            setActiveCandidate={setActiveCandidate}
+            sidebarCollapsed={sidebarCollapsed}
+            setSidebarCollapsed={setSidebarCollapsed}
+            toggleMobileSidebar={toggleMobileSidebar}
+            activeUser={mockUser}
+            candidates={candidates}
+          />
+          <main style={{ width: '100%' }}>
+            <Suspense fallback={<SuspenseFallback />}>{renderActivePage()}</Suspense>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  // =========================================================================
   // Loading Screen (Auth Re-hydration / Loading Supabase)
   // =========================================================================
   if (isLoading) {
@@ -492,7 +532,7 @@ export default function App() {
           zIndex: 0
         }} />
         <div style={{
-          border: '3px solid rgba(255, 255, 255, 0.05)',
+          border: '3px solid rgba(20, 30, 60, 0.08)',
           borderTop: '3px solid var(--accent-blue-bright)',
           borderRadius: '50%',
           width: '50px',

@@ -76,9 +76,9 @@ export default function Modal({ isOpen, onClose, title, children }) {
           maxWidth: '550px',
           padding: '2rem',
           position: 'relative',
-          background: 'rgba(7, 31, 19, 0.95)',
-          border: '1px solid rgba(255, 255, 255, 0.12)',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.75), 0 0 30px var(--accent-green-glow)',
+          background: 'var(--modal-bg)',
+          border: '1px solid var(--modal-border)',
+          boxShadow: '0 25px 60px -12px rgba(20, 30, 60, 0.28)',
           color: 'var(--text-white)'
         }}
       >
@@ -99,16 +99,16 @@ export default function Modal({ isOpen, onClose, title, children }) {
           <button
             onClick={onClose}
             style={{
-              background: 'rgba(255,255,255,0.05)',
+              background: 'var(--row-alt)',
               color: 'var(--text-gray)',
-              border: '1px solid rgba(255,255,255,0.08)',
+              border: '1px solid var(--border-color)',
               padding: '6px',
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}
-            onMouseEnter={(e) => e.currentTarget.style.color = '#FFFFFF'}
+            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-white)'}
             onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-gray)'}
           >
             <X size={16} />
@@ -121,8 +121,8 @@ export default function Modal({ isOpen, onClose, title, children }) {
 
       <style>{`
         dialog::backdrop {
-          background: rgba(0, 0, 0, 0.75);
-          backdrop-filter: blur(8px);
+          background: rgba(20, 30, 60, 0.45);
+          backdrop-filter: blur(6px);
           -webkit-backdrop-filter: blur(8px);
           animation: fadeBackdrop 0.3s ease-out forwards;
         }

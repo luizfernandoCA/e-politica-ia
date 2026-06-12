@@ -14,7 +14,7 @@ históricos e a **Mestre**, estrategista com IA (Claude Opus 4.7).
 | Roteamento | `useState activePage` (sem React Router) | ⚠️ legado, ver ROADMAP |
 | Estilo | CSS-in-JS inline + variáveis CSS | ⚠️ legado, ver ROADMAP |
 | Autenticação | Supabase Auth (email/senha + Google OAuth) | ✅ ativo |
-| Banco | Supabase Postgres com RLS (projeto `tlnprjkiydiogrcsruxw`, sa-east-1) | ✅ 6 tabelas em `schema.sql` + 4 gerenciadas fora do repo |
+| Banco | Supabase Postgres com RLS (projeto `tlnprjkiydiogrcsruxw`, sa-east-1) | ✅ 13 tabelas em produção, RLS ativo em todas (6 versionadas em `schema.sql`; 7 de fases posteriores via migrations — veja o dashboard para o estado completo) |
 | Pagamentos | Mercado Pago Checkout Pro (Pix, cartão, boleto) | ⚙️ requer `MP_ACCESS_TOKEN` |
 | IA (Mestre) | Claude Opus 4.7 via proxy serverless + prompt caching (override por `ANTHROPIC_MODEL`) | ⚙️ requer `ANTHROPIC_API_KEY` |
 | Roteamento legal | Páginas LGPD públicas em `#/privacidade` e `#/termos` | ✅ ativo |
@@ -45,7 +45,7 @@ checkout exibe aviso de gateway pendente.
 | `contacts` | **CRM normalizado** (substitui `user_state.contacts`) | `progressive_schema_v1` (Fase C) | ✅ owner CRUD |
 | `demands` | **Atendimentos do eleitor** com priority/status | `progressive_schema_v1` (Fase C) | ✅ owner CRUD |
 | `tse_votes_cache` | **Cache real TSE** (lista oficial + outcome) | `progressive_schema_v1` (Fase C) | ✅ read authenticated |
-| `ai_analyses` | **Auditoria Mestre** (tokens, cache hits, custo) | `progressive_schema_v1` (Fase C) | ✅ owner read/insert |
+| `ai_analyses` | **Auditoria Mestre** (tokens, cache hits, custo) — *estrutura criada com RLS; gravação de métricas ainda não implementada (0 linhas hoje)* | `progressive_schema_v1` (Fase C) | ✅ owner read/insert |
 
 > Migrations aplicadas via MCP Supabase: `progressive_schema_v1` e
 > `harden_touch_updated_at_search_path`. O SQL canônico ainda está em

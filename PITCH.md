@@ -4,6 +4,14 @@ Material de apoio para conversas comerciais com candidatos, coordenadores
 de campanha e assessores parlamentares. Cada bloco é independente:
 escolha o que servir conforme a conversa.
 
+> **⚠️ Status de produção (2026-06-11).** O painel está no ar em
+> https://e-politica-ia.vercel.app com **dados reais** (TSE, CRM, Reports,
+> cache, LGPD, checkout). As capacidades de **IA — o Mestre e a Consultoria
+> E-Poliana — exigem uma `ANTHROPIC_API_KEY` ativa no painel da Vercel e estão
+> pendentes de ativação**. Enquanto a chave não é configurada, o chat opera com
+> um estrategista local (offline) e a Consultoria exibe aviso de ativação.
+> **Não venda a IA como ativa antes de configurar a chave.**
+
 ---
 
 ## 🎯 Posicionamento em 1 frase
@@ -20,7 +28,7 @@ Concorrente referência: **Politique.com.br**. Comparativo objetivo:
 |---|---|---|
 | Assinatura mensal | **R$ 99,90** sem fidelidade | Mensalidade elevada com fidelidade |
 | Custo por relatório PDF | **R$ 500,00** (no plano executivo) | até R$ 2.000,00 |
-| IA estrategista integrada | **Mestre (Claude Opus 4.7)** com SWOT/discursos | Não possui |
+| IA estrategista integrada | **Mestre (Claude Opus 4.7)** com SWOT/discursos — *requer chave de IA ativa* | Não possui |
 | Mapa de calor de lideranças | Coordenadas reais cruzadas com CRM | Mapa genérico, sem foco tático |
 | Dados TSE/TRE | Oficiais + cache resiliente (Fase D) | Oficiais |
 | Foco regional | **Rondônia (52 municípios pré-mapeados)** + expansão BR | Brasil genérico |
@@ -88,8 +96,9 @@ a decidir mais rápido = menos energia desperdiçada com palpite.
 3. **Minimização de dados (LGPD art. 6º, III)** — não coletamos CPF de
    eleitores; o CRM guarda apenas nome, telefone e região.
 4. **Chave da IA nunca chega no browser** — proxy serverless.
-5. **Auditoria de uso da IA** registrada em `ai_analyses` (você pode
-   exigir relatório de uso por dia/semana).
+5. **Auditoria de uso da IA** (relatório de consumo por dia/semana) está no
+   roadmap — a tabela `ai_analyses` já existe com RLS por dono, e a gravação
+   de métricas será habilitada junto com a ativação da IA.
 
 ---
 

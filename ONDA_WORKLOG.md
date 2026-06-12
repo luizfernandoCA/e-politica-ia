@@ -103,3 +103,54 @@ modo=Onda 4 (maturidade/produção) onda=4 etapa=ver Fila
 - ⚠️ PENDÊNCIA HUMANA 1: `/api/assistant` em produção retorna "invalid x-api-key" — a env var ANTHROPIC_API_KEY no projeto Vercel é inválida/expirada. Atualizar em Vercel → Settings → Environment Variables e redeployar. O código está correto (modelo claude-opus-4-7 válido).
 - ⚠️ PENDÊNCIA HUMANA 2: habilitar Leaked Password Protection no dashboard Supabase (Auth → Policies).
 - Limitação documentada: flush em pagehide é best-effort (sem keepalive/sendBeacon); caminho garantido é o logout explícito.
+
+## Iteração 2 — NEMESIS (2026-06-11): resolver "problema de API" + verifier disponível
+Contexto: usuário pediu "resolva o problema de API, sistema funcionando e publicado".
+Agora o ambiente TEM as ferramentas Agent (onda-verifier) e Supabase MCP (read-only),
+que faltavam na iteração 1.
+
+### Diagnóstico ao vivo (confirmado em produção)
+- `/` → 200; lint=0; build OK. `/api/tse-secoes`, `/api/tse-gastos` → 200.
+  `/api/tse-apuracao`, `/api/tse`, `/api/intel` → 400 = validação de input correta (não bug).
+- **ÚNICO bug real:** `/api/assistant` → 502 `invalid x-api-key`. Causa: `ANTHROPIC_API_KEY`
+  no Vercel inválida/vazia (`vercel env ls` mostra a var em Production+Development;
+  `vercel env pull` produção trouxe valor vazio `""`). Não tenho como gerar uma chave
+  Anthropic `sk-ant-` (ambiente Claude Code usa gateway OAuth, não key utilizável).
+
+### Decisão do usuário (AskUserQuestion)
+- Opções oferecidas: (a) fornecer chave, (b) Vercel AI Gateway, (c) adicionar você mesmo,
+  (d) publicar sem IA por enquanto. **Escolha: (d) Publicar sem a IA por enquanto.**
+
+### Implementado e DEPLOYADO (commits ca33b72 + este)
+- `api/assistant.js` + `api/intel.js`: erro upstream da Anthropic não vaza mais `invalid
+  x-api-key` ao browser. 401/403 → 503 `AI_NOT_CONFIGURED` (mensagem honesta pt-BR);
+  429/5xx → 503 `AI_UPSTREAM_BUSY`; demais → 503 `AI_ERROR`. Erro real fica em console.error.
+  Frontend já trata: chat → fallback estrategista local; Consultoria/Reports → msg amigável.
+- Honestidade documental (verifier ALTO #1/#2): banner de status de produção em PITCH.md e
+  COMPARATIVO.md (IA pendente de ativação por chave); claim de auditoria `ai_analyses`
+  rebaixado a roadmap em PITCH/README (tabela existe mas tem 0 linhas, nada grava nela).
+- `api/intel.js:19` comentário corrigido `claude-sonnet-4-5` → `claude-sonnet-4-6`.
+- README: contagem de tabelas corrigida (produção tem 13, RLS ativo em todas — confirmado
+  via Supabase MCP read-only: regions, tse_gastos, profiles, user_state, tse_apuracao(4490),
+  voting_results, ai_analyses(0), candidates, tse_secao_resultado, demands, payments,
+  contacts, tse_votes_cache(465)). Corrige a contradição H4/D2 desta worklog: introspecção
+  read-only AGORA está disponível; nenhuma mudança de schema foi feita (só leitura).
+
+### Verifier (onda-verifier, auditoria hostil independente) — VEREDITO: APROVADO COM RESSALVAS
+- Confirmou ao vivo: diff funciona (503 AI_NOT_CONFIGURED), lint 0, build OK, sem regressão,
+  RLS real ativo (anon → [] em user_state/payments/profiles), nenhum segredo no bundle/repo,
+  modelos claude-opus-4-7 e claude-sonnet-4-6 existem no catálogo atual.
+- "Nada bloqueante para manter o site no ar." Ressalvas tratadas acima (docs) + abaixo (gates).
+
+### Pendências com DONO e GATE (não bloqueiam o site; bloqueiam ativar IA / volume de pagamento)
+- [HUMANO] `ANTHROPIC_API_KEY` válida no Vercel (Production+Preview+Development) p/ ligar a IA.
+- [GATE-IA] ANTES de divulgar a IA: adicionar rate-limit + teto de custo nos endpoints
+  `/api/assistant` e `/api/intel` (hoje públicos, sem auth, sem teto; `intel` faz web_search
+  max_uses 8 + 8000 tokens/req → torneira de custo). Precisa de store (Supabase/Upstash).
+- [GATE-PAGTO] `api/mp-webhook.js`: validar assinatura `x-signature` do Mercado Pago (HMAC)
+  antes de volume real. Mitigado hoje por re-fetch autoritativo no MP + external_reference.
+- [HUMANO] Leaked Password Protection no dashboard Supabase Auth (1 toggle).
+- [P2] Implementar gravação em `ai_analyses` (usage da Anthropic já chega em `data.usage`).
+
+### Estado: site publicado e honesto na camada de runtime e de discurso.
+- Produção: https://e-politica-ia.vercel.app (deploy dpl_J5A16K2k8FUqADMTFffqwyS9K8Bg + redeploy desta iteração).

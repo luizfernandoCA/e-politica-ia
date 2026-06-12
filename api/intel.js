@@ -16,7 +16,7 @@
  *
  * Variáveis de ambiente (Vercel):
  *   ANTHROPIC_API_KEY  (obrigatória)  - console.anthropic.com/settings/keys
- *   ANTHROPIC_MODEL    (opcional)     - default: claude-sonnet-4-5
+ *   ANTHROPIC_MODEL    (opcional)     - default: claude-sonnet-4-6
  */
 
 export const config = { maxDuration: 60 };
@@ -135,7 +135,7 @@ Pesquise na web menções reais ao candidato e os indicadores oficiais do munic�
     const data = await anthropicRes.json();
 
     if (!anthropicRes.ok) {
-      console.error('[Intel Anthropic Error]:', JSON.stringify(data).slice(0, 500));
+      console.error('[Intel Anthropic Error]:', anthropicRes.status, JSON.stringify(data).slice(0, 500));
       if (anthropicRes.status === 401 || anthropicRes.status === 403) {
         return res.status(503).json({
           success: false,
@@ -145,9 +145,13 @@ Pesquise na web menções reais ao candidato e os indicadores oficiais do munic�
             'inválida ou ausente. Configure uma ANTHROPIC_API_KEY válida no painel da Vercel.'
         });
       }
-      return res.status(502).json({
+      const busy = anthropicRes.status === 429 || anthropicRes.status >= 500;
+      return res.status(503).json({
         success: false,
-        message: data?.error?.message || 'Erro ao consultar o núcleo de inteligência.'
+        code: busy ? 'AI_UPSTREAM_BUSY' : 'AI_ERROR',
+        message: busy
+          ? 'Núcleo de inteligência temporariamente sobrecarregado. Tente novamente em alguns instantes.'
+          : 'Não foi possível gerar a consultoria no modelo de IA agora.'
       });
     }
 

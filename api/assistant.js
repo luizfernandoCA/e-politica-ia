@@ -505,7 +505,7 @@ Diretrizes:
       const data = await anthropicRes.json();
 
       if (!anthropicRes.ok) {
-        console.error('[Anthropic API Error]:', data);
+        console.error('[Anthropic API Error]:', anthropicRes.status, data);
         if (anthropicRes.status === 401 || anthropicRes.status === 403) {
           return res.status(503).json({
             success: false,
@@ -515,9 +515,13 @@ Diretrizes:
               'ou ausente. Configure uma ANTHROPIC_API_KEY válida (console.anthropic.com) no painel da Vercel.'
           });
         }
-        return res.status(502).json({
+        const busy = anthropicRes.status === 429 || anthropicRes.status >= 500;
+        return res.status(503).json({
           success: false,
-          message: data?.error?.message || 'Erro ao consultar o modelo de IA.'
+          code: busy ? 'AI_UPSTREAM_BUSY' : 'AI_ERROR',
+          message: busy
+            ? 'Assistente IA temporariamente sobrecarregado. Tente novamente em alguns instantes.'
+            : 'Não foi possível processar a solicitação no modelo de IA agora.'
         });
       }
 

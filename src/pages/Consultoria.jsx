@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import Markdown from '../components/Markdown';
 import useScrollReveal from '../hooks/useScrollReveal';
+import { downloadConsultoriaPdf } from '../lib/pdf/consultoriaPdf';
 
 function readParams() {
   try {
@@ -84,15 +85,27 @@ export default function Consultoria() {
     }
   }
 
-  function downloadMd() {
+  const [pdfLoading, setPdfLoading] = useState(false);
+  async function downloadPdf() {
     if (!result?.report) return;
-    const blob = new Blob([result.report], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `consultoria-${(params.candidateName || 'candidato').toLowerCase().replace(/\s+/g, '-')}.md`;
-    a.click();
-    URL.revokeObjectURL(url);
+    setPdfLoading(true);
+    try {
+      await downloadConsultoriaPdf({
+        candidateName: params.candidateName,
+        party: params.party,
+        role: params.role,
+        city: params.city,
+        state: params.state || 'RO',
+        report: result.report,
+        sources: result.sources || [],
+        generatedAt: result.generatedAt
+      });
+    } catch (e) {
+      console.error('Falha ao gerar PDF:', e);
+      setError('Não foi possível gerar o PDF agora. Tente novamente.');
+    } finally {
+      setPdfLoading(false);
+    }
   }
 
   if (!params?.candidateName) {
@@ -177,7 +190,9 @@ export default function Consultoria() {
               </p>
             </div>
             <div className="cs-report-actions">
-              <button className="cs-btn-ghost" onClick={downloadMd}><Download size={16} /> Baixar</button>
+              <button className="cs-btn-ghost" onClick={downloadPdf} disabled={pdfLoading}>
+                {pdfLoading ? <Loader2 size={16} className="cs-spin" /> : <Download size={16} />} {pdfLoading ? 'Gerando PDF…' : 'Baixar PDF'}
+              </button>
               <button className="cs-btn-ghost" onClick={generate}><RefreshCw size={16} /> Refazer</button>
             </div>
           </div>

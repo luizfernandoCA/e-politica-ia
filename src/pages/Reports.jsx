@@ -8,9 +8,11 @@ import {
   RefreshCw,
   AlertCircle,
   CheckCircle2,
-  Sparkles
+  Sparkles,
+  FileDown
 } from 'lucide-react';
 import DataSourceBadge from '../components/DataSourceBadge';
+import { downloadTseReportPdf } from '../lib/pdf/tseReportPdf';
 
 /**
  * Relatórios — cruzamento de dados oficiais TSE + dados internos.
@@ -67,6 +69,7 @@ export default function Reports() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [generatingInsight, setGeneratingInsight] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
@@ -183,6 +186,27 @@ export default function Reports() {
     URL.revokeObjectURL(url);
   }
 
+  async function downloadPdf() {
+    if (!myCandidate) return;
+    setPdfLoading(true);
+    try {
+      await downloadTseReportPdf({
+        myCandidate,
+        apuracao,
+        gastos,
+        secoes,
+        role,
+        city: apuracao?.municipality?.name || city,
+        mestreInsight,
+        generatedAt: new Date().toISOString()
+      });
+    } catch (e) {
+      console.error('Falha ao gerar PDF do relatório TSE:', e);
+    } finally {
+      setPdfLoading(false);
+    }
+  }
+
   async function generateMestreInsight() {
     if (!myCandidate) return;
     setGeneratingInsight(true);
@@ -290,6 +314,9 @@ export default function Reports() {
             </p>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <button onClick={downloadPdf} disabled={pdfLoading} style={{ ...primaryBtnStyle, background: 'var(--accent-blue)', color: '#fff' }}>
+              {pdfLoading ? <RefreshCw size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <FileDown size={16} />} {pdfLoading ? 'Gerando…' : 'Baixar PDF'}
+            </button>
             <button onClick={exportCSV} style={primaryBtnStyle}>
               <Download size={16} /> CSV
             </button>

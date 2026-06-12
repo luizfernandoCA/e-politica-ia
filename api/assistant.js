@@ -506,6 +506,15 @@ Diretrizes:
 
       if (!anthropicRes.ok) {
         console.error('[Anthropic API Error]:', data);
+        if (anthropicRes.status === 401 || anthropicRes.status === 403) {
+          return res.status(503).json({
+            success: false,
+            code: 'AI_NOT_CONFIGURED',
+            message:
+              'Assistente IA temporariamente indisponível: a credencial do modelo está inválida ' +
+              'ou ausente. Configure uma ANTHROPIC_API_KEY válida (console.anthropic.com) no painel da Vercel.'
+          });
+        }
         return res.status(502).json({
           success: false,
           message: data?.error?.message || 'Erro ao consultar o modelo de IA.'

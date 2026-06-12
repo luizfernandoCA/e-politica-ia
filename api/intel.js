@@ -136,6 +136,15 @@ Pesquise na web menções reais ao candidato e os indicadores oficiais do munic�
 
     if (!anthropicRes.ok) {
       console.error('[Intel Anthropic Error]:', JSON.stringify(data).slice(0, 500));
+      if (anthropicRes.status === 401 || anthropicRes.status === 403) {
+        return res.status(503).json({
+          success: false,
+          code: 'AI_NOT_CONFIGURED',
+          message:
+            'Núcleo de inteligência temporariamente indisponível: a credencial do modelo está ' +
+            'inválida ou ausente. Configure uma ANTHROPIC_API_KEY válida no painel da Vercel.'
+        });
+      }
       return res.status(502).json({
         success: false,
         message: data?.error?.message || 'Erro ao consultar o núcleo de inteligência.'

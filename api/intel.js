@@ -19,7 +19,7 @@
  *   ANTHROPIC_MODEL    (opcional)     - default: claude-sonnet-4-6
  */
 
-export const config = { maxDuration: 60 };
+export const config = { maxDuration: 300 };
 
 const DEFAULT_MODEL = 'claude-sonnet-4-6';
 

@@ -16,7 +16,7 @@ históricos e a **Mestre**, estrategista com IA (Claude Opus 4.7).
 | Autenticação | Supabase Auth (email/senha + Google OAuth) | ✅ ativo |
 | Banco | Supabase Postgres com RLS (projeto `tlnprjkiydiogrcsruxw`, sa-east-1) | ✅ 13 tabelas em produção, RLS ativo em todas (6 versionadas em `schema.sql`; 7 de fases posteriores via migrations — veja o dashboard para o estado completo) |
 | Pagamentos | Mercado Pago Checkout Pro (Pix, cartão, boleto) | ⚙️ requer `MP_ACCESS_TOKEN` |
-| IA (Mestre) | Claude Opus 4.7 via proxy serverless + prompt caching (override por `ANTHROPIC_MODEL`) | ⚙️ requer `ANTHROPIC_API_KEY` |
+| IA (Mestre) | Claude Opus 4.7 via proxy serverless + prompt caching (override por `ANTHROPIC_MODEL`) | ✅ ativo (`ANTHROPIC_API_KEY` configurada) |
 | Roteamento legal | Páginas LGPD públicas em `#/privacidade` e `#/termos` | ✅ ativo |
 | Procedência de dados | `<DataSourceBadge>` (Oficial TSE / Estimativa / Demonstração) | ✅ ativo |
 | Dados eleitorais | TSE DivulgaCandContas + cache em `tse_votes_cache` | ✅ ativo (Fase D) |

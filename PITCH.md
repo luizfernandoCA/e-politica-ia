@@ -4,13 +4,11 @@ Material de apoio para conversas comerciais com candidatos, coordenadores
 de campanha e assessores parlamentares. Cada bloco é independente:
 escolha o que servir conforme a conversa.
 
-> **⚠️ Status de produção (2026-06-11).** O painel está no ar em
+> **✅ Status de produção (2026-06-12).** O painel está no ar em
 > https://e-politica-ia.vercel.app com **dados reais** (TSE, CRM, Reports,
-> cache, LGPD, checkout). As capacidades de **IA — o Mestre e a Consultoria
-> E-Poliana — exigem uma `ANTHROPIC_API_KEY` ativa no painel da Vercel e estão
-> pendentes de ativação**. Enquanto a chave não é configurada, o chat opera com
-> um estrategista local (offline) e a Consultoria exibe aviso de ativação.
-> **Não venda a IA como ativa antes de configurar a chave.**
+> cache, LGPD, checkout) **e a IA ativa**: o **Mestre (Claude Opus 4.7)** responde
+> no chat chamando tools sobre a apuração oficial do TSE, e a **Consultoria
+> E-Poliana** gera relatórios com busca web. Validado em produção em 2026-06-12.
 
 ---
 
@@ -28,7 +26,7 @@ Concorrente referência: **Politique.com.br**. Comparativo objetivo:
 |---|---|---|
 | Assinatura mensal | **R$ 99,90** sem fidelidade | Mensalidade elevada com fidelidade |
 | Custo por relatório PDF | **R$ 500,00** (no plano executivo) | até R$ 2.000,00 |
-| IA estrategista integrada | **Mestre (Claude Opus 4.7)** com SWOT/discursos — *requer chave de IA ativa* | Não possui |
+| IA estrategista integrada | **Mestre (Claude Opus 4.7)** com SWOT/discursos | Não possui |
 | Mapa de calor de lideranças | Coordenadas reais cruzadas com CRM | Mapa genérico, sem foco tático |
 | Dados TSE/TRE | Oficiais + cache resiliente (Fase D) | Oficiais |
 | Foco regional | **Rondônia (52 municípios pré-mapeados)** + expansão BR | Brasil genérico |

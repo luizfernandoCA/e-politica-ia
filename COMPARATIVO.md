@@ -7,12 +7,10 @@ Politique baseiam-se no que o site público anuncia; não temos acesso ao produt
 interno deles, então itens marcados como "não anunciado" não devem ser vendidos
 como ausências confirmadas.
 
-> **⚠️ Status de produção (2026-06-11):** as capacidades de **IA (Mestre e
-> Consultoria E-Poliana)** exigem uma `ANTHROPIC_API_KEY` ativa e estão
-> **pendentes de ativação** no deploy atual — o código existe (`api/assistant.js`,
-> `api/intel.js`), mas em produção o assistente degrada para um estrategista
-> local. Todos os demais itens da tabela estão ativos. Configure a chave antes
-> de vender a IA Mestre como diferencial em operação.
+> **✅ Status de produção (2026-06-12):** a **IA está ativa em produção** — o
+> Mestre (Claude Opus 4.7, `api/assistant.js`) responde no chat chamando tools
+> sobre dados reais do TSE, e a Consultoria E-Poliana (`api/intel.js`) gera
+> relatórios com busca web. Todos os itens da tabela abaixo estão operacionais.
 
 ## Tabela de paridade e diferenciação
 
@@ -26,7 +24,7 @@ como ausências confirmadas.
 | Página de Política de Privacidade | ✅ | ✅ | `src/pages/PrivacyPolicy.jsx` (`#/privacidade`) |
 | Página de Termos de Uso | ✅ | ✅ | `src/pages/TermsOfUse.jsx` (`#/termos`) |
 | Contato | ✅ (e-mail) | ✅ (WhatsApp) | links no footer/landing |
-| **IA estrategista integrada (Mestre)** | ⚙️ **(Claude Opus 4.7 + tool calling — requer chave de IA ativa)** | ❌ não possui | `api/assistant.js` com 5 tools sobre dados TSE |
+| **IA estrategista integrada (Mestre)** | ✅ **(Claude Opus 4.7 + tool calling)** | ❌ não possui | `api/assistant.js` com 5 tools sobre dados TSE |
 | **CRM de lideranças** | ✅ | não anunciado | `CRM.jsx` + persistência em `user_state` (RLS por dono) via `dbService.js` |
 | **SaaS self-service com checkout** | ✅ (Pix/cartão/boleto via Mercado Pago) | ✅ | `api/checkout.js`, `api/mp-webhook.js` |
 | **Cache TSE resiliente** | ✅ (Supabase, TTL 14d) | não anunciado | `api/tse.js` consulta cache antes do TSE |

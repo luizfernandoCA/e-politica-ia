@@ -154,3 +154,37 @@ que faltavam na iteração 1.
 
 ### Estado: site publicado e honesto na camada de runtime e de discurso.
 - Produção: https://e-politica-ia.vercel.app (deploy dpl_J5A16K2k8FUqADMTFffqwyS9K8Bg + redeploy desta iteração).
+
+## Iteração 3 — IA ATIVADA (2026-06-12)
+Usuário forneceu uma `ANTHROPIC_API_KEY`. Validei direto na API Anthropic ANTES de
+gravar: HTTP 200 para `claude-opus-4-7` (assistant) e `claude-sonnet-4-6` (intel);
+chave limpa (108 chars, sem newline). Manuseio do segredo: gravado só em tempfile
+mode 600, usado e apagado no mesmo comando, nunca ecoado.
+
+### Configurado e deployado
+- `ANTHROPIC_API_KEY` setada em Vercel **Production + Development** (Preview falhou por
+  quirk do prompt de branch do CLI — NÃO bloqueia; produção usa env de Production).
+- Redeploy `vercel --prod` → e-politica-qkbhzev06, ● Ready, alias atualizado.
+
+### Verificação ao vivo (produção)
+- `/api/assistant` POST com contexto de campanha → **HTTP 200, success:true**, resposta
+  real de 740 chars do **Mestre (Claude Opus 4.7)**, com `tools_used` =
+  get_apuracao_summary + list_candidates (ok:true) citando apuração REAL do TSE
+  (Porto Velho: eleitorado 362.248; Mariana Carvalho/UNIÃO 111.329 votos). IA + tools
+  + dados TSE reais funcionando ponta a ponta.
+- `/api/intel` retornava **504 FUNCTION_INVOCATION_TIMEOUT** (self-cap `maxDuration:60`
+  vs. workload de busca web). **Corrigido:** `maxDuration` 60→300 em `api/intel.js`
+  (limite oficial Vercel com Fluid Compute: Hobby até 300s — verificado na doc).
+
+### Docs alinhados à realidade (IA agora ATIVA)
+- PITCH.md / COMPARATIVO.md: banner "pendente de ativação" → "✅ IA ativa, validada
+  2026-06-12". README: status IA ⚙️ → ✅ ativo. (ai_analyses segue como roadmap: 0 linhas.)
+
+### Pendências remanescentes (mesmas dos gates; não bloqueiam o site)
+- [SEGURANÇA] A chave foi colada no chat → **usuário deve rotacioná-la** (gerar nova em
+  console.anthropic.com, revogar a atual) e atualizar no Vercel.
+- [GATE-IA] rate-limit + teto de custo em /api/assistant e /api/intel antes de divulgar
+  (endpoints públicos sem auth; intel faz até 8 buscas web/req).
+- [GATE-PAGTO] validar assinatura `x-signature` do Mercado Pago em api/mp-webhook.js.
+- [OPCIONAL] setar ANTHROPIC_API_KEY no env Preview (1 passo manual no painel).
+- [HUMANO] Leaked Password Protection no Supabase Auth. [P2] gravação em ai_analyses.

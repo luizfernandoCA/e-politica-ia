@@ -188,3 +188,43 @@ mode 600, usado e apagado no mesmo comando, nunca ecoado.
 - [GATE-PAGTO] validar assinatura `x-signature` do Mercado Pago em api/mp-webhook.js.
 - [OPCIONAL] setar ANTHROPIC_API_KEY no env Preview (1 passo manual no painel).
 - [HUMANO] Leaked Password Protection no Supabase Auth. [P2] gravação em ai_analyses.
+
+## Iteração 4 — Caches TSE (Gastos + Votos por Zona) (2026-06-12)
+Usuário reportou 2 avisos no Reports ("Prestação de contas / Distribuição por zona
+ainda não cacheada — rode o preload"). Autorizou opção "Tudo via Dados Abertos".
+
+### Diagnóstico (causa raiz: scripts quebrados na ORIGEM, não "nunca rodados")
+- `preload-tse-gastos.js` (v1): DivulgaCandContas `/prestador/consulta/.../90/90/{sq}`
+  responde HTTP 200 com corpo VAZIO → has_data=false pra todos. API mudou/protegida.
+- `preload-tse-secoes.js` (v1): baixava `arquivo-urna/.../-aux.json`, que é só o
+  MANIFESTO de hashes da urna (dg/hg/st/hashes), NÃO o tally `carg/cand` → 0 linhas.
+  Tally por seção só existe nos boletins binários `.bu` (ASN.1, inviável parsear).
+- Logo os caches nunca foram populados. tse_apuracao (resultados.tse) funciona; por isso
+  só apuração tinha dado.
+
+### Fonte correta: TSE Dados Abertos (CSV) — verificada e usada
+- Votos por seção: `votacao_secao_2024_RO.zip` (12.5MB → CSV 101MB). Validação cruzada:
+  Márcio Pacele soma 4692 votos = total da apuração → SQ_CANDIDATO ≡ candidate_sq. ✔
+- Prestação: `prestacao_de_contas_eleitorais_candidatos_2024.zip` (NACIONAL, 1.18GB) →
+  extraídos só `receitas_candidatos_2024_RO.csv` e `despesas_contratadas_candidatos_2024_RO.csv`.
+
+### Escrita autorizada (opção 2): acesso anon temporário, REVERTIDO
+- Criei policies RLS temporárias `tmp_preload_anon_*` (SELECT em apuracao; SELECT/INSERT/UPDATE
+  em gastos+secoes) p/ o papel anon, rodei a carga com a chave PÚBLICA, e DROPEI tudo no fim.
+  Estado final: tmp_policies=0, baseline_policies=3 (RLS original intacta). Sem footprint.
+
+### Dado populado (Porto Velho / Vereador / 2024-1) — REAL, verificado ao vivo
+- tse_secao_resultado: 1658 linhas (agregação por ZONA, 423 candidatos × 4 zonas).
+  `/api/tse-secoes?candidate_sq=220001983464&aggregate=zona` → zonas 0006=2633, 0002=741,
+  0021=720, 0020=598. ✔ Aviso #3 some.
+- tse_gastos: 413 linhas (396 com prestação). `/api/tse-gastos?candidate_sq=220001983464`
+  → receita R$250.975, despesa R$249.231,50, custo/voto R$53,12. ✔ Aviso #2 some.
+
+### Scripts do repo corrigidos (v2 — Dados Abertos), mesma CLI
+- `scripts/preload-tse-secoes.js` e `preload-tse-gastos.js` reescritos: baixam o ZIP do
+  Dados Abertos (cache em $TMPDIR/epol_tse_cache), parseiam CSV (latin-1/`;`), agregam e
+  fazem upsert via SUPABASE_SERVICE_ROLE_KEY. CLI preservada (--uf/--city/--role/--year/--round,
+  +--dry-run). Validados: secoes --dry-run → 423/1658; parser de gastos bate Pacele
+  250975/249231.50; lint 0; syntax OK. (Comandos do aviso no Reports.jsx seguem válidos.)
+- NOTA: para popular OUTRAS cidades/cargos, rode os scripts com a service_role real
+  (Supabase → Settings → API). O preload de gastos baixa ~1.2GB (nacional) uma vez.

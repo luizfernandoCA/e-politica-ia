@@ -1,242 +1,143 @@
 #!/usr/bin/env node
 /**
- * scripts/preload-tse-gastos.js
+ * scripts/preload-tse-gastos.js  (v2 — TSE Dados Abertos)
  *
- * Para cada candidato em public.tse_apuracao, busca a prestação de contas
- * no DivulgaCandContas do TSE e popula public.tse_gastos. Roda LOCAL
- * (Mac/Linux do operador) porque o TSE bloqueia (403) IPs cloud.
+ * Popula public.tse_gastos com a prestação de contas (receitas + despesas)
+ * de um município/cargo, a partir dos datasets OFICIAIS do TSE Dados Abertos.
+ *
+ * POR QUE MUDOU (v1 estava quebrado):
+ *   A v1 chamava `divulgacandcontas.../prestador/consulta/.../90/90/{sq}`, que
+ *   responde HTTP 200 com corpo VAZIO (a API mudou / é protegida) → has_data=false
+ *   pra todo mundo. A fonte estável é o pacote `prestacao_de_contas_eleitorais_
+ *   candidatos_{ano}.zip` do TSE Dados Abertos (CSVs por UF: receitas + despesas).
+ *
+ * Roda LOCAL (Mac/Linux) — usa `curl` e `unzip`. ATENÇÃO: o ZIP é NACIONAL e
+ * grande (~1.2 GB); é cacheado em $TMPDIR/epol_tse_cache e só extrai os CSVs da
+ * UF pedida. Em re-execuções não rebaixa.
  *
  * Uso:
  *   export SUPABASE_SERVICE_ROLE_KEY="..."
- *   node scripts/preload-tse-gastos.js --year=2024 --round=1
- *
- * Opcionais:
- *   --city="PORTO VELHO"    # só esse município
- *   --role=Vereador         # Prefeito|Vereador (default ambos)
- *   --limit=20              # primeiros N candidatos (debug)
- *
- * Rate limit: 5 req/s pra ser polido com o TSE.
+ *   node scripts/preload-tse-gastos.js --uf=RO --city="PORTO VELHO" --role=Vereador --year=2024
+ *   # opcional: --dry-run
  */
+
+import { execSync } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import readline from 'node:readline';
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://tlnprjkiydiogrcsruxw.supabase.co';
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!SERVICE_KEY) {
-  console.error('❌ SUPABASE_SERVICE_ROLE_KEY não definida.');
-  process.exit(1);
-}
-
-const SQ_ELEICAO_MAP = {
-  '2024-1': { sq: '2045202024', id: '619' },
-  '2024-2': { sq: '2045202024', id: '620' },
-  '2020-1': { sq: '2030402020', id: '426' }
-};
-
-const BROWSER_HEADERS = {
-  'User-Agent':
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) ' +
-    'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
-  Accept: 'application/json, text/plain, */*',
-  'Accept-Language': 'pt-BR,pt;q=0.9',
-  Referer: 'https://divulgacandcontas.tse.jus.br/divulga/'
-};
-
 const args = Object.fromEntries(
   process.argv.slice(2).map((a) => a.split('=')).map(([k, v]) => [k.replace(/^--/, ''), v ?? true])
 );
-
+const DRY = !!args['dry-run'];
 const year = parseInt(args.year || '2024', 10);
 const round = parseInt(args.round || '1', 10);
-const eleicao = SQ_ELEICAO_MAP[`${year}-${round}`];
-if (!eleicao) {
-  console.error(`❌ Ano/turno ${year}-${round} não mapeado.`);
-  process.exit(1);
-}
+const uf = (args.uf || 'RO').toString().toUpperCase();
+const cityFilter = (args.city ? args.city.toString() : '').toUpperCase();
+const roleFilter = args.role ? args.role.toString() : 'Vereador';
+const roleCode = roleFilter.toLowerCase().includes('vereador') ? '13' : '11';
 
-const cityFilter = args.city ? args.city.toString().toUpperCase() : null;
-const roleFilter = args.role ? args.role.toString() : null;
-const candidateLimit = args.limit ? parseInt(args.limit, 10) : null;
+const ELECTION = { '2024-1': { id: '619', sq: '2045202024' }, '2024-2': { id: '620', sq: '2045202024' }, '2020-1': { id: '426', sq: '2030402020' } };
+const cfg = ELECTION[`${year}-${round}`];
 
-// ----------------------------------------------------------------------- API
-async function fetchApuracaoCandidates() {
-  const params = new URLSearchParams({
-    select: 'candidate_sq,candidate_name,candidate_urn_name,candidate_number,party_abbr,role_code,role_name,mun_tse_code,mun_name,candidate_votes',
-    election_id: `eq.${eleicao.id}`,
-    order: 'mun_name.asc,role_code.asc,candidate_seq.asc'
-  });
-  if (cityFilter) params.set('mun_name', `ilike.%${cityFilter}%`);
-  if (roleFilter) {
-    const code = roleFilter.toLowerCase().includes('vereador') ? '13' : '11';
-    params.set('role_code', `eq.${code}`);
+if (!SERVICE_KEY) { console.error('❌ SUPABASE_SERVICE_ROLE_KEY não definida.'); process.exit(1); }
+if (!cfg) { console.error(`❌ ${year}-${round} não mapeado.`); process.exit(1); }
+if (!cityFilter) { console.error('❌ --city obrigatório.'); process.exit(1); }
+
+const CACHE = path.join(os.tmpdir(), 'epol_tse_cache');
+fs.mkdirSync(CACHE, { recursive: true });
+
+function parseCsvLine(line) {
+  const out = []; let cur = ''; let q = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (q) { if (ch === '"') { if (line[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+    else { if (ch === '"') q = true; else if (ch === ';') { out.push(cur); cur = ''; } else cur += ch; }
   }
-  if (candidateLimit) params.set('limit', String(candidateLimit));
-
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/tse_apuracao?${params.toString()}`, {
-    headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` }
+  out.push(cur); return out;
+}
+function brl(v) {
+  if (v == null) return 0;
+  const s = String(v).trim();
+  if (['', '#NULO#', '#NE#', '-1', '-'].includes(s)) return 0;
+  const n = parseFloat(s.replace(/\./g, '').replace(',', '.'));
+  return Number.isNaN(n) ? 0 : n;
+}
+async function supa(method, pathname, body) {
+  const res = await fetch(`${SUPABASE_URL}${pathname}`, {
+    method,
+    headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: body ? JSON.stringify(body) : undefined
   });
-  if (!res.ok) throw new Error(`Supabase ${res.status}: ${await res.text()}`);
-  return res.json();
+  if (!res.ok) throw new Error(`Supabase ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  return res;
 }
-
-async function fetchPrestacao({ munCode, roleCode, sqcand }) {
-  const url = `https://divulgacandcontas.tse.jus.br/divulga/rest/v1/prestador/consulta/${eleicao.sq}/${year}/${munCode}/${roleCode}/90/90/${sqcand}`;
-  const res = await fetch(url, { headers: BROWSER_HEADERS });
-  if (!res.ok) return { __status: res.status };
-  const text = await res.text();
-  if (!text || text.trim() === '') return { __empty: true };
-  try {
-    return JSON.parse(text);
-  } catch {
-    return { __unparseable: text.slice(0, 200) };
+function ensureUfCsv(kind) {
+  // kind: 'receitas_candidatos' | 'despesas_contratadas_candidatos'
+  const csv = path.join(CACHE, `${kind}_${year}_${uf}.csv`);
+  if (fs.existsSync(csv)) return csv;
+  const zip = path.join(CACHE, `prestacao_de_contas_eleitorais_candidatos_${year}.zip`);
+  if (!fs.existsSync(zip)) {
+    const url = `https://cdn.tse.jus.br/estatistica/sead/odsele/prestacao_contas/prestacao_de_contas_eleitorais_candidatos_${year}.zip`;
+    console.log(`▶ baixando prestação de contas (NACIONAL, ~1.2GB) — ${url}`);
+    execSync(`curl -fsSL -A 'Mozilla/5.0' -o '${zip}' '${url}'`, { stdio: 'inherit' });
   }
+  console.log(`▶ extraindo ${kind}_${year}_${uf}.csv …`);
+  execSync(`unzip -o '${zip}' '${kind}_${year}_${uf}.csv' -d '${CACHE}'`, { stdio: 'ignore' });
+  return csv;
 }
-
-function num(v) {
-  if (v == null || v === '') return null;
-  if (typeof v === 'number') return v;
-  // TSE usa vírgula decimal: "1.234,56"
-  const n = parseFloat(String(v).replace(/\./g, '').replace(',', '.'));
-  return Number.isNaN(n) ? null : n;
-}
-
-function normalizePrestacao(raw, ctx) {
-  // O JSON do DivulgaCandContas tem campos como:
-  // totalReceita, totalDespesas, totalRecursosProprios, limiteGastos, etc.
-  // Como a estrutura varia entre versões, extraímos defensivamente.
-  if (!raw || raw.__empty || raw.__status || raw.__unparseable) {
-    return {
-      ...ctx,
-      has_data: false,
-      raw_payload: raw || null,
-      prestacao_status: raw?.__status ? `HTTP ${raw.__status}` : 'sem dados',
-      fetched_at: new Date().toISOString()
-    };
+async function sumBySq(csvPath, valCol, sqset) {
+  const rl = readline.createInterface({ input: fs.createReadStream(csvPath, { encoding: 'latin1' }), crlfDelay: Infinity });
+  let H = null; const tot = new Map();
+  for await (const line of rl) {
+    const f = parseCsvLine(line);
+    if (!H) { H = {}; f.forEach((c, i) => (H[c] = i)); continue; }
+    const sq = f[H.SQ_CANDIDATO];
+    if (sqset.has(sq)) tot.set(sq, (tot.get(sq) || 0) + brl(f[H[valCol]]));
   }
-
-  const total_receita = num(raw.totalReceita ?? raw.totalReceitas);
-  const total_despesa = num(raw.totalDespesas ?? raw.totalDespesa);
-  const limite = num(raw.limiteGastosCargo ?? raw.limiteGastos);
-  const votos = ctx.candidate_votes ?? 0;
-
-  return {
-    ...ctx,
-    has_data: true,
-    prestacao_status: raw.dsSituacaoPrestacao || raw.situacaoEnvio || 'Recebida',
-    total_receita,
-    total_despesa,
-    total_receita_estimavel: num(raw.totalReceitaEstimavel),
-    total_doacoes_proprio: num(raw.totalRecursoProprio ?? raw.totalDoacoesProprio),
-    total_doacoes_outros: num(raw.totalDoacoesOutros),
-    total_outros_recursos: num(raw.totalOutrosRecursos),
-    saldo_caixa: num(raw.saldoCaixa),
-    limite_legal: limite,
-    custo_por_voto: total_despesa && votos > 0 ? total_despesa / votos : null,
-    taxa_uso_limite: total_despesa && limite ? (total_despesa / limite) * 100 : null,
-    raw_payload: raw,
-    fetched_at: new Date().toISOString()
-  };
-}
-
-async function saveBatch(rows) {
-  if (rows.length === 0) return { ok: true, inserted: 0 };
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/tse_gastos`, {
-    method: 'POST',
-    headers: {
-      apikey: SERVICE_KEY,
-      Authorization: `Bearer ${SERVICE_KEY}`,
-      'Content-Type': 'application/json',
-      Prefer: 'resolution=merge-duplicates,return=minimal'
-    },
-    body: JSON.stringify(rows)
-  });
-  if (!res.ok) return { ok: false, status: res.status, body: await res.text() };
-  return { ok: true, inserted: rows.length };
-}
-
-function sleep(ms) {
-  return new Promise((r) => setTimeout(r, ms));
+  return tot;
 }
 
 async function main() {
-  console.log(`▶ Pré-carga GASTOS — ano ${year} turno ${round} eleição ${eleicao.id}`);
-  if (cityFilter) console.log(`  cidade: ${cityFilter}`);
-  if (roleFilter) console.log(`  cargo: ${roleFilter}`);
+  console.log(`▶ Pré-carga GASTOS (Dados Abertos) — ${cityFilter}/${uf} ${roleFilter} ${year} (eleição ${cfg.id})`);
+  const q = `/rest/v1/tse_apuracao?select=candidate_sq,candidate_votes,party_abbr,candidate_urn_name,candidate_name,candidate_number,mun_tse_code,mun_name` +
+    `&election_id=eq.${cfg.id}&role_code=eq.${roleCode}&mun_name=ilike.*${encodeURIComponent(cityFilter)}*&limit=5000`;
+  const cands = {}; for (const c of await (await supa('GET', q)).json()) cands[c.candidate_sq] = c;
+  const sqset = new Set(Object.keys(cands));
+  console.log(`  candidatos (${cityFilter}/${roleFilter}): ${sqset.size}`);
+  if (!sqset.size) { console.error('❌ Nenhum candidato em tse_apuracao — rode preload-tse-apuracao primeiro.'); process.exit(1); }
 
-  const cands = await fetchApuracaoCandidates();
-  console.log(`  candidatos a processar: ${cands.length}\n`);
+  const receita = await sumBySq(ensureUfCsv('receitas_candidatos'), 'VR_RECEITA', sqset);
+  const despesa = await sumBySq(ensureUfCsv('despesas_contratadas_candidatos'), 'VR_DESPESA_CONTRATADA', sqset);
+  console.log(`  com receita: ${receita.size} | com despesa: ${despesa.size}`);
 
-  let comDados = 0;
-  let semDados = 0;
-  let erros = 0;
-  const startedAt = Date.now();
-  const batch = [];
+  const rows = Object.values(cands).map((c) => {
+    const sq = c.candidate_sq; const tr = receita.get(sq); const td = despesa.get(sq);
+    const votes = c.candidate_votes || 0; const has = !!(tr || td);
+    return {
+      election_year: year, election_id: cfg.id, sq_eleicao: cfg.sq, uf: uf.toLowerCase(),
+      mun_tse_code: c.mun_tse_code, mun_name: c.mun_name, role_code: roleCode, role_name: roleFilter,
+      candidate_sq: sq, candidate_urn_name: c.candidate_urn_name, candidate_name: c.candidate_name,
+      candidate_number: c.candidate_number, party_abbr: c.party_abbr,
+      has_data: has, prestacao_status: has ? 'TSE Dados Abertos (prestação ' + year + ')' : 'Sem prestação localizada',
+      total_receita: tr != null ? Math.round(tr * 100) / 100 : null,
+      total_despesa: td != null ? Math.round(td * 100) / 100 : null,
+      limite_legal: null,
+      custo_por_voto: td && votes > 0 ? Math.round((td / votes) * 100) / 100 : null,
+      taxa_uso_limite: null,
+      raw_payload: { source: `tse_dados_abertos:receitas+despesas_contratadas_${year}_${uf}` }
+    };
+  });
+  console.log(`  linhas: ${rows.length} | com prestação: ${rows.filter((r) => r.has_data).length}`);
+  if (DRY) { console.log('  (dry-run — nada gravado)'); return; }
 
-  for (let i = 0; i < cands.length; i++) {
-    const c = cands[i];
-    try {
-      const raw = await fetchPrestacao({
-        munCode: c.mun_tse_code,
-        roleCode: c.role_code,
-        sqcand: c.candidate_sq
-      });
-      const ctx = {
-        election_year: year,
-        election_id: eleicao.id,
-        sq_eleicao: eleicao.sq,
-        uf: 'ro',
-        mun_tse_code: c.mun_tse_code,
-        mun_name: c.mun_name,
-        role_code: c.role_code,
-        role_name: c.role_name,
-        candidate_sq: c.candidate_sq,
-        candidate_urn_name: c.candidate_urn_name,
-        candidate_name: c.candidate_name,
-        candidate_number: c.candidate_number,
-        party_abbr: c.party_abbr,
-        candidate_votes: c.candidate_votes
-      };
-      const row = normalizePrestacao(raw, ctx);
-      // Remove campos que não estão na tabela
-      delete row.candidate_votes;
-      batch.push(row);
-      if (row.has_data) comDados++;
-      else semDados++;
-
-      if ((i + 1) % 10 === 0) {
-        process.stdout.write(`  [${i + 1}/${cands.length}] processados (${comDados} com dados)\r`);
-      }
-
-      // Flush a cada 50 linhas
-      if (batch.length >= 50) {
-        const r = await saveBatch(batch.splice(0));
-        if (!r.ok) {
-          console.warn(`\n  ⚠ flush falhou: ${r.status} ${r.body?.slice(0, 100)}`);
-          erros++;
-        }
-      }
-
-      await sleep(200); // 5 req/s
-    } catch (e) {
-      erros++;
-      console.warn(`\n  ✗ ${c.candidate_urn_name}: ${e.message}`);
-    }
-  }
-
-  // Flush final
-  if (batch.length > 0) {
-    const r = await saveBatch(batch);
-    if (!r.ok) {
-      console.warn(`\n  ⚠ flush final falhou: ${r.status} ${r.body?.slice(0, 100)}`);
-      erros++;
-    }
-  }
-
-  const elapsed = ((Date.now() - startedAt) / 1000).toFixed(1);
-  console.log(`\n\n▶ Finalizado em ${elapsed}s`);
-  console.log(`  total: ${cands.length} | com prestação: ${comDados} | sem dados: ${semDados} | erros: ${erros}`);
+  let ins = 0;
+  for (let i = 0; i < rows.length; i += 200) { await supa('POST', '/rest/v1/tse_gastos', rows.slice(i, i + 200)); ins += Math.min(200, rows.length - i); }
+  console.log(`▶ Gravadas ${ins} linhas em tse_gastos.`);
 }
 
-main().catch((e) => {
-  console.error('❌ Erro fatal:', e);
-  process.exit(1);
-});
+main().catch((e) => { console.error('❌ Erro fatal:', e.message); process.exit(1); });

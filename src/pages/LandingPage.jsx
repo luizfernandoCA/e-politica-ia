@@ -88,7 +88,7 @@ export default function LandingPage({ onStartCheckout, onShowLegal }) {
           padding: '0 4rem',
           zIndex: 100,
           borderRadius: 0,
-          background: 'rgba(5, 12, 30, 0.8)',
+          background: 'rgba(255, 255, 255, 0.88)',
           borderWidth: '0 0 1px 0',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)'
@@ -207,7 +207,7 @@ export default function LandingPage({ onStartCheckout, onShowLegal }) {
             <a 
               href="#compare"
               style={{ 
-                background: 'rgba(255,255,255,0.03)', 
+                background: 'rgba(20,30,60,0.03)', 
                 border: '1px solid var(--border-color)',
                 color: 'var(--text-white)', 
                 padding: '14px 28px', 
@@ -248,15 +248,15 @@ export default function LandingPage({ onStartCheckout, onShowLegal }) {
             width: '90%', 
             maxWidth: '900px', 
             padding: '1rem',
-            background: 'rgba(5, 12, 30, 0.45)',
-            borderColor: 'rgba(255,255,255,0.08)',
-            boxShadow: '0 30px 60px rgba(0,0,0,0.6), 0 0 40px var(--accent-blue-glow)',
+            background: '#ffffff',
+            borderColor: 'rgba(20,30,60,0.08)',
+            boxShadow: '0 30px 60px rgba(20,30,60,0.18), 0 0 40px var(--accent-blue-glow)',
             position: 'relative',
             zIndex: 1
           }}
         >
           {/* Simulated Browser Bar */}
-          <div style={{ display: 'flex', gap: '6px', paddingBottom: '10px', borderBottom: '1px solid rgba(255,255,255,0.06)', marginBottom: '10px' }}>
+          <div style={{ display: 'flex', gap: '6px', paddingBottom: '10px', borderBottom: '1px solid rgba(20,30,60,0.06)', marginBottom: '10px' }}>
             <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#EF4444' }}></div>
             <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#F59E0B' }}></div>
             <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#10B981' }}></div>
@@ -280,34 +280,34 @@ export default function LandingPage({ onStartCheckout, onShowLegal }) {
             }}
           >
             {/* Sidebar mock */}
-            <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '6px', display: 'flex', flexDirection: 'column', gap: '15px', padding: '15px 0', alignItems: 'center' }}>
+            <div style={{ background: '#eef1f7', borderRadius: '6px', display: 'flex', flexDirection: 'column', gap: '15px', padding: '15px 0', alignItems: 'center' }}>
               <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'var(--accent-blue)' }} />
-              <div style={{ width: '30px', height: '8px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)' }} />
-              <div style={{ width: '30px', height: '8px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)' }} />
-              <div style={{ width: '30px', height: '8px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)' }} />
+              <div style={{ width: '30px', height: '8px', borderRadius: '4px', background: 'rgba(20,30,60,0.1)' }} />
+              <div style={{ width: '30px', height: '8px', borderRadius: '4px', background: 'rgba(20,30,60,0.1)' }} />
+              <div style={{ width: '30px', height: '8px', borderRadius: '4px', background: 'rgba(20,30,60,0.1)' }} />
             </div>
 
             {/* Dashboard main mock */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {/* Row 1 cards */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
-                <div className="glass" style={{ padding: '10px', height: '50px', background: 'rgba(255,255,255,0.02)' }}>
-                  <div style={{ width: '30px', height: '6px', background: 'rgba(255,255,255,0.1)', marginBottom: '6px' }} />
-                  <div style={{ width: '50px', height: '14px', background: '#FFFFFF', borderRadius: '2px' }} />
+                <div className="glass" style={{ padding: '10px', height: '50px', background: 'rgba(20,30,60,0.02)' }}>
+                  <div style={{ width: '30px', height: '6px', background: 'rgba(20,30,60,0.1)', marginBottom: '6px' }} />
+                  <div style={{ width: '50px', height: '14px', background: 'rgba(20,30,60,0.18)', borderRadius: '2px' }} />
                 </div>
-                <div className="glass" style={{ padding: '10px', height: '50px', background: 'rgba(255,255,255,0.02)' }}>
-                  <div style={{ width: '30px', height: '6px', background: 'rgba(255,255,255,0.1)', marginBottom: '6px' }} />
+                <div className="glass" style={{ padding: '10px', height: '50px', background: 'rgba(20,30,60,0.02)' }}>
+                  <div style={{ width: '30px', height: '6px', background: 'rgba(20,30,60,0.1)', marginBottom: '6px' }} />
                   <div style={{ width: '45px', height: '14px', background: 'var(--accent-yellow)', borderRadius: '2px' }} />
                 </div>
-                <div className="glass" style={{ padding: '10px', height: '50px', background: 'rgba(255,255,255,0.02)' }}>
-                  <div style={{ width: '30px', height: '6px', background: 'rgba(255,255,255,0.1)', marginBottom: '6px' }} />
+                <div className="glass" style={{ padding: '10px', height: '50px', background: 'rgba(20,30,60,0.02)' }}>
+                  <div style={{ width: '30px', height: '6px', background: 'rgba(20,30,60,0.1)', marginBottom: '6px' }} />
                   <div style={{ width: '40px', height: '14px', background: 'var(--accent-green)', borderRadius: '2px' }} />
                 </div>
               </div>
               
               {/* Graphic mock */}
-              <div className="glass" style={{ flexGrow: 1, padding: '15px', background: 'rgba(255,255,255,0.02)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div style={{ width: '120px', height: '8px', background: 'rgba(255,255,255,0.1)' }} />
+              <div className="glass" style={{ flexGrow: 1, padding: '15px', background: 'rgba(20,30,60,0.02)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div style={{ width: '120px', height: '8px', background: 'rgba(20,30,60,0.1)' }} />
                 {/* SVG mock line */}
                 <svg width="100%" height="60" viewBox="0 0 100 20" style={{ overflow: 'visible' }}>
                   <path d="M0 18 Q20 5, 40 12 T80 2 T100 15" fill="none" stroke="var(--accent-blue-bright)" strokeWidth="2" />
@@ -317,16 +317,16 @@ export default function LandingPage({ onStartCheckout, onShowLegal }) {
             </div>
 
             {/* AI Strategic mock */}
-            <div className="glass" style={{ padding: '15px', background: 'rgba(7, 31, 19, 0.2)', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div className="glass" style={{ padding: '15px', background: '#eef1f7', border: '1px solid rgba(20,30,60,0.05)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                 <div style={{ width: '16px', height: '16px', borderRadius: '50%', background: 'var(--accent-yellow)' }} />
-                <div style={{ width: '80px', height: '6px', background: '#FFFFFF' }} />
+                <div style={{ width: '80px', height: '6px', background: 'rgba(20,30,60,0.18)' }} />
               </div>
-              <div style={{ width: '100%', height: '2px', background: 'rgba(255,255,255,0.05)' }} />
-              <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px' }} />
-              <div style={{ width: '85%', height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px' }} />
-              <div style={{ width: '90%', height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px' }} />
-              <div style={{ width: '60%', height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', marginTop: '10px' }} />
+              <div style={{ width: '100%', height: '2px', background: 'rgba(20,30,60,0.05)' }} />
+              <div style={{ width: '100%', height: '8px', background: 'rgba(20,30,60,0.05)', borderRadius: '2px' }} />
+              <div style={{ width: '85%', height: '8px', background: 'rgba(20,30,60,0.05)', borderRadius: '2px' }} />
+              <div style={{ width: '90%', height: '8px', background: 'rgba(20,30,60,0.05)', borderRadius: '2px' }} />
+              <div style={{ width: '60%', height: '8px', background: 'rgba(20,30,60,0.05)', borderRadius: '2px', marginTop: '10px' }} />
             </div>
           </div>
         </div>
@@ -334,7 +334,7 @@ export default function LandingPage({ onStartCheckout, onShowLegal }) {
       </section>
 
       {/* Feature grid Section */}
-      <section style={{ padding: '4rem 2rem', borderTop: '1px solid var(--border-color)', background: 'rgba(5, 12, 30, 0.5)' }}>
+      <section style={{ padding: '4rem 2rem', borderTop: '1px solid var(--border-color)', background: '#eef1f7' }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '3rem' }}>
           
           <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -379,7 +379,7 @@ export default function LandingPage({ onStartCheckout, onShowLegal }) {
 
             {/* Feature 4: PDF */}
             <div className="glass" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '10px', borderRadius: '50%', color: '#FFFFFF', alignSelf: 'flex-start' }}>
+              <div style={{ background: 'rgba(37,99,235,0.1)', padding: '10px', borderRadius: '50%', color: 'var(--accent-blue-bright)', alignSelf: 'flex-start' }}>
                 <FileText size={24} />
               </div>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Relatórios Rápidos</h3>
@@ -436,7 +436,7 @@ export default function LandingPage({ onStartCheckout, onShowLegal }) {
               <span style={{ fontSize: '0.8rem', color: 'var(--accent-blue-bright)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>e-politica.ia</span>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', margin: '8px 0 1.5rem 0' }}>
                 <span style={{ fontSize: '1.25rem', color: 'var(--text-gray)', fontWeight: 500 }}>R$</span>
-                <span style={{ fontSize: '3rem', fontWeight: 800, color: '#FFFFFF', fontFamily: 'var(--font-title)', lineHeight: 1 }}>99,90</span>
+                <span style={{ fontSize: '3rem', fontWeight: 800, color: 'var(--text-white)', fontFamily: 'var(--font-title)', lineHeight: 1 }}>99,90</span>
                 <span style={{ fontSize: '0.85rem', color: 'var(--text-gray)', fontWeight: 500 }}>/mês</span>
               </div>
 
@@ -493,21 +493,21 @@ export default function LandingPage({ onStartCheckout, onShowLegal }) {
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', fontSize: '0.85rem' }}>
                   <X size={16} style={{ color: '#EF4444', flexShrink: 0, marginTop: '2px' }} />
                   <div>
-                    <strong style={{ color: '#DDD' }}>Planos Básicos Limitados</strong>
+                    <strong style={{ color: 'var(--text-white)' }}>Planos Básicos Limitados</strong>
                     <span style={{ display: 'block', color: 'var(--text-gray)', fontSize: '0.75rem' }}>Funcionalidades essenciais travadas sob upgrade.</span>
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', fontSize: '0.85rem' }}>
                   <X size={16} style={{ color: '#EF4444', flexShrink: 0, marginTop: '2px' }} />
                   <div>
-                    <strong style={{ color: '#DDD' }}>Sem Inteligência Artificial de Série</strong>
+                    <strong style={{ color: 'var(--text-white)' }}>Sem Inteligência Artificial de Série</strong>
                     <span style={{ display: 'block', color: 'var(--text-gray)', fontSize: '0.75rem' }}>Sem assistente de discursos ou diagnóstico virtual.</span>
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', fontSize: '0.85rem' }}>
                   <X size={16} style={{ color: '#EF4444', flexShrink: 0, marginTop: '2px' }} />
                   <div>
-                    <strong style={{ color: '#DDD' }}>Relatórios de Até R$ 2.000,00</strong>
+                    <strong style={{ color: 'var(--text-white)' }}>Relatórios de Até R$ 2.000,00</strong>
                     <span style={{ display: 'block', color: 'var(--text-gray)', fontSize: '0.75rem' }}>Cobrança exorbitante por dados estáticos de agências.</span>
                   </div>
                 </div>
@@ -520,7 +520,7 @@ export default function LandingPage({ onStartCheckout, onShowLegal }) {
           </div>
 
           {/* Comparison Table */}
-          <div className="glass" style={{ padding: '2rem', overflowX: 'auto', border: '1px solid rgba(255,255,255,0.05)' }}>
+          <div className="glass" style={{ padding: '2rem', overflowX: 'auto', border: '1px solid rgba(20,30,60,0.05)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-gray)' }}>
@@ -531,14 +531,14 @@ export default function LandingPage({ onStartCheckout, onShowLegal }) {
               </thead>
               <tbody>
                 {compareList.map((row, idx) => (
-                  <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                    <td style={{ padding: '16px 12px', fontWeight: 600, color: '#FFFFFF' }}>{row.feature}</td>
+                  <tr key={idx} style={{ borderBottom: '1px solid rgba(20,30,60,0.03)' }}>
+                    <td style={{ padding: '16px 12px', fontWeight: 600, color: 'var(--text-white)' }}>{row.feature}</td>
                     <td style={{ padding: '16px 12px' }}>
                       <strong style={{ color: 'var(--accent-blue-bright)', display: 'block' }}>{row.ePolitica}</strong>
                       <span style={{ fontSize: '0.7rem', color: 'var(--text-gray)', display: 'block', marginTop: '2px' }}>{row.ePoliticaSub}</span>
                     </td>
                     <td style={{ padding: '16px 12px' }}>
-                      <span style={{ color: '#CCC', display: 'block' }}>{row.politique}</span>
+                      <span style={{ color: 'var(--text-white)', display: 'block' }}>{row.politique}</span>
                       <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', marginTop: '2px' }}>{row.politiqueSub}</span>
                     </td>
                   </tr>
@@ -551,7 +551,7 @@ export default function LandingPage({ onStartCheckout, onShowLegal }) {
       </section>
 
       {/* Testimonials */}
-      <section style={{ padding: '4rem 2rem', background: 'rgba(5, 12, 30, 0.3)' }}>
+      <section style={{ padding: '4rem 2rem', background: '#eef1f7' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '3rem' }}>
           <h2 style={{ fontSize: '2rem', fontFamily: 'var(--font-title)', fontWeight: 800, textAlign: 'center' }}>
             Quem Usa, <span className="text-gradient-brasil">Recomenda</span>
@@ -559,26 +559,26 @@ export default function LandingPage({ onStartCheckout, onShowLegal }) {
           
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2.5rem' }} ref={(el) => { if (el && window.innerWidth <= 768) el.style.gridTemplateColumns = '1fr'; }}>
             <div className="glass" style={{ padding: '2rem', borderLeft: '4px solid var(--accent-blue-bright)' }}>
-              <p style={{ fontStyle: 'italic', fontSize: '0.9rem', lineHeight: 1.5, color: '#DDD' }}>
+              <p style={{ fontStyle: 'italic', fontSize: '0.9rem', lineHeight: 1.5, color: 'var(--text-white)' }}>
                 "O e-politica.ia revolucionou nossa abordagem jurídica e tática. A precisão no cruzamento de dados públicos do TSE e o mapa de calor de lideranças nos permitem orientar as candidaturas de forma cirúrgica, focando a mobilização onde há real potencial de crescimento. A economia frente ao Politique é impressionante!"
               </p>
               <div style={{ marginTop: '1.25rem', display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <span style={{ fontSize: '1.5rem' }}>👨‍⚖️</span>
                 <div>
-                  <strong style={{ fontSize: '0.85rem', color: '#FFF', display: 'block' }}>Dr. Juacy Loura Jr.</strong>
+                  <strong style={{ fontSize: '0.85rem', color: 'var(--text-white)', display: 'block' }}>Dr. Juacy Loura Jr.</strong>
                   <span style={{ fontSize: '0.7rem', color: 'var(--text-gray)' }}>Ex-Juiz do TRE e Advogado Eleitoral</span>
                 </div>
               </div>
             </div>
 
             <div className="glass" style={{ padding: '2rem', borderLeft: '4px solid var(--accent-yellow)' }}>
-              <p style={{ fontStyle: 'italic', fontSize: '0.9rem', lineHeight: 1.5, color: '#DDD' }}>
+              <p style={{ fontStyle: 'italic', fontSize: '0.9rem', lineHeight: 1.5, color: 'var(--text-white)' }}>
                 "O Mestre AI superou todas as minhas expectativas no dia a dia parlamentar e de campanha. Poder gerar discursos táticos, análises SWOT e diagnósticos de bairro consolidados em menos de 30 segundos, direto pelo celular, é uma vantagem competitiva inestimável. Um divisor de águas!"
               </p>
               <div style={{ marginTop: '1.25rem', display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <span style={{ fontSize: '1.5rem' }}>👨‍💼</span>
                 <div>
-                  <strong style={{ fontSize: '0.85rem', color: '#FFF', display: 'block' }}>Sergio Augusto</strong>
+                  <strong style={{ fontSize: '0.85rem', color: 'var(--text-white)', display: 'block' }}>Sergio Augusto</strong>
                   <span style={{ fontSize: '0.7rem', color: 'var(--text-gray)' }}>Especialista Eleitoral e Assessor Parlamentar</span>
                 </div>
               </div>
@@ -602,17 +602,17 @@ export default function LandingPage({ onStartCheckout, onShowLegal }) {
                   style={{ 
                     padding: '1.25rem 1.5rem', 
                     cursor: 'pointer',
-                    background: isOpen ? 'rgba(255,255,255,0.02)' : 'var(--bg-card)'
+                    background: isOpen ? 'rgba(20,30,60,0.02)' : 'var(--bg-card)'
                   }}
                   onClick={() => setActiveFaq(isOpen ? null : idx)}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <strong style={{ fontSize: '0.95rem', color: '#FFFFFF' }}>{faq.q}</strong>
+                    <strong style={{ fontSize: '0.95rem', color: 'var(--text-white)' }}>{faq.q}</strong>
                     <ChevronDown size={18} style={{ color: 'var(--text-gray)', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }} />
                   </div>
                   
                   {isOpen && (
-                    <p style={{ fontSize: '0.82rem', color: 'var(--text-gray)', lineHeight: 1.5, marginTop: '10px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '10px' }}>
+                    <p style={{ fontSize: '0.82rem', color: 'var(--text-gray)', lineHeight: 1.5, marginTop: '10px', borderTop: '1px solid rgba(20,30,60,0.05)', paddingTop: '10px' }}>
                       {faq.a}
                     </p>
                   )}

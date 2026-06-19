@@ -2,7 +2,7 @@ import LegalLayout from './LegalLayout';
 
 /**
  * Termos de Uso — descreve a relação contratual de uso da Plataforma.
- * Reflete o modelo real: assinatura mensal sem fidelidade via Mercado Pago,
+ * Reflete o modelo real: pacote único de acesso via Mercado Pago,
  * IA como ferramenta de apoio (não aconselhamento), dados públicos do TSE,
  * vedação a uso ilegal sob a legislação eleitoral.
  *
@@ -11,7 +11,7 @@ import LegalLayout from './LegalLayout';
  */
 export default function TermsOfUse({ onBack }) {
   return (
-    <LegalLayout title="Termos de Uso" updatedAt="10 de junho de 2026" onBack={onBack}>
+    <LegalLayout title="Termos de Uso" updatedAt="19 de junho de 2026" onBack={onBack}>
       <p>
         Estes Termos de Uso regulam o acesso e a utilização da plataforma{' '}
         <strong>e-politica.ia</strong> ("Plataforma"). Ao criar uma conta ou utilizar a
@@ -41,10 +41,10 @@ export default function TermsOfUse({ onBack }) {
         <li>É vedado compartilhar a conta com terceiros fora da sua equipe de campanha.</li>
       </ul>
 
-      <h2>4. Assinatura, pagamento e cancelamento</h2>
+      <h2>4. Pagamento e acesso</h2>
       <ul>
-        <li>O acesso é mediante <strong>assinatura mensal</strong>, processada pelo Mercado Pago (Pix, cartão ou boleto).</li>
-        <li><strong>Sem fidelidade</strong>: você pode cancelar a qualquer momento, sem multa. O acesso permanece ativo até o fim do período já pago.</li>
+        <li>O acesso é liberado mediante <strong>pagamento único do pacote (R$ 990,00)</strong>, processado pelo Mercado Pago: em até <strong>3x de R$ 330,00 no cartão</strong>, ou <strong>R$ 841,50 à vista no Pix</strong> (15% de desconto).</li>
+        <li>Trata-se de <strong>pagamento único, sem mensalidade nem cobrança recorrente</strong>. Eventuais pedidos de reembolso seguem a legislação de consumo aplicável.</li>
         <li>Nenhum dado de cartão é processado ou armazenado pela Plataforma; o pagamento ocorre no ambiente seguro (PCI) do Mercado Pago.</li>
       </ul>
 

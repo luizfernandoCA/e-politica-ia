@@ -6,6 +6,8 @@ import {
 import Markdown from '../components/Markdown';
 import useScrollReveal from '../hooks/useScrollReveal';
 import { downloadConsultoriaPdf } from '../lib/pdf/consultoriaPdf';
+import { authedFetch } from '../services/api';
+import { RO_MUNICIPALITIES } from '../data/roMunicipalities';
 
 function readParams() {
   try {
@@ -34,6 +36,15 @@ const PILLARS = [
 
 export default function Consultoria() {
   const params = readParams();
+  // Buscador: município + candidato editáveis (default vêm da campanha, se houver).
+  const [form, setForm] = useState({
+    candidateName: params?.candidateName || '',
+    party: params?.party || '',
+    role: params?.role || 'Prefeito',
+    city: params?.city || '',
+    state: params?.state || 'RO'
+  });
+  const setField = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const [focusAreas, setFocusAreas] = useState('');
   const [loading, setLoading] = useState(false);
   const [phase, setPhase] = useState(0);
@@ -50,21 +61,22 @@ export default function Consultoria() {
   }, [loading]);
 
   async function generate() {
-    if (!params?.candidateName) return;
+    if (!form.city) { setError('Selecione o município.'); return; }
+    if (!form.candidateName.trim()) { setError('Informe o nome do candidato a pesquisar.'); return; }
     setLoading(true);
     setError(null);
     setResult(null);
     setPhase(0);
     try {
-      const res = await fetch('/api/intel', {
+      const res = await authedFetch('/api/intel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          candidateName: params.candidateName,
-          party: params.party,
-          role: params.role,
-          city: params.city,
-          state: params.state || 'RO',
+          candidateName: form.candidateName.trim(),
+          party: form.party,
+          role: form.role,
+          city: form.city,
+          state: form.state || 'RO',
           focusAreas
         })
       });
@@ -91,11 +103,11 @@ export default function Consultoria() {
     setPdfLoading(true);
     try {
       await downloadConsultoriaPdf({
-        candidateName: params.candidateName,
-        party: params.party,
-        role: params.role,
-        city: params.city,
-        state: params.state || 'RO',
+        candidateName: form.candidateName,
+        party: form.party,
+        role: form.role,
+        city: form.city,
+        state: form.state || 'RO',
         report: result.report,
         sources: result.sources || [],
         generatedAt: result.generatedAt
@@ -108,18 +120,6 @@ export default function Consultoria() {
     }
   }
 
-  if (!params?.candidateName) {
-    return (
-      <div className="consultoria-scope" style={{ padding: '2rem' }}>
-        <div className="cs-empty reveal is-visible">
-          <Sparkles size={28} />
-          <h2>Consultoria Estratégica E-Poliana</h2>
-          <p>Configure sua campanha primeiro (nome do candidato, cargo e município) para gerar a consultoria.</p>
-        </div>
-      </div>
-    );
-  }
-
   const Phase = PHASES[phase].icon;
 
   return (
@@ -128,13 +128,11 @@ export default function Consultoria() {
       {!result && (
         <section className="cs-hero reveal is-visible">
           <span className="cs-badge"><Sparkles size={14} /> Inteligência de campanha</span>
-          <h1>Consultoria estratégica para<br /><span className="cs-grad">{params.candidateName}</span></h1>
-          <p className="cs-sub">
-            {params.role} · {params.city}/{params.state || 'RO'}{params.party ? ` · ${params.party}` : ''}
-          </p>
+          <h1>Consultoria estratégica<br /><span className="cs-grad">por município e candidato</span></h1>
           <p className="cs-lead">
-            A E-Poliana pesquisa a internet em tempo real, cruza indicadores oficiais de Rondônia e entrega
-            uma consultoria de pré-campanha — não um texto genérico de IA.
+            Escolha o município, informe o nome do candidato e a E-Poliana rastreia menções
+            reais e verificáveis (notícias e redes sociais) na web e entrega a consultoria —
+            funcione o candidato já tendo disputado eleição ou estreando agora.
           </p>
 
           <div className="cs-pillars">
@@ -151,6 +149,45 @@ export default function Consultoria() {
           </div>
 
           <div className="cs-form reveal">
+            <label htmlFor="cs-city">Município (Rondônia)</label>
+            <select id="cs-city" className="cs-input" value={form.city} onChange={setField('city')}>
+              <option value="" disabled>Selecione o município…</option>
+              {RO_MUNICIPALITIES.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+
+            <label htmlFor="cs-name">Nome do candidato(a)</label>
+            <input
+              id="cs-name"
+              className="cs-input"
+              type="text"
+              placeholder="Ex.: Maria Souza"
+              value={form.candidateName}
+              onChange={setField('candidateName')}
+            />
+
+            <div className="cs-form-row">
+              <div>
+                <label htmlFor="cs-role">Cargo pretendido</label>
+                <select id="cs-role" className="cs-input" value={form.role} onChange={setField('role')}>
+                  <option value="Prefeito">Prefeito(a)</option>
+                  <option value="Vereador">Vereador(a)</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="cs-party">Partido (opcional)</label>
+                <input
+                  id="cs-party"
+                  className="cs-input"
+                  type="text"
+                  placeholder="Ex.: PSD, PL, MDB…"
+                  value={form.party}
+                  onChange={setField('party')}
+                />
+              </div>
+            </div>
+
             <label htmlFor="focus">Temas de interesse (opcional)</label>
             <textarea
               id="focus"
@@ -160,8 +197,8 @@ export default function Consultoria() {
               rows={3}
             />
             <button className="cs-cta" onClick={generate} disabled={loading}>
-              {loading ? <Loader2 size={18} className="cs-spin" /> : <Sparkles size={18} />}
-              {loading ? 'Gerando consultoria…' : 'Gerar consultoria estratégica'}
+              {loading ? <Loader2 size={18} className="cs-spin" /> : <Search size={18} />}
+              {loading ? 'Pesquisando menções…' : 'Buscar menções e gerar consultoria'}
             </button>
             {error && <div className="cs-error">{error}</div>}
           </div>
@@ -183,9 +220,9 @@ export default function Consultoria() {
           <div className="cs-report-head reveal is-visible">
             <div>
               <span className="cs-badge"><FileText size={14} /> Relatório de consultoria</span>
-              <h1>{params.candidateName}</h1>
+              <h1>{form.candidateName}</h1>
               <p className="cs-sub">
-                {params.role} · {params.city}/{params.state || 'RO'} ·{' '}
+                {form.role} · {form.city}/{form.state || 'RO'} ·{' '}
                 {new Date(result.generatedAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
               </p>
             </div>

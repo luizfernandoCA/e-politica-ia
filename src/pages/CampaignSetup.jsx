@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ShieldCheck, Sparkles, Loader2, Database, AlertCircle } from 'lucide-react';
+import { RO_MUNICIPALITIES } from '../data/roMunicipalities';
 
 export default function CampaignSetup({ onSetupComplete }) {
   const [formData, setFormData] = useState({
@@ -13,19 +14,7 @@ export default function CampaignSetup({ onSetupComplete }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
 
-  const roCities = [
-    "Alta Floresta D'Oeste", "Alto Alegre dos Parecis", "Alto Paraíso", "Alvorada D'Oeste",
-    "Ariquemes", "Buritis", "Cabixi", "Cacaulândia", "Cacoal", "Campo Novo de Rondônia",
-    "Candeias do Jamari", "Castanheiras", "Cerejeiras", "Chupinguaia", "Colorado do Oeste",
-    "Corumbiara", "Costa Marques", "Cujubim", "Espigão D'Oeste", "Governador Jorge Teixeira",
-    "Guajará-Mirim", "Itapuã do Oeste", "Jaru", "Ji-Paraná", "Machadinho D'Oeste",
-    "Ministro Andreazza", "Mirante da Serra", "Monte Negro", "Nova Brasilândia D'Oeste",
-    "Nova Mamoré", "Nova União", "Novo Horizonte do Oeste", "Ouro Preto do Oeste", "Parecis",
-    "Pimenta Bueno", "Pimenteiras do Oeste", "Porto Velho", "Presidente Médici",
-    "Primavera de Rondônia", "Rio Crespo", "Rolim de Moura", "Santa Luzia D'Oeste",
-    "São Felipe D'Oeste", "São Francisco do Guaporé", "São Miguel do Guaporé", "Seringueiras",
-    "Teixeirópolis", "Theobroma", "Urupá", "Vale do Anari", "Vale do Paraíso", "Vilhena"
-  ];
+  const roCities = RO_MUNICIPALITIES;
 
   const syncSteps = [
     "Estabelecendo canal seguro com gateway do TSE...",

@@ -117,3 +117,27 @@ ON CONFLICT (id) DO NOTHING;
 
 -- Security hardening: the trigger function must not be callable via the API
 REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authenticated;
+
+-- =========================================================================
+-- MIGRAÇÃO (NEMESIS 2026-06-19) — trava de auto-ativação de assinatura
+-- -------------------------------------------------------------------------
+-- Achado CRÍTICO: a policy `user_state_update_own` autoriza o usuário a
+-- escrever QUALQUER coluna da própria linha — inclusive `payment_status`.
+-- Logo, qualquer usuário autenticado podia rodar no console:
+--     supabase.from('user_state')
+--       .upsert({ user_id: <meu_uid>, payment_status: { status: 'active' } })
+-- e liberar o produto pago sem pagar.
+--
+-- Correção: o Postgres avalia GRANTs de COLUNA *antes* da RLS. Revogando
+-- INSERT/UPDATE na coluna `payment_status` dos papéis `authenticated`/`anon`,
+-- o cliente não consegue mais alterá-la; só o `service_role` (usado pelo
+-- webhook do Mercado Pago em api/mp-webhook.js) continua podendo escrever.
+-- As demais colunas (campaign_params, contacts, tasks) seguem graváveis.
+--
+-- PRÉ-REQUISITO antes de aplicar em produção: confirme que o webhook
+-- (api/mp-webhook.js) está gravando payment_status='active' na aprovação —
+-- após esta migração, ele passa a ser a ÚNICA fonte de ativação. Caso
+-- contrário, assinantes podem perder acesso ao recarregar a página.
+-- =========================================================================
+REVOKE INSERT (payment_status) ON public.user_state FROM authenticated, anon;
+REVOKE UPDATE (payment_status) ON public.user_state FROM authenticated, anon;

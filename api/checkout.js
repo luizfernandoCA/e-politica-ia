@@ -3,8 +3,17 @@
  *
  * REAL payment integration via Mercado Pago Checkout Pro.
  * Creates a payment preference server-side and returns the `init_point`
- * URL where the user completes payment (Pix, card, boleto) inside
- * Mercado Pago's PCI-compliant environment.
+ * URL where the user completes payment inside Mercado Pago's PCI-compliant
+ * environment. O Pix também é recebido VIA Mercado Pago (decisão de produto):
+ * a ativação da assinatura permanece automática via webhook; o repasse para a
+ * conta bancária é feito por saque no painel do Mercado Pago. Nenhum dado
+ * bancário pessoal (chave Pix/CPF/conta) trafega ou é versionado.
+ *
+ * Pacote único "Estrategista":
+ *   - Cartão: R$ 990,00 em até 3x.
+ *   - Pix à vista: R$ 841,50 (15% de desconto).
+ * O PREÇO é definido no servidor a partir de `method` ('card' | 'pix');
+ * o cliente nunca informa o valor (anti-adulteração).
  *
  * Required environment variable (Vercel > Settings > Environment Variables):
  *   MP_ACCESS_TOKEN  - Mercado Pago access token
@@ -14,18 +23,23 @@
  *   APP_URL          - public URL of the app (defaults to the request origin)
  */
 
-const PLAN_PRICE = 99.90;
+import { applyCors, verifyUser, unauthorized, fetchWithTimeout } from '../lib/guard.js';
+
+const PACKAGE_PRICE = 990.0;       // preço cheio (cartão)
+const PIX_DISCOUNT = 0.15;         // 15% à vista no Pix
+const PIX_PRICE = Math.round(PACKAGE_PRICE * (1 - PIX_DISCOUNT) * 100) / 100; // 841.50
+const MAX_INSTALLMENTS = 3;        // 3x no cartão
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (applyCors(req, res)) return;
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, message: 'Method Not Allowed' });
   }
+
+  // Identidade vem do JWT validado, NÃO do corpo: impede creditar a
+  // assinatura a um userId arbitrário (confused-deputy).
+  const user = await verifyUser(req);
+  if (!user) return unauthorized(res);
 
   const accessToken = process.env.MP_ACCESS_TOKEN;
   if (!accessToken) {
@@ -39,10 +53,43 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { userId, email, name } = req.body || {};
-    if (!userId || !email) {
-      return res.status(400).json({ success: false, message: 'userId e email são obrigatórios.' });
+    // userId e email são os do usuário autenticado (fonte autoritativa).
+    const userId = user.id;
+    const email = user.email || (req.body && req.body.email);
+    const name = req.body?.name;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'E-mail da conta indisponível.' });
     }
+
+    // Método vem do cliente; o PREÇO é definido aqui no servidor.
+    const method = req.body?.method === 'pix' ? 'pix' : 'card';
+    const isPix = method === 'pix';
+    const unitPrice = isPix ? PIX_PRICE : PACKAGE_PRICE;
+
+    // Restringe os meios de pagamento conforme o caminho escolhido.
+    // Pix = payment_type "bank_transfer"; boleto = "ticket".
+    const paymentMethods = isPix
+      ? {
+          // Só Pix: exclui cartões/boleto/atm.
+          excluded_payment_types: [
+            { id: 'credit_card' },
+            { id: 'debit_card' },
+            { id: 'prepaid_card' },
+            { id: 'ticket' },
+            { id: 'atm' }
+          ],
+          installments: 1
+        }
+      : {
+          // Só cartão (até 3x): exclui Pix/boleto/atm.
+          excluded_payment_types: [
+            { id: 'bank_transfer' },
+            { id: 'ticket' },
+            { id: 'atm' }
+          ],
+          installments: MAX_INSTALLMENTS,
+          default_installments: MAX_INSTALLMENTS
+        };
 
     const appUrl =
       process.env.APP_URL ||
@@ -51,15 +98,19 @@ export default async function handler(req, res) {
     const preference = {
       items: [
         {
-          id: 'plano-estrategista-pro',
-          title: 'e-politica.ia — Plano Estrategista Pro (assinatura mensal)',
-          description: 'Acesso completo: dashboards eleitorais, CRM e assistente IA.',
+          id: 'pacote-estrategista',
+          title: isPix
+            ? 'e-politica.ia — Pacote Estrategista (Pix à vista, 15% off)'
+            : 'e-politica.ia — Pacote Estrategista (até 3x no cartão)',
+          description: 'Acesso completo: dashboards eleitorais, CRM, consultoria e assistente IA.',
           category_id: 'services',
           quantity: 1,
           currency_id: 'BRL',
-          unit_price: PLAN_PRICE
+          unit_price: unitPrice
         }
       ],
+      payment_methods: paymentMethods,
+      metadata: { plan: 'pacote-estrategista', method, list_price: PACKAGE_PRICE },
       payer: { email, name: name || undefined },
       external_reference: userId,
       back_urls: {
@@ -72,14 +123,14 @@ export default async function handler(req, res) {
       statement_descriptor: 'EPOLITICA.IA'
     };
 
-    const mpResponse = await fetch('https://api.mercadopago.com/checkout/preferences', {
+    const mpResponse = await fetchWithTimeout('https://api.mercadopago.com/checkout/preferences', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${accessToken}`
       },
       body: JSON.stringify(preference)
-    });
+    }, 10000);
 
     const data = await mpResponse.json();
 
@@ -93,6 +144,8 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
+      method,
+      amount: unitPrice,
       preferenceId: data.id,
       init_point: data.init_point,
       sandbox_init_point: data.sandbox_init_point

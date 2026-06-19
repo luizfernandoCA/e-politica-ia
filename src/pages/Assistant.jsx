@@ -7,11 +7,18 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { CANDIDATES } from '../data/electoralMockData';
+import { authedFetch } from '../services/api';
 
 export default function Assistant({ activeCandidate }) {
   const candidate = CANDIDATES.find(c => c.id === activeCandidate) || CANDIDATES[0];
   
-  const campaignParams = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('campaignParams')) : null;
+  // Guarda contra localStorage corrompido: JSON.parse de valor inválido lançaria
+  // exceção em tempo de render (crash). Mesmo padrão de readParams() usado em Consultoria/Reports.
+  const campaignParams = (() => {
+    if (typeof window === 'undefined') return null;
+    try { return JSON.parse(localStorage.getItem('campaignParams') || 'null'); }
+    catch { return null; }
+  })();
   const cityName = campaignParams ? campaignParams.city : "Serra Dourada";
   
   const [messages, setMessages] = useState([
@@ -132,7 +139,7 @@ Deseja detalhar a abordagem para algum bairro específico ou prefere criar um ro
 
     // 1. Real AI: secure serverless proxy to the Anthropic Claude API
     try {
-      const response = await fetch('/api/assistant', {
+      const response = await authedFetch('/api/assistant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

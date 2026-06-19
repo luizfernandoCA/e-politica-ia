@@ -18,11 +18,11 @@ export default function LandingPage({ onStartCheckout, onShowLegal }) {
 
   const compareList = [
     {
-      feature: "Assinatura Mensal (Acesso)",
-      ePolitica: "R$ 99,90",
-      ePoliticaSub: "Sem taxas ocultas, acesso a todas as ferramentas",
+      feature: "Acesso completo (pacote único)",
+      ePolitica: "R$ 990",
+      ePoliticaSub: "Pagamento único · 3x no cartão ou Pix com 15% off · sem mensalidade",
       politique: "Mensalidade Elevada",
-      politiqueSub: "Planos básicos restritivos",
+      politiqueSub: "Planos básicos restritivos com cobrança recorrente",
       better: true
     },
     {
@@ -66,7 +66,7 @@ export default function LandingPage({ onStartCheckout, onShowLegal }) {
     },
     {
       q: "Como é cobrado o valor dos relatórios?",
-      a: "O acesso completo a todos os painéis, CRM e chat IA é de apenas R$ 99,90 por mês. Se desejar exportar relatórios executivos fechados com análises complexas prontas para impressão e PDF, cada documento gerado custa R$ 500,00 — economizando até R$ 1.500,00 se comparado com agências tradicionais."
+      a: "O acesso completo a todos os painéis, CRM e chat IA é um pacote único de R$ 990 — em até 3x de R$ 330 no cartão, ou R$ 841,50 à vista no Pix (15% de desconto). Sem mensalidade. Se desejar exportar relatórios executivos fechados com análises complexas prontas para impressão e PDF, cada documento gerado custa R$ 500,00 — economizando até R$ 1.500,00 se comparado com agências tradicionais."
     }
   ];
 
@@ -201,7 +201,7 @@ export default function LandingPage({ onStartCheckout, onShowLegal }) {
                 gap: '8px'
               }}
             >
-              Começar Agora por R$ 99,90 <ArrowRight size={18} />
+              Começar Agora por R$ 990 <ArrowRight size={18} />
             </button>
             
             <a 
@@ -436,8 +436,11 @@ export default function LandingPage({ onStartCheckout, onShowLegal }) {
               <span style={{ fontSize: '0.8rem', color: 'var(--accent-blue-bright)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>e-politica.ia</span>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', margin: '8px 0 1.5rem 0' }}>
                 <span style={{ fontSize: '1.25rem', color: 'var(--text-gray)', fontWeight: 500 }}>R$</span>
-                <span style={{ fontSize: '3rem', fontWeight: 800, color: 'var(--text-white)', fontFamily: 'var(--font-title)', lineHeight: 1 }}>99,90</span>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-gray)', fontWeight: 500 }}>/mês</span>
+                <span style={{ fontSize: '3rem', fontWeight: 800, color: 'var(--text-white)', fontFamily: 'var(--font-title)', lineHeight: 1 }}>990</span>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-gray)', fontWeight: 500 }}>único</span>
+              </div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-gray)', marginTop: '-1rem', marginBottom: '1.5rem' }}>
+                3x de R$ 330 no cartão · ou R$ 841,50 à vista no Pix (15% off)
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem' }}>
@@ -478,7 +481,7 @@ export default function LandingPage({ onStartCheckout, onShowLegal }) {
                   boxShadow: '0 5px 15px var(--accent-blue-glow)'
                 }}
               >
-                Assinar Agora por R$ 99,90
+                Garantir acesso por R$ 990
               </button>
             </div>
 
@@ -646,10 +649,10 @@ export default function LandingPage({ onStartCheckout, onShowLegal }) {
               marginTop: '1rem'
             }}
           >
-            Assinar Plano por R$ 99,90 <ArrowRight size={18} />
+            Garantir acesso por R$ 990 <ArrowRight size={18} />
           </button>
-          
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Assinatura mensal recorrente. Cancele quando quiser.</span>
+
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Pagamento único — 3x no cartão ou Pix à vista com 15% de desconto. Sem mensalidade.</span>
         </div>
       </section>
 

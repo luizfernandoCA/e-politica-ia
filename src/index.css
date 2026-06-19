@@ -434,6 +434,20 @@ input[type="checkbox"] {
 .consultoria-scope .cs-form textarea:focus {
   outline: none; border-color: var(--cs-blue); box-shadow: 0 0 0 4px rgba(0,113,227,0.12);
 }
+.consultoria-scope .cs-form .cs-input {
+  width: 100%; border: 1px solid var(--cs-line); border-radius: 12px; padding: 0.85rem 1rem;
+  font-family: inherit; font-size: 0.95rem; color: var(--cs-ink); background: #fbfbfd;
+  margin-bottom: 1.1rem; transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.consultoria-scope .cs-form .cs-input:focus {
+  outline: none; border-color: var(--cs-blue); box-shadow: 0 0 0 4px rgba(0,113,227,0.12);
+}
+.consultoria-scope .cs-form-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+}
+@media (max-width: 520px) {
+  .consultoria-scope .cs-form-row { grid-template-columns: 1fr; }
+}
 .consultoria-scope .cs-cta {
   display: inline-flex; align-items: center; justify-content: center; gap: 10px;
   width: 100%; margin-top: 1rem; padding: 1rem 1.5rem; border: none; cursor: pointer;

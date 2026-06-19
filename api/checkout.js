@@ -3,8 +3,17 @@
  *
  * REAL payment integration via Mercado Pago Checkout Pro.
  * Creates a payment preference server-side and returns the `init_point`
- * URL where the user completes payment (Pix, card, boleto) inside
- * Mercado Pago's PCI-compliant environment.
+ * URL where the user completes payment inside Mercado Pago's PCI-compliant
+ * environment. O Pix também é recebido VIA Mercado Pago (decisão de produto):
+ * a ativação da assinatura permanece automática via webhook; o repasse para a
+ * conta bancária é feito por saque no painel do Mercado Pago. Nenhum dado
+ * bancário pessoal (chave Pix/CPF/conta) trafega ou é versionado.
+ *
+ * Pacote único "Estrategista":
+ *   - Cartão: R$ 990,00 em até 3x.
+ *   - Pix à vista: R$ 841,50 (15% de desconto).
+ * O PREÇO é definido no servidor a partir de `method` ('card' | 'pix');
+ * o cliente nunca informa o valor (anti-adulteração).
  *
  * Required environment variable (Vercel > Settings > Environment Variables):
  *   MP_ACCESS_TOKEN  - Mercado Pago access token
@@ -16,7 +25,10 @@
 
 import { applyCors, verifyUser, unauthorized, fetchWithTimeout } from '../lib/guard.js';
 
-const PLAN_PRICE = 99.90;
+const PACKAGE_PRICE = 990.0;       // preço cheio (cartão)
+const PIX_DISCOUNT = 0.15;         // 15% à vista no Pix
+const PIX_PRICE = Math.round(PACKAGE_PRICE * (1 - PIX_DISCOUNT) * 100) / 100; // 841.50
+const MAX_INSTALLMENTS = 3;        // 3x no cartão
 
 export default async function handler(req, res) {
   if (applyCors(req, res)) return;
@@ -49,6 +61,36 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, message: 'E-mail da conta indisponível.' });
     }
 
+    // Método vem do cliente; o PREÇO é definido aqui no servidor.
+    const method = req.body?.method === 'pix' ? 'pix' : 'card';
+    const isPix = method === 'pix';
+    const unitPrice = isPix ? PIX_PRICE : PACKAGE_PRICE;
+
+    // Restringe os meios de pagamento conforme o caminho escolhido.
+    // Pix = payment_type "bank_transfer"; boleto = "ticket".
+    const paymentMethods = isPix
+      ? {
+          // Só Pix: exclui cartões/boleto/atm.
+          excluded_payment_types: [
+            { id: 'credit_card' },
+            { id: 'debit_card' },
+            { id: 'prepaid_card' },
+            { id: 'ticket' },
+            { id: 'atm' }
+          ],
+          installments: 1
+        }
+      : {
+          // Só cartão (até 3x): exclui Pix/boleto/atm.
+          excluded_payment_types: [
+            { id: 'bank_transfer' },
+            { id: 'ticket' },
+            { id: 'atm' }
+          ],
+          installments: MAX_INSTALLMENTS,
+          default_installments: MAX_INSTALLMENTS
+        };
+
     const appUrl =
       process.env.APP_URL ||
       `https://${req.headers['x-forwarded-host'] || req.headers.host}`;
@@ -56,15 +98,19 @@ export default async function handler(req, res) {
     const preference = {
       items: [
         {
-          id: 'plano-estrategista-pro',
-          title: 'e-politica.ia — Plano Estrategista Pro (assinatura mensal)',
-          description: 'Acesso completo: dashboards eleitorais, CRM e assistente IA.',
+          id: 'pacote-estrategista',
+          title: isPix
+            ? 'e-politica.ia — Pacote Estrategista (Pix à vista, 15% off)'
+            : 'e-politica.ia — Pacote Estrategista (até 3x no cartão)',
+          description: 'Acesso completo: dashboards eleitorais, CRM, consultoria e assistente IA.',
           category_id: 'services',
           quantity: 1,
           currency_id: 'BRL',
-          unit_price: PLAN_PRICE
+          unit_price: unitPrice
         }
       ],
+      payment_methods: paymentMethods,
+      metadata: { plan: 'pacote-estrategista', method, list_price: PACKAGE_PRICE },
       payer: { email, name: name || undefined },
       external_reference: userId,
       back_urls: {
@@ -98,6 +144,8 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
+      method,
+      amount: unitPrice,
       preferenceId: data.id,
       init_point: data.init_point,
       sandbox_init_point: data.sandbox_init_point

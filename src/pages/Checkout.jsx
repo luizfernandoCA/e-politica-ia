@@ -140,7 +140,7 @@ export default function Checkout({ onPaymentSuccess, onBackToLanding, initialUse
   // ---------------------------------------------------------------------
   // Payment handler (Mercado Pago Checkout Pro - server-side preference)
   // ---------------------------------------------------------------------
-  const handleSubscribe = async () => {
+  const handleSubscribe = async (payMethod = 'card') => {
     if (isVIP) {
       onPaymentSuccess(user);
       return;
@@ -149,11 +149,12 @@ export default function Checkout({ onPaymentSuccess, onBackToLanding, initialUse
     setIsProcessing(true);
     setError(null);
     try {
-      // userId/email vêm do JWT no servidor; o corpo é só dica de UX (name).
+      // userId/email vêm do JWT no servidor; o corpo é só dica de UX (name) +
+      // o método ('card' | 'pix'). O servidor é quem define o valor.
       const response = await authedFetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: user.name })
+        body: JSON.stringify({ name: user.name, method: payMethod })
       });
 
       const data = await response.json();
@@ -445,11 +446,16 @@ export default function Checkout({ onPaymentSuccess, onBackToLanding, initialUse
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, fontSize: '0.95rem' }}>
-                  <Sparkles size={16} style={{ color: 'var(--accent-yellow, #FFCC00)' }} /> Plano Estrategista Pro
+                  <Sparkles size={16} style={{ color: 'var(--accent-yellow, #FFCC00)' }} /> Pacote Estrategista
                 </span>
                 <span style={{ fontFamily: 'var(--font-title)', fontWeight: 800, fontSize: '1.25rem' }}>
-                  R$ 99,90<span style={{ fontSize: '0.75rem', color: 'var(--text-gray)', fontWeight: 600 }}>/mês</span>
+                  R$ 990<span style={{ fontSize: '0.75rem', color: 'var(--text-gray)', fontWeight: 600 }}> à vista ou parcelado</span>
                 </span>
+              </div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-gray)', display: 'flex', flexWrap: 'wrap', gap: '4px 10px' }}>
+                <span>💳 <strong>3x de R$ 330</strong> no cartão</span>
+                <span>·</span>
+                <span>⚡ <strong>R$ 841,50</strong> à vista no Pix <strong style={{ color: 'var(--accent-green-bright, #00A859)' }}>(15% off)</strong></span>
               </div>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {[
@@ -469,7 +475,7 @@ export default function Checkout({ onPaymentSuccess, onBackToLanding, initialUse
             {/* CTA */}
             {isVIP ? (
               <button
-                onClick={handleSubscribe}
+                onClick={() => handleSubscribe('card')}
                 disabled={isProcessing}
                 style={{
                   display: 'flex',
@@ -489,32 +495,44 @@ export default function Checkout({ onPaymentSuccess, onBackToLanding, initialUse
                 <Crown size={20} /> Entrar com Acesso VIP
               </button>
             ) : (
-              <button
-                onClick={handleSubscribe}
-                disabled={isProcessing}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '10px',
-                  padding: '16px 24px',
-                  background: '#009EE3',
-                  color: '#FFFFFF',
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: '1rem',
-                  fontWeight: 800,
-                  cursor: isProcessing ? 'wait' : 'pointer',
-                  border: 'none',
-                  boxShadow: '0 6px 20px rgba(0, 158, 227, 0.35)'
-                }}
-              >
-                {isProcessing ? (
-                  <Loader2 size={20} style={{ animation: 'spin-rot 1s linear infinite' }} />
-                ) : (
-                  <ShieldCheck size={20} />
-                )}
-                {isProcessing ? 'Conectando ao gateway...' : 'Pagar com Mercado Pago'}
-              </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <button
+                  onClick={() => handleSubscribe('pix')}
+                  disabled={isProcessing}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+                    padding: '16px 24px', background: '#00A859', color: '#FFFFFF',
+                    borderRadius: 'var(--radius-sm)', fontSize: '1rem', fontWeight: 800,
+                    cursor: isProcessing ? 'wait' : 'pointer', border: 'none',
+                    boxShadow: '0 6px 20px rgba(0, 168, 89, 0.35)'
+                  }}
+                >
+                  {isProcessing ? (
+                    <Loader2 size={20} style={{ animation: 'spin-rot 1s linear infinite' }} />
+                  ) : (
+                    <Sparkles size={20} />
+                  )}
+                  Pagar no Pix — R$ 841,50 (15% off)
+                </button>
+                <button
+                  onClick={() => handleSubscribe('card')}
+                  disabled={isProcessing}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+                    padding: '16px 24px', background: '#009EE3', color: '#FFFFFF',
+                    borderRadius: 'var(--radius-sm)', fontSize: '1rem', fontWeight: 800,
+                    cursor: isProcessing ? 'wait' : 'pointer', border: 'none',
+                    boxShadow: '0 6px 20px rgba(0, 158, 227, 0.35)'
+                  }}
+                >
+                  {isProcessing ? (
+                    <Loader2 size={20} style={{ animation: 'spin-rot 1s linear infinite' }} />
+                  ) : (
+                    <ShieldCheck size={20} />
+                  )}
+                  Pagar no cartão — 3x de R$ 330
+                </button>
+              </div>
             )}
 
             <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>

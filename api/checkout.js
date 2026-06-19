@@ -14,18 +14,20 @@
  *   APP_URL          - public URL of the app (defaults to the request origin)
  */
 
+import { applyCors, verifyUser, unauthorized, fetchWithTimeout } from '../lib/guard.js';
+
 const PLAN_PRICE = 99.90;
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (applyCors(req, res)) return;
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, message: 'Method Not Allowed' });
   }
+
+  // Identidade vem do JWT validado, NÃO do corpo: impede creditar a
+  // assinatura a um userId arbitrário (confused-deputy).
+  const user = await verifyUser(req);
+  if (!user) return unauthorized(res);
 
   const accessToken = process.env.MP_ACCESS_TOKEN;
   if (!accessToken) {
@@ -39,9 +41,12 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { userId, email, name } = req.body || {};
-    if (!userId || !email) {
-      return res.status(400).json({ success: false, message: 'userId e email são obrigatórios.' });
+    // userId e email são os do usuário autenticado (fonte autoritativa).
+    const userId = user.id;
+    const email = user.email || (req.body && req.body.email);
+    const name = req.body?.name;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'E-mail da conta indisponível.' });
     }
 
     const appUrl =
@@ -72,14 +77,14 @@ export default async function handler(req, res) {
       statement_descriptor: 'EPOLITICA.IA'
     };
 
-    const mpResponse = await fetch('https://api.mercadopago.com/checkout/preferences', {
+    const mpResponse = await fetchWithTimeout('https://api.mercadopago.com/checkout/preferences', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${accessToken}`
       },
       body: JSON.stringify(preference)
-    });
+    }, 10000);
 
     const data = await mpResponse.json();
 

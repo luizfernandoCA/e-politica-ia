@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import DataSourceBadge from '../components/DataSourceBadge';
 import { downloadTseReportPdf } from '../lib/pdf/tseReportPdf';
+import { authedFetch } from '../services/api';
 
 /**
  * Relatórios — cruzamento de dados oficiais TSE + dados internos.
@@ -218,7 +219,7 @@ export default function Reports() {
         `o candidato "${myCandidate.candidate_urn_name}" em ${apuracao.municipality?.name}/${role}. ` +
         `Estrutura: ### Diagnóstico, ### Pontos fortes, ### Riscos, ### Próximas ações (3 itens priorizados).`;
 
-      const res = await fetch('/api/assistant', {
+      const res = await authedFetch('/api/assistant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

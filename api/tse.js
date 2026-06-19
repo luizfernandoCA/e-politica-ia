@@ -4,6 +4,8 @@
  * bypassing CORS, specifically designed for Rondônia's 52 municipalities.
  */
 
+import { applyCors } from '../lib/guard.js';
+
 // Comprehensive Rondônia 52 Municipalities to 5-digit TSE Code mapping
 const RO_MUNICIPALITIES = {
   "ALTA FLORESTA D'OESTE": "00310",
@@ -197,18 +199,7 @@ function getPartyColor(party) {
 }
 
 export default async function handler(req, res) {
-  // CORS Configuration
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  if (applyCors(req, res, { methods: 'GET,OPTIONS' })) return;
 
   const { city, year, role } = req.query;
 
@@ -446,9 +437,9 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error(`[API TSE PROXY ERROR]:`, error);
-    return res.status(500).json({ 
-      success: false, 
-      error: `Falha ao consultar base oficial do TSE: ${error.message}` 
+    return res.status(502).json({
+      success: false,
+      error: 'Falha ao consultar a base oficial do TSE. Tente novamente em instantes.'
     });
   }
 }

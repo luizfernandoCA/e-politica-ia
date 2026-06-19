@@ -6,6 +6,7 @@ import {
 import Markdown from '../components/Markdown';
 import useScrollReveal from '../hooks/useScrollReveal';
 import { downloadConsultoriaPdf } from '../lib/pdf/consultoriaPdf';
+import { authedFetch } from '../services/api';
 
 function readParams() {
   try {
@@ -56,7 +57,7 @@ export default function Consultoria() {
     setResult(null);
     setPhase(0);
     try {
-      const res = await fetch('/api/intel', {
+      const res = await authedFetch('/api/intel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

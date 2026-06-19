@@ -16,8 +16,7 @@ import {
   signInWithGoogle,
   isVipEmail
 } from '../services/authService';
-
-const PLAN_PRICE = 99.90;
+import { authedFetch } from '../services/api';
 
 /**
  * Checkout - real authentication (Supabase) + real payment (Mercado Pago Checkout Pro).
@@ -150,15 +149,11 @@ export default function Checkout({ onPaymentSuccess, onBackToLanding, initialUse
     setIsProcessing(true);
     setError(null);
     try {
-      const response = await fetch('/api/checkout', {
+      // userId/email vêm do JWT no servidor; o corpo é só dica de UX (name).
+      const response = await authedFetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.uid,
-          email: user.email,
-          name: user.name,
-          amount: PLAN_PRICE
-        })
+        body: JSON.stringify({ name: user.name })
       });
 
       const data = await response.json();

@@ -13,6 +13,8 @@
  *   ?aggregate=zona|secao    (default zona — soma votos por zona)
  */
 
+import { applyCors, fetchWithTimeout, digitsOnly, safeFilterText } from '../lib/guard.js';
+
 function getSupabaseConfig() {
   const url = process.env.SUPABASE_URL || 'https://tlnprjkiydiogrcsruxw.supabase.co';
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -20,11 +22,7 @@ function getSupabaseConfig() {
 }
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (applyCors(req, res, { methods: 'GET,OPTIONS' })) return;
 
   const {
     candidate_sq,
@@ -35,6 +33,20 @@ export default async function handler(req, res) {
     aggregate = 'zona'
   } = req.query;
 
+  // Sanitização: parâmetros do cliente NUNCA entram crus no filtro PostgREST.
+  const electionId = digitsOnly(election_id) || '619';
+  let candSq = '';
+  if (candidate_sq !== undefined && candidate_sq !== '') {
+    candSq = digitsOnly(candidate_sq);
+    if (!candSq) return res.status(400).json({ success: false, error: 'candidate_sq inválido.' });
+  }
+  let zone = '';
+  if (electoral_zone !== undefined && electoral_zone !== '') {
+    zone = digitsOnly(electoral_zone);
+    if (!zone) return res.status(400).json({ success: false, error: 'electoral_zone inválida.' });
+  }
+  const cityClean = city ? safeFilterText(city) : '';
+
   const { url, serviceKey } = getSupabaseConfig();
   if (!serviceKey) {
     return res
@@ -43,25 +55,25 @@ export default async function handler(req, res) {
   }
 
   const params = new URLSearchParams({
-    election_id: `eq.${election_id}`,
+    election_id: `eq.${electionId}`,
     select: '*',
     order: 'electoral_zone.asc,electoral_section.asc,votes.desc'
   });
-  if (candidate_sq) params.set('candidate_sq', `eq.${candidate_sq}`);
-  if (city) params.set('mun_name', `ilike.%${city.toUpperCase()}%`);
-  if (electoral_zone) params.set('electoral_zone', `eq.${electoral_zone}`);
+  if (candSq) params.set('candidate_sq', `eq.${candSq}`);
+  if (cityClean) params.set('mun_name', `ilike.%${cityClean.toUpperCase()}%`);
+  if (zone) params.set('electoral_zone', `eq.${zone}`);
   if (role) {
-    const role_code = role.toLowerCase().includes('vereador') ? '13' : '11';
+    const role_code = String(role).toLowerCase().includes('vereador') ? '13' : '11';
     params.set('role_code', `eq.${role_code}`);
   }
 
-  const supaRes = await fetch(`${url}/rest/v1/tse_secao_resultado?${params.toString()}`, {
+  const supaRes = await fetchWithTimeout(`${url}/rest/v1/tse_secao_resultado?${params.toString()}`, {
     headers: {
       apikey: serviceKey,
       Authorization: `Bearer ${serviceKey}`,
       Accept: 'application/json'
     }
-  });
+  }, 8000);
   if (!supaRes.ok) {
     return res.status(502).json({ success: false, error: `Supabase ${supaRes.status}` });
   }

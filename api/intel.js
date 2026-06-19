@@ -19,19 +19,21 @@
  *   ANTHROPIC_MODEL    (opcional)     - default: claude-sonnet-4-6
  */
 
+import { applyCors, verifyUser, unauthorized, fetchWithTimeout, tooLong } from '../lib/guard.js';
+
 export const config = { maxDuration: 300 };
 
 const DEFAULT_MODEL = 'claude-sonnet-4-6';
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (applyCors(req, res)) return;
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, message: 'Method Not Allowed' });
   }
+
+  // Endpoint mais caro do sistema (web_search + 8k tokens): exige sessão válida.
+  const user = await verifyUser(req);
+  if (!user) return unauthorized(res);
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -60,6 +62,13 @@ export default async function handler(req, res) {
         success: false,
         message: 'candidateName e city são obrigatórios.'
       });
+    }
+    // Limites de input: barra payloads gigantes que inflam tokens / custo.
+    if (
+      tooLong(candidateName, 120) || tooLong(city, 120) || tooLong(party, 80) ||
+      tooLong(role, 80) || tooLong(focusAreas, 1000)
+    ) {
+      return res.status(413).json({ success: false, message: 'Parâmetros longos demais.' });
     }
 
     const stateName = state === 'RO' ? 'Rondônia' : state;
@@ -116,7 +125,7 @@ ${focusAreas ? `- Temas/áreas de interesse declarados: ${focusAreas}` : ''}${el
 
 Pesquise na web menções reais ao candidato e os indicadores oficiais do município e do estado. Entregue a consultoria nas 9 seções definidas.`;
 
-    const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
+    const anthropicRes = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -130,7 +139,7 @@ Pesquise na web menções reais ao candidato e os indicadores oficiais do munic�
         tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 8 }],
         messages: [{ role: 'user', content: userPrompt }]
       })
-    });
+    }, 280000);
 
     const data = await anthropicRes.json();
 

@@ -24,6 +24,8 @@
  *   Reuso ≤5min reduz custo em ~90%.
  */
 
+import { applyCors, verifyUser, unauthorized, fetchWithTimeout, tooLong } from '../lib/guard.js';
+
 // Default: Opus 4.7 — modelo Claude mais capaz disponível na Anthropic API
 // (junho/2026). Override via env ANTHROPIC_MODEL se quiser Sonnet 4.6
 // (mais rápido/barato) ou Haiku 4.5 (mais barato ainda).
@@ -49,15 +51,16 @@ async function queryApuracao(filters) {
   for (const [k, v] of Object.entries(filters)) {
     if (v !== undefined && v !== null && v !== '') params.set(k, v);
   }
-  const res = await fetch(`${url}/rest/v1/tse_apuracao?${params.toString()}`, {
+  const res = await fetchWithTimeout(`${url}/rest/v1/tse_apuracao?${params.toString()}`, {
     headers: {
       apikey: serviceKey,
       Authorization: `Bearer ${serviceKey}`,
       Accept: 'application/json'
     }
-  });
+  }, 8000);
   if (!res.ok) {
-    return { error: `Supabase ${res.status}: ${await res.text()}` };
+    // Não vaza o corpo de erro do Supabase (pode conter detalhe interno).
+    return { error: `Apuração indisponível (Supabase ${res.status}).` };
   }
   return res.json();
 }
@@ -411,14 +414,14 @@ const TOOLS = [
 // Handler principal
 // =========================================================================
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (applyCors(req, res)) return;
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, message: 'Method Not Allowed' });
   }
+
+  // Exige sessão válida: barra abuso anônimo do endpoint (custo Anthropic).
+  const user = await verifyUser(req);
+  if (!user) return unauthorized(res);
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -435,6 +438,15 @@ export default async function handler(req, res) {
     const { messages, context } = req.body || {};
     if (!Array.isArray(messages) || messages.length === 0) {
       return res.status(400).json({ success: false, message: 'messages é obrigatório.' });
+    }
+    // Limites de input: barra payloads gigantes que inflam tokens.
+    if (messages.length > 60) {
+      return res.status(413).json({ success: false, message: 'Histórico longo demais.' });
+    }
+    for (const m of messages) {
+      if (tooLong(m?.text, 8000)) {
+        return res.status(413).json({ success: false, message: 'Mensagem longa demais (máx. 8000 caracteres).' });
+      }
     }
 
     const candidateName = context?.candidateName || 'o candidato';
@@ -480,7 +492,7 @@ Diretrizes:
     let toolCallsLog = [];
 
     for (let iter = 0; iter < MAX_TOOL_ITERATIONS; iter++) {
-      const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
+      const anthropicRes = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -500,7 +512,7 @@ Diretrizes:
           tools: TOOLS,
           messages: conversationMessages
         })
-      });
+      }, 60000);
 
       const data = await anthropicRes.json();
 

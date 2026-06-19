@@ -250,13 +250,10 @@ function flattenTsePayload({ tseData, queryYear, electionId, munCode, munName, r
 // =====================================================================
 // HANDLER
 // =====================================================================
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+import { applyCors } from '../lib/guard.js';
 
-  if (req.method === 'OPTIONS') return res.status(200).end();
+export default async function handler(req, res) {
+  if (applyCors(req, res, { methods: 'GET,OPTIONS' })) return;
 
   const { city, role = 'Prefeito', year = '2024', round = '1', force } = req.query;
   if (!city) {
@@ -341,16 +338,18 @@ export default async function handler(req, res) {
       }
     });
     if (!tseRes.ok) {
+      console.error(`[TSE Apuração] ${tseRes.status} em ${tseUrl}`);
       return res.status(502).json({
         success: false,
-        error: `TSE retornou ${tseRes.status} para ${tseUrl}`
+        error: `A apuração oficial do TSE retornou status ${tseRes.status}. Tente novamente.`
       });
     }
     tseData = await tseRes.json();
   } catch (err) {
+    console.error('[TSE Apuração] Falha de rede:', err?.message);
     return res.status(502).json({
       success: false,
-      error: `Falha de rede ao consultar TSE: ${err.message}`
+      error: 'Falha de rede ao consultar a apuração oficial do TSE.'
     });
   }
 

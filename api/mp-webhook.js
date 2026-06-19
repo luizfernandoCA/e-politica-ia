@@ -10,7 +10,10 @@
  *   MP_ACCESS_TOKEN            - Mercado Pago access token
  *   SUPABASE_URL               - https://tlnprjkiydiogrcsruxw.supabase.co
  *   SUPABASE_SERVICE_ROLE_KEY  - Supabase Dashboard > Settings > API > service_role
+ *   MP_WEBHOOK_SECRET          - (opcional) ativa a validação da assinatura x-signature
  */
+
+import { fetchWithTimeout, verifyMercadoPagoSignature } from '../lib/guard.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -40,10 +43,21 @@ export default async function handler(req, res) {
       return res.status(200).json({ received: true, ignored: true });
     }
 
+    // 0. Verificação de assinatura HMAC (defesa em profundidade).
+    //    Opt-in: só rejeita se MP_WEBHOOK_SECRET estiver configurado.
+    const sig = verifyMercadoPagoSignature(req, paymentId);
+    if (sig.configured && !sig.valid) {
+      console.warn('[MP Webhook] Assinatura x-signature inválida — rejeitado.');
+      return res.status(401).json({ received: true, error: 'invalid signature' });
+    }
+    if (!sig.configured) {
+      console.warn('[MP Webhook] MP_WEBHOOK_SECRET ausente — seguindo só com re-fetch autoritativo.');
+    }
+
     // 1. Fetch the authoritative payment record from Mercado Pago
-    const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+    const mpRes = await fetchWithTimeout(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
       headers: { Authorization: `Bearer ${accessToken}` }
-    });
+    }, 10000);
     if (!mpRes.ok) {
       console.error('[MP Webhook] Falha ao consultar pagamento:', await mpRes.text());
       return res.status(200).json({ received: true, processed: false });
@@ -60,8 +74,10 @@ export default async function handler(req, res) {
       Prefer: 'resolution=merge-duplicates,return=minimal'
     };
 
-    // 2. Record in payments ledger
-    await fetch(`${supabaseUrl}/rest/v1/payments`, {
+    // 2. Record in payments ledger.
+    //    `raw` guarda só campos de reconciliação — NÃO o objeto completo do
+    //    pagador (LGPD: minimização de dados pessoais).
+    await fetchWithTimeout(`${supabaseUrl}/rest/v1/payments`, {
       method: 'POST',
       headers: sbHeaders,
       body: JSON.stringify({
@@ -72,13 +88,23 @@ export default async function handler(req, res) {
         amount: payment.transaction_amount,
         currency: payment.currency_id || 'BRL',
         status,
-        raw: payment
+        raw: {
+          id: payment.id,
+          status: payment.status,
+          status_detail: payment.status_detail,
+          transaction_amount: payment.transaction_amount,
+          currency_id: payment.currency_id,
+          date_approved: payment.date_approved,
+          payment_method_id: payment.payment_method_id,
+          payment_type_id: payment.payment_type_id,
+          external_reference: payment.external_reference
+        }
       })
-    });
+    }, 8000);
 
     // 3. Activate subscription when approved
     if (status === 'approved' && userId) {
-      await fetch(`${supabaseUrl}/rest/v1/user_state?on_conflict=user_id`, {
+      await fetchWithTimeout(`${supabaseUrl}/rest/v1/user_state?on_conflict=user_id`, {
         method: 'POST',
         headers: sbHeaders,
         body: JSON.stringify({
@@ -92,7 +118,7 @@ export default async function handler(req, res) {
           },
           updated_at: new Date().toISOString()
         })
-      });
+      }, 8000);
     }
 
     return res.status(200).json({ received: true, processed: true, status });

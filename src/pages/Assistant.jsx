@@ -9,8 +9,12 @@ import {
 import { CANDIDATES } from '../data/electoralMockData';
 import { authedFetch } from '../services/api';
 
-export default function Assistant({ activeCandidate }) {
-  const candidate = CANDIDATES.find(c => c.id === activeCandidate) || CANDIDATES[0];
+export default function Assistant({ activeCandidate, candidates }) {
+  const candidate =
+    (candidates && candidates.find((c) => c.id === activeCandidate)) ||
+    (candidates && candidates[0]) ||
+    CANDIDATES.find((c) => c.id === activeCandidate) ||
+    CANDIDATES[0];
   
   // Guarda contra localStorage corrompido: JSON.parse de valor inválido lançaria
   // exceção em tempo de render (crash). Mesmo padrão de readParams() usado em Consultoria/Reports.

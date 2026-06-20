@@ -15,9 +15,13 @@ import {
 import { CANDIDATES } from '../data/electoralMockData';
 import DataSourceBadge from '../components/DataSourceBadge';
 
-export default function Dashboard({ activeCandidate, contacts = [], tasks, setTasks, setActivePage }) {
-  // Find current candidate parameters
-  const candidate = CANDIDATES.find(c => c.id === activeCandidate) || CANDIDATES[0];
+export default function Dashboard({ activeCandidate, candidates, contacts = [], tasks, setTasks, setActivePage }) {
+  // Candidato vem da lista REAL (configurada); mock só como último fallback.
+  const candidate =
+    (candidates && candidates.find((c) => c.id === activeCandidate)) ||
+    (candidates && candidates[0]) ||
+    CANDIDATES.find((c) => c.id === activeCandidate) ||
+    CANDIDATES[0];
 
   // Indicadores de campanha DERIVADOS dos dados reais do CRM (contacts).
   // Numa campanha recém-configurada começam zerados e crescem conforme o uso —

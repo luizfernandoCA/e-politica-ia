@@ -15,6 +15,7 @@ import {
   X
 } from 'lucide-react';
 import DataSourceBadge from '../components/DataSourceBadge';
+import { UF_DATA } from '../data/ufElectoral';
 
 /**
  * Apuração TSE — paridade com o Politique mobile.
@@ -89,12 +90,17 @@ function downloadCsv(filename, candidates) {
 
 export default function ApuracaoTSE() {
   const params = readCampaignParams();
-  const [activeTab, setActiveTab] = useState('coligacao');
+  // A apuração oficial que temos é MUNICIPAL (RO/2024-2020). Se o candidato
+  // disputa cargo estadual/federal (2026), essa apuração é só CONTEXTO do
+  // município — não a candidatura dele. Nesse caso, abrimos no Coeficiente.
+  const isMunicipalCargo = ['prefeito', 'vereador'].includes((params?.role || '').toLowerCase());
+  const [activeTab, setActiveTab] = useState(isMunicipalCargo ? 'coligacao' : 'coeficiente');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [year, setYear] = useState(2024);
-  const [role, setRole] = useState(params?.role || 'Vereador');
+  // Para a apuração municipal de contexto, usa cargo municipal válido.
+  const [role, setRole] = useState(isMunicipalCargo ? params.role : 'Prefeito');
 
   const city = params?.city || 'PORTO VELHO';
 
@@ -227,6 +233,20 @@ export default function ApuracaoTSE() {
           </button>
         </div>
       </header>
+
+      {/* Aviso quando o candidato disputa cargo 2026 (não municipal):
+          a apuração 2024 abaixo é contexto do município, não a candidatura dele. */}
+      {!isMunicipalCargo && (
+        <section
+          className="glass"
+          style={{ padding: '0.9rem 1.1rem', marginBottom: '1rem', borderRadius: 'var(--radius-md)', borderLeft: '4px solid var(--accent-yellow)' }}
+        >
+          <strong style={{ color: 'var(--accent-yellow)' }}>⚠️ Candidatura 2026: {params?.candidateName ? `${params.candidateName} · ` : ''}{params?.role}/{params?.state || 'BR'}</strong>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-gray)', margin: '0.4rem 0 0', lineHeight: 1.5 }}>
+            A eleição geral de 2026 ocorre em outubro — ainda <strong>não há apuração</strong>. A apuração oficial de {year} mostrada abaixo é a <strong>última eleição MUNICIPAL de {city}</strong> (contexto), <strong>não</strong> a candidatura deste candidato. Para a projeção de 2026, use a aba <strong>Coeficiente</strong>.
+          </p>
+        </section>
+      )}
 
       {/* Resumo do município (sempre visível) */}
       {data && (
@@ -577,16 +597,20 @@ function TabCoeficiente({ role, data }) {
         : null;
     } catch { return null; }
   })();
-  const uf = params?.state || data?.uf || '—';
-  const eleitoradoOficial = data?.aggregate?.totalVoters || 0;
+  const uf = params?.state || data?.uf || '';
+  const ufInfo = UF_DATA[uf] || null;
+  const roleIsMunicipal = (role || '').toLowerCase().includes('vereador') || (role || '').toLowerCase().includes('prefeito');
+  // Vereador/Prefeito → eleitorado do MUNICÍPIO; demais cargos → do ESTADO.
+  const eleitoradoBase = roleIsMunicipal ? (data?.aggregate?.totalVoters || 0) : (ufInfo?.eleitorado || 0);
 
-  const [eleitorado, setEleitorado] = useState(eleitoradoOficial ? String(eleitoradoOficial) : '');
+  const [eleitorado, setEleitorado] = useState(eleitoradoBase ? String(eleitoradoBase) : '');
   const [comparecimento, setComparecimento] = useState('80');
   const [pctValidos, setPctValidos] = useState('90');
   const [vagas, setVagas] = useState(
     (role || '').toLowerCase().includes('vereador') && data?.role?.seats ? String(data.role.seats) : ''
   );
-  const [depFederais, setDepFederais] = useState('');
+  // Bancada federal do estado prefilled da base oficial → deriva as estaduais.
+  const [depFederais, setDepFederais] = useState(ufInfo?.depFed ? String(ufInfo.depFed) : '');
 
   const roleLower = (role || '').toLowerCase();
   const isDepEstadual = roleLower.includes('estadual');
@@ -604,6 +628,8 @@ function TabCoeficiente({ role, data }) {
   const vagasEfetivas = isDepEstadual ? estadualSeats : isDepFederal ? fedN : (Number(vagas) || 0);
   const votosValidos = Math.round(eN * (comp / 100) * (val / 100));
   const qe = quocienteEleitoral(votosValidos, vagasEfetivas);
+  // Coeficiente "bruto": aptos a votar ÷ cadeiras (referência simples e direta).
+  const coefBruto = vagasEfetivas > 0 ? Math.round(eN / vagasEfetivas) : 0;
 
   const inputStyle = {
     width: '100%', padding: '10px 12px', background: 'var(--bg-dark)',
@@ -702,6 +728,15 @@ function TabCoeficiente({ role, data }) {
               </h3>
               <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                 {vagasEfetivas > 0 ? `votos para eleger 1 nome` : 'informe o nº de vagas'}
+              </span>
+            </div>
+            <div style={{ ...card, textAlign: 'center' }}>
+              <span style={labelStyle}>Aptos ÷ cadeiras</span>
+              <h3 style={{ fontSize: '1.6rem', fontWeight: 800, margin: '4px 0 0', color: 'var(--accent-blue-bright)' }}>
+                {vagasEfetivas > 0 && eN > 0 ? formatNumber(coefBruto) : '—'}
+              </h3>
+              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                {vagasEfetivas > 0 ? `referência bruta: ${formatNumber(eN)} aptos ÷ ${vagasEfetivas} cadeiras` : 'eleitorado ÷ vagas'}
               </span>
             </div>
           </div>

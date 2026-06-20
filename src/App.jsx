@@ -182,9 +182,20 @@ export default function App() {
           setCampaignParams(params);
           setIsCampaignConfigured(true);
 
-          const userCandidateId = 'dr-marcos-silva';
-          setCandidates([...initialCandidates]);
-          setActiveCandidate(userCandidateId);
+          // Mostra SOMENTE o candidato configurado — sem candidatos "demo".
+          const userCandidate = {
+            id: 'user-candidate',
+            name: (params.candidateName || 'Candidato').toUpperCase(),
+            party: params.party || '',
+            role: params.role || '',
+            avatar: '🗳️',
+            color: 'var(--accent-green)',
+            status: 'Sua candidatura',
+            baseCount: 0,
+            targetGoal: 0
+          };
+          setCandidates([userCandidate]);
+          setActiveCandidate(userCandidate.id);
         } else {
           setIsCampaignConfigured(false);
           setCampaignParams(null);
@@ -307,7 +318,17 @@ export default function App() {
   const handleSetupComplete = async (params) => {
     setCampaignParams(params);
 
-    const userCandidateId = 'dr-marcos-silva';
+    const userCandidate = {
+      id: 'user-candidate',
+      name: (params.candidateName || 'Candidato').toUpperCase(),
+      party: params.party || '',
+      role: params.role || '',
+      avatar: '🗳️',
+      color: 'var(--accent-green)',
+      status: 'Sua candidatura',
+      baseCount: 0,
+      targetGoal: 0
+    };
     setContacts([]); // Starts with absolutely 0 pre-registered contacts!
 
     const defaultTasks = [
@@ -325,8 +346,8 @@ export default function App() {
     }
     reinitializeElectoralMockData();
 
-    setCandidates([...initialCandidates]);
-    setActiveCandidate(userCandidateId);
+    setCandidates([userCandidate]);
+    setActiveCandidate(userCandidate.id);
 
     if (activeUser) {
       const userId = activeUser.uid;
@@ -393,6 +414,7 @@ export default function App() {
         return (
           <Dashboard
             activeCandidate={activeCandidate}
+            candidates={candidates}
             contacts={contacts}
             tasks={tasks}
             setTasks={setTasks}
@@ -417,7 +439,7 @@ export default function App() {
       case 'assistant':
         return (
           <ErrorBoundary label="Mestre AI">
-            <Assistant activeCandidate={activeCandidate} />
+            <Assistant activeCandidate={activeCandidate} candidates={candidates} />
           </ErrorBoundary>
         );
       case 'crm':
@@ -440,6 +462,7 @@ export default function App() {
         return (
           <Dashboard
             activeCandidate={activeCandidate}
+            candidates={candidates}
             contacts={contacts}
             tasks={tasks}
             setTasks={setTasks}

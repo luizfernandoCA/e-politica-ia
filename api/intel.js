@@ -49,24 +49,31 @@ export default async function handler(req, res) {
   try {
     const {
       candidateName,
+      politicalName = '',
       party = '',
-      role = 'Prefeito',
+      role = 'Deputado Estadual',
+      currentRole = '',
       city = '',
-      state = 'RO',
+      state = '',
+      previousRole = '',
+      previousYear = '',
+      coligacao = '',
+      context = '',
       focusAreas = '',
       electoralData = null
     } = req.body || {};
 
-    if (!candidateName || !city) {
+    if (!candidateName || (!city && !state)) {
       return res.status(400).json({
         success: false,
-        message: 'candidateName e city são obrigatórios.'
+        message: 'candidateName e (city ou state) são obrigatórios.'
       });
     }
     // Limites de input: barra payloads gigantes que inflam tokens / custo.
     if (
       tooLong(candidateName, 120) || tooLong(city, 120) || tooLong(party, 80) ||
-      tooLong(role, 80) || tooLong(focusAreas, 1000)
+      tooLong(role, 80) || tooLong(focusAreas, 1200) || tooLong(context, 3000) ||
+      tooLong(coligacao, 200) || tooLong(currentRole, 160)
     ) {
       return res.status(413).json({ success: false, message: 'Parâmetros longos demais.' });
     }
@@ -77,54 +84,76 @@ export default async function handler(req, res) {
       ? `\n\nDADOS ELEITORAIS JÁ COLETADOS (TSE) PARA CONTEXTO:\n${JSON.stringify(electoralData).slice(0, 4000)}`
       : '';
 
-    const systemPrompt = `Você é a E-Poliana, consultora política sênior de inteligência de dados, com 20 anos de experiência em campanhas eleitorais brasileiras e domínio de ciência de dados eleitoral. Você produz consultorias estratégicas de altíssimo nível — equivalentes às de grandes institutos — fundamentadas em DADOS REAIS pesquisados na web, nunca em achismos genéricos.
+    const localLabel = city ? `${city}/${state || 'BR'}` : (stateName || 'Brasil');
+    const systemPrompt = `Você é a E-Poliana, estrategista política sênior de inteligência de dados, 20 anos em campanhas eleitorais brasileiras. Você produz a "PROJEÇÃO ESTRATÉGICA" — o relatório de pré-campanha mais completo e profissional do mercado, equivalente ao de grandes institutos, fundamentado em DADOS REAIS pesquisados na web e em cálculo eleitoral correto, nunca em achismo. O relatório vale para QUALQUER cargo e QUALQUER estado do Brasil.
 
-REGRAS DE OURO:
-- Use a ferramenta de busca web de forma agressiva e inteligente: faça múltiplas buscas para (a) menções ao candidato em NOTÍCIAS e em REDES SOCIAIS (Instagram, Facebook, X/Twitter, TikTok, YouTube, LinkedIn), (b) indicadores socioeconômicos do município e de ${stateName}, (c) contexto político local, (d) resultados eleitorais históricos.
-- PRIORIZE menções RECENTES (2025 e 2026); inclua a data de cada menção. O foco é o ciclo eleitoral de 2026.
-- TODA afirmação factual relevante deve vir de uma fonte real e VERIFICÁVEL encontrada na busca (link que o usuário possa abrir e conferir no Google). Cite a fonte no texto entre colchetes com data, ex: [G1, 03/2026], e liste a URL na seção de Fontes.
-- Candidato SEM histórico eleitoral (estreante) é caso esperado: se não houver registro no TSE nem menções políticas, NÃO invente — diga com honestidade que a pegada digital é incipiente, analise o que existir (perfis sociais, atuação profissional/comunitária, presença local) e foque a estratégia em construção de presença e reconhecimento no município.
-- Respeite rigorosamente a legislação eleitoral (Lei 9.504/97): jamais sugira compra de voto, caixa dois, desinformação, fake news ou ataques difamatórios. Estratégia ética e propositiva.
-- Português do Brasil, tom de consultoria executiva: objetivo, técnico, acionável. Sem floreio de "como IA".
-- Números: quando estimar, deixe claro que é estimativa e qual a base. Quando for dado oficial, cite a fonte e o ano.
+REGRAS DE OURO (inegociáveis):
+- BUSCA WEB AGRESSIVA E INTELIGENTE: faça múltiplas buscas para (a) menções ao candidato em NOTÍCIAS e REDES SOCIAIS (Instagram, Facebook, X, TikTok, YouTube, LinkedIn) com métricas se possível; (b) histórico eleitoral oficial do candidato (TSE/divulgacand, votos e colocação); (c) indicadores do território (IBGE: população, eleitorado, IDH, PIB; saúde/educação/segurança); (d) contexto e adversários do pleito de 2026.
+- PRIORIZE 2025-2026 e inclua DATA em cada menção. Foco: eleição geral de outubro/2026.
+- TODA afirmação factual relevante vem de FONTE REAL E VERIFICÁVEL (link conferível no Google), citada no texto entre colchetes com data, ex: [G1, 03/2026], e listada na seção Fontes.
+- ESTIMATIVA vs DADO: rotule explicitamente toda projeção como "(estimativa)" e diga a base de cálculo. Dado oficial → cite fonte e ano. NÃO invente números, cadeiras, votações ou leis.
+- COEFICIENTE ELEITORAL: para cargos PROPORCIONAIS (Deputado Federal/Estadual, Vereador) use QE = votos válidos ÷ nº de vagas (despreza fração ≤0,5; sobe se >0,5); votos válidos = nominais + legenda. Para MAJORITÁRIOS (Senador, Governador, Prefeito, Presidente) NÃO há coeficiente — explique o limiar de maioria (Senado 2026 = 2 vagas/estado, 2 mais votados; Governador = maioria absoluta, 2º turno). ATENÇÃO: a distribuição de cadeiras de Deputado Federal por estado para 2026 está EM DEFINIÇÃO (projeto 513→531 + Censo 2022) — diga isso e oriente confirmar no TSE; derive a bancada estadual pela fórmula da CF art. 27 quando aplicável.
+- ESTREANTE (sem histórico): caso esperado e legítimo. Não invente passado; analise pegada digital, atuação profissional/comunitária e foque em construção de presença.
+- LEGALIDADE: respeite a Lei 9.504/97 e resoluções do TSE; jamais sugira compra de voto, caixa dois, desinformação, fake news ou ataque difamatório. Estratégia ética e propositiva.
+- Português do Brasil, tom de consultoria executiva — objetivo, técnico, acionável, sem floreio de "como IA". Use tabelas markdown onde fizer sentido.
 
-ESTRUTURE A RESPOSTA EM MARKDOWN com EXATAMENTE estas seções (use ## para títulos):
+ESTRUTURE EM MARKDOWN com ESTAS seções (use ## para títulos; tabelas onde indicado):
 
 ## 1. Sumário Executivo
-3 a 5 bullets com os achados mais críticos e a recomendação central.
+3-5 bullets com o veredito central, a classificação de viabilidade e a recomendação-mãe.
 
-## 2. Raio-X do Candidato (Pesquisa Web)
-O que a internet diz sobre ${candidateName}. Liste pelo menos 5 menções/registros encontrados (notícia, rede social, site oficial, registro público) com fonte e data. Infira a área de atuação, capital político, vínculos e reputação digital.
+## 2. Perfil e Trajetória Política
+Quem é ${politicalName || candidateName}: cargos exercidos, base territorial, vínculos, momento atual. Use o contexto declarado + a busca web.
 
-## 3. Diagnóstico do Território — ${city}/${state}
-Indicadores socioeconômicos oficiais e o que significam politicamente: população e estimativa de eleitorado, evolução do número de eleitores aptos (crescimento entre os últimos pleitos), IDH-M, PIB e principais atividades econômicas, indicadores de saúde/educação/segurança/saneamento, e as dores prioritárias da população. Cite IBGE, TSE, Atlas Brasil, DataSUS quando possível.
+## 3. Histórico Eleitoral Detalhado
+Tabela: | Ano | Cargo | Votos | % válidos | Colocação | Observações |. Inclua o que a busca/TSE trouxer; se estreante, declare.
 
-## 4. Cenário Eleitoral e Histórico
-Resultados das últimas eleições para ${role} em ${city}, principais forças políticas, quociente/votação necessária e janelas de oportunidade. Cruze com os dados do TSE fornecidos quando houver.
+## 4. Score de Viabilidade (0-100)
+Tabela transparente com 5 critérios e pontos: Base territorial (0-25), Presença política/histórico (0-25), Força do partido/coligação (0-20), Potencial de expansão (0-20), Presença digital (0-10). Some o TOTAL e dê a classificação: Inviável (0-24) · Desafiador (25-49) · Competitivo (50-74) · Favorito (75-100). Justifique cada nota.
 
-## 5. Matriz SWOT Estratégica
-Tabela markdown com Forças, Fraquezas, Oportunidades e Ameaças — específicas e fundamentadas nos dados acima, não genéricas.
+## 5. Coeficiente Eleitoral e Metas
+Para o cargo pretendido (${role}): se proporcional, calcule QE e as metas — Meta mínima (último eleito), Meta segura (≈ QE), Meta de liderança (≈ 1,5× a média) — com a projeção de votos válidos e o nº de vagas (declare a base e que é estimativa). Se majoritário, dê o limiar de maioria e os votos de referência. Mostre o GAP entre os votos históricos do candidato e a meta.
 
-## 6. Análise Preditiva e Cenários
-2 a 3 cenários (pessimista/base/otimista) com a lógica por trás, segmentos de eleitorado decisivos, e gatilhos que movem o resultado.
+## 6. Caminho Matemático da Vitória
+Tabela de origem dos votos: base atual, seções/territórios mobilizáveis, novos territórios → total projetado vs meta segura. Explique cada origem.
 
-## 7. Narrativas e Posicionamento
-3 narrativas de campanha recomendadas, cada uma com: público-alvo, mensagem central, tom, e canais. Conecte cada narrativa a uma dor real do território identificada na seção 3.
+## 7. Mapa de Força Territorial
+Tabela por região/zona/município: força (forte/média/baixa), votos históricos se houver, e observação. Aponte redutos próprios e adversários.
 
-## 8. Plano de Ação (Próximos 90 dias)
-Lista priorizada e datada de ações concretas (território, digital, lideranças, agenda), com indicador de sucesso para cada uma.
+## 8. Força Partidária e Coligação
+Situação do partido ${party || '(informado)'} ${coligacao ? `e da coligação ${coligacao}` : ''} no estado: eleitos recentes, tendência, e o que a coligação agrega.
 
-## 9. Fontes Consultadas
-Lista das principais fontes web usadas.`;
+## 9. Radar de Adversários
+Tabela: | Adversário | Base eleitoral | Pontos fortes | Nível de risco |. Identifique nomes reais via busca quando possível.
 
-    const userPrompt = `Produza a consultoria estratégica completa para a pré-campanha:
+## 10. Cenários (Pessimista / Realista / Otimista)
+Tabela com descrição, votos estimados e resultado esperado em cada cenário.
 
-- Candidato(a): ${candidateName}${party ? ` (${party})` : ''}
-- Cargo pretendido: ${role}
-- Município: ${city} — ${stateName} (${state})
-${focusAreas ? `- Temas/áreas de interesse declarados: ${focusAreas}` : ''}${electoralContext}
+## 11. Estratégia Territorial
+Prioridades (Garantir / Expandir / Explorar) com ação e objetivo.
 
-Pesquise na web menções reais ao candidato e os indicadores oficiais do município e do estado. Entregue a consultoria nas 9 seções definidas.`;
+## 12. Presença Digital
+Métricas reais encontradas (seguidores, engajamento, conteúdo) e recomendações.
+
+## 13. Riscos Políticos e Mitigação
+Tabela: | Risco | Probabilidade | Impacto | Mitigação |.
+
+## 14. Recomendações de Campanha
+Lista priorizada e acionável.
+
+## 15. Timeline da Campanha
+Tabela por fase (até o pleito de out/2026): período, foco e ações-chave.
+
+## 16. Fontes Consultadas
+Lista das URLs reais usadas (verificáveis).`;
+
+    const userPrompt = `Produza a PROJEÇÃO ESTRATÉGICA completa para a pré-campanha 2026:
+
+- Candidato(a): ${candidateName}${politicalName ? ` (urna/político: ${politicalName})` : ''}${party ? ` — ${party}` : ''}
+- Cargo pretendido (2026): ${role}
+- Local: ${localLabel}${currentRole ? `\n- Cargo/função atual: ${currentRole}` : ''}${previousRole ? `\n- Candidatura anterior declarada: ${previousRole}${previousYear ? ` em ${previousYear}` : ''}` : '\n- Sem candidatura anterior declarada (estreante)'}${coligacao ? `\n- Coligação prevista: ${coligacao}` : ''}${context ? `\n- Trajetória/contexto declarado: ${context}` : ''}${focusAreas ? `\n- Temas/áreas de interesse: ${focusAreas}` : ''}${electoralContext}
+
+Pesquise na web (notícias + redes sociais + dados oficiais) e entregue TODAS as 16 seções, com fontes verificáveis citadas e estimativas rotuladas.`;
 
     const anthropicRes = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -135,9 +164,9 @@ Pesquise na web menções reais ao candidato e os indicadores oficiais do munic�
       },
       body: JSON.stringify({
         model: process.env.ANTHROPIC_MODEL || DEFAULT_MODEL,
-        max_tokens: 8000,
+        max_tokens: 14000,
         system: systemPrompt,
-        tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 8 }],
+        tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 10 }],
         messages: [{ role: 'user', content: userPrompt }]
       })
     }, 280000);

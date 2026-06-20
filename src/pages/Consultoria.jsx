@@ -40,12 +40,13 @@ export default function Consultoria() {
   const [form, setForm] = useState({
     candidateName: params?.candidateName || '',
     party: params?.party || '',
-    role: params?.role || 'Prefeito',
+    role: params?.role || '',
     city: params?.city || '',
-    state: params?.state || 'RO'
+    state: params?.state || ''
   });
   const setField = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const [focusAreas, setFocusAreas] = useState('');
+  const [context, setContext] = useState('');
   const [loading, setLoading] = useState(false);
   const [phase, setPhase] = useState(0);
   const [result, setResult] = useState(null);
@@ -61,8 +62,8 @@ export default function Consultoria() {
   }, [loading]);
 
   async function generate() {
-    if (!form.city) { setError('Selecione o município.'); return; }
     if (!form.candidateName.trim()) { setError('Informe o nome do candidato a pesquisar.'); return; }
+    if (!form.city && !form.state) { setError('Selecione ao menos o município ou a UF.'); return; }
     setLoading(true);
     setError(null);
     setResult(null);
@@ -76,7 +77,12 @@ export default function Consultoria() {
           party: form.party,
           role: form.role,
           city: form.city,
-          state: form.state || 'RO',
+          state: form.state || '',
+          previousRole: params?.previousRole || '',
+          previousYear: params?.previousYear || '',
+          currentRole: params?.currentRole || '',
+          coligacao: params?.coligacao || '',
+          context: context.trim(),
           focusAreas
         })
       });
@@ -187,6 +193,15 @@ export default function Consultoria() {
                 />
               </div>
             </div>
+
+            <label htmlFor="ctx">Trajetória / contexto político (opcional, melhora muito a análise)</label>
+            <textarea
+              id="ctx"
+              placeholder="Ex.: ex-deputado estadual e federal, ex-prefeito de Ouro Preto do Oeste, secretário de Agricultura, base no agro, coligação PRD+Solidariedade…"
+              value={context}
+              onChange={(e) => setContext(e.target.value)}
+              rows={3}
+            />
 
             <label htmlFor="focus">Temas de interesse (opcional)</label>
             <textarea

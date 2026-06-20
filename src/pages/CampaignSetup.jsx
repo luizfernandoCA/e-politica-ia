@@ -8,6 +8,7 @@ export default function CampaignSetup({ onSetupComplete }) {
     city: 'Porto Velho',
     state: 'RO',
     role: 'Prefeito',
+    previousRole: '', // cargo já disputado (vazio = nunca concorreu)
     party: ''
   });
 
@@ -15,6 +16,14 @@ export default function CampaignSetup({ onSetupComplete }) {
   const [currentStep, setCurrentStep] = useState(0);
 
   const roCities = RO_MUNICIPALITIES;
+
+  // Cargos. Municipais (Prefeito/Vereador) têm dados TSE 2024 sincronizados.
+  // Estaduais/federais (2026) ficam salvos como parâmetro; a apuração só
+  // existirá após o pleito de outubro/2026.
+  const CARGOS = ['Prefeito', 'Vereador', 'Deputado Estadual', 'Deputado Federal', 'Senador', 'Governador'];
+  const MUNICIPAL_CARGOS = ['Prefeito', 'Vereador'];
+  const UFS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
+  const isMunicipalSync = MUNICIPAL_CARGOS.includes(formData.role) && formData.state === 'RO';
 
   const syncSteps = [
     "Estabelecendo canal seguro com gateway do TSE...",
@@ -40,22 +49,29 @@ export default function CampaignSetup({ onSetupComplete }) {
       await new Promise(resolve => setTimeout(resolve, 1000));
       setCurrentStep(1);
 
-      // Step 1: Fetch 2024 Electoral Data
-      const res2024 = await fetch(`/api/tse?city=${encodeURIComponent(formData.city)}&role=${formData.role}&year=2024`);
-      const data2024 = await res2024.json();
-      
-      if (!data2024.success) {
-        throw new Error(data2024.error || 'Falha ao buscar dados do TSE de 2024.');
-      }
-      
-      setCurrentStep(2);
+      let data2024 = null;
+      let data2020 = null;
 
-      // Step 2: Fetch 2020 Electoral Data
-      const res2020 = await fetch(`/api/tse?city=${encodeURIComponent(formData.city)}&role=${formData.role}&year=2020`);
-      const data2020 = await res2020.json();
-      
-      if (!data2020.success) {
-        throw new Error(data2020.error || 'Falha ao buscar dados do TSE de 2020.');
+      if (isMunicipalSync) {
+        // Cargo municipal em RO: sincroniza apuração oficial TSE de 2024 e 2020.
+        const res2024 = await fetch(`/api/tse?city=${encodeURIComponent(formData.city)}&role=${formData.role}&year=2024`);
+        data2024 = await res2024.json();
+        if (!data2024.success) {
+          throw new Error(data2024.error || 'Falha ao buscar dados do TSE de 2024.');
+        }
+        setCurrentStep(2);
+
+        const res2020 = await fetch(`/api/tse?city=${encodeURIComponent(formData.city)}&role=${formData.role}&year=2020`);
+        data2020 = await res2020.json();
+        if (!data2020.success) {
+          throw new Error(data2020.error || 'Falha ao buscar dados do TSE de 2020.');
+        }
+      } else {
+        // Cargo estadual/federal (2026) ou UF ≠ RO: o pleito de 2026 ocorre em
+        // outubro/2026 — ainda não há apuração oficial. Salvamos os parâmetros;
+        // o Painel e a Consultoria operam com busca web e dados disponíveis.
+        setCurrentStep(2);
+        await new Promise(resolve => setTimeout(resolve, 600));
       }
 
       setCurrentStep(3);
@@ -186,8 +202,32 @@ export default function CampaignSetup({ onSetupComplete }) {
                       fontSize: '0.9rem'
                     }}
                   >
-                    <option value="Prefeito">Prefeito</option>
-                    <option value="Vereador">Vereador</option>
+                    {CARGOS.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Cargo já disputado (opcional) */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-gray)' }}>Cargo já disputado (opcional)</label>
+                  <select
+                    value={formData.previousRole}
+                    onChange={(e) => setFormData(prev => ({ ...prev, previousRole: e.target.value }))}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      background: 'var(--bg-dark)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: 'var(--radius-sm)',
+                      color: '#FFFFFF',
+                      fontSize: '0.9rem'
+                    }}
+                  >
+                    <option value="">Nunca concorreu</option>
+                    {CARGOS.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
                   </select>
                 </div>
 
@@ -242,34 +282,40 @@ export default function CampaignSetup({ onSetupComplete }) {
                   </datalist>
                 </div>
 
-                {/* Estado (Fixed to RO) */}
+                {/* Estado (UF) — selecionável */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-gray)' }}>UF</label>
-                  <div 
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-gray)' }}>UF *</label>
+                  <select
+                    value={formData.state}
+                    onChange={(e) => setFormData(prev => ({ ...prev, state: e.target.value }))}
                     style={{
                       width: '100%',
                       padding: '12px',
-                      background: 'rgba(20,30,60,0.03)',
+                      background: 'var(--bg-dark)',
                       border: '1px solid var(--border-color)',
                       borderRadius: 'var(--radius-sm)',
-                      color: 'var(--accent-yellow)',
+                      color: '#FFFFFF',
                       fontSize: '0.9rem',
-                      fontWeight: 800,
-                      textAlign: 'center',
-                      cursor: 'not-allowed'
+                      fontWeight: 700,
+                      textAlign: 'center'
                     }}
-                    title="e-politica.ia configurado especificamente para o TRE-RO!"
                   >
-                    RO 🇧🇷
-                  </div>
+                    {UFS.map((uf) => (
+                      <option key={uf} value={uf}>{uf}</option>
+                    ))}
+                  </select>
                 </div>
 
               </div>
 
-              {/* Security info note */}
+              {/* Security info note (dinâmica conforme cargo/UF) */}
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center', fontSize: '0.72rem', color: 'var(--text-gray)', background: 'rgba(20,30,60,0.01)', padding: '10px 14px', borderRadius: '6px', border: '1px solid var(--border-color)', marginTop: '6px' }}>
                 <Database size={16} style={{ color: 'var(--accent-blue-bright)', flexShrink: 0 }} />
-                <span>O cruzamento com os dados públicos do TSE e TRE-RO levará alguns segundos. A inteligência artificial criará automaticamente o SWOT e as regras de bairros sob medida.</span>
+                {isMunicipalSync ? (
+                  <span>O cruzamento com os dados públicos do TSE e TRE-{formData.state} levará alguns segundos. A inteligência artificial criará automaticamente o SWOT e as regras de bairros sob medida.</span>
+                ) : (
+                  <span><strong>Eleição 2026 ({formData.role}/{formData.state}):</strong> o pleito geral ocorre em <strong>outubro/2026</strong>, então ainda não há apuração oficial para cruzar. Seus parâmetros são salvos e a Consultoria/IA já trabalham com pesquisa web; a apuração será sincronizada quando o TSE divulgar.</span>
+                )}
               </div>
 
               {/* Real API Connection Error alert */}
@@ -300,7 +346,7 @@ export default function CampaignSetup({ onSetupComplete }) {
                   border: 'none'
                 }}
               >
-                <Sparkles size={16} /> Sincronizar com TSE & TRE-RO
+                <Sparkles size={16} /> {isMunicipalSync ? `Sincronizar com TSE & TRE-${formData.state}` : 'Salvar campanha & ativar IA'}
               </button>
 
             </form>

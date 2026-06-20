@@ -393,6 +393,7 @@ export default function App() {
         return (
           <Dashboard
             activeCandidate={activeCandidate}
+            contacts={contacts}
             tasks={tasks}
             setTasks={setTasks}
             setActivePage={setActivePage}
@@ -439,6 +440,7 @@ export default function App() {
         return (
           <Dashboard
             activeCandidate={activeCandidate}
+            contacts={contacts}
             tasks={tasks}
             setTasks={setTasks}
             setActivePage={setActivePage}

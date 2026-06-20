@@ -13,15 +13,26 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { CANDIDATES } from '../data/electoralMockData';
-import { CAMPAIGN_METRICS } from '../data/crmMockData';
 import DataSourceBadge from '../components/DataSourceBadge';
 
-export default function Dashboard({ activeCandidate, tasks, setTasks, setActivePage }) {
+export default function Dashboard({ activeCandidate, contacts = [], tasks, setTasks, setActivePage }) {
   // Find current candidate parameters
   const candidate = CANDIDATES.find(c => c.id === activeCandidate) || CANDIDATES[0];
-  
-  // Calculate goal percentage
-  const goalPercentage = Math.min(Math.round((candidate.baseCount / candidate.targetGoal) * 100), 100);
+
+  // Indicadores de campanha DERIVADOS dos dados reais do CRM (contacts).
+  // Numa campanha recém-configurada começam zerados e crescem conforme o uso —
+  // sem números ilustrativos fixos.
+  const baseMapeada = contacts.length;
+  const lideresCount = contacts.filter((c) => (c.role || '').toLowerCase().includes('lider')).length;
+  const ativosCount = contacts.filter((c) => (c.status || '').toLowerCase() === 'ativo').length;
+  const activeRatio = baseMapeada ? Math.round((ativosCount / baseMapeada) * 1000) / 10 : 0;
+  const regionsCovered = new Set(contacts.map((c) => c.regionId).filter(Boolean)).size;
+
+  // Meta da base: alvo derivado dos dados oficiais do TSE do candidato.
+  const targetGoal = candidate.targetGoal || 0;
+
+  // Calculate goal percentage (sobre a base REAL)
+  const goalPercentage = targetGoal ? Math.min(Math.round((baseMapeada / targetGoal) * 100), 100) : 0;
 
   // Toggle tasks check/uncheck
   const toggleTask = (taskId) => {
@@ -37,14 +48,16 @@ export default function Dashboard({ activeCandidate, tasks, setTasks, setActiveP
     }).catch(() => {});
   };
 
-  // Static chart parameters for support growth over the last 6 months
-  const growthData = [1200, 2400, 3900, 4800, 6100, candidate.baseCount];
+  // Evolução real: sem histórico ilustrativo. Antes do uso a base é 0; o ponto
+  // atual reflete os apoiadores efetivamente cadastrados no CRM.
+  const growthData = [0, 0, 0, 0, 0, baseMapeada];
   const months = ['Dez', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai'];
-  
+  const hasBase = baseMapeada > 0;
+
   // SVG Chart calculation parameters
   const chartHeight = 100;
   const chartWidth = 500;
-  const maxVal = 10000;
+  const maxVal = Math.max(...growthData, 10);
   const points = growthData.map((val, idx) => {
     const x = (idx / (growthData.length - 1)) * chartWidth;
     const y = chartHeight - (val / maxVal) * chartHeight;
@@ -104,9 +117,9 @@ export default function Dashboard({ activeCandidate, tasks, setTasks, setActiveP
           </div>
           <div>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)', textTransform: 'uppercase', fontWeight: 600 }}>Base Mapeada</span>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: '2px' }}>{candidate.baseCount.toLocaleString()}</h3>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: '2px' }}>{baseMapeada.toLocaleString()}</h3>
             <span style={{ fontSize: '0.65rem', color: 'var(--accent-green-bright)', display: 'flex', alignItems: 'center', gap: '2px', fontWeight: 600, marginTop: '2px' }}>
-              <TrendingUp size={12} /> +{CAMPAIGN_METRICS.weeklyGrowth}% esta semana
+              <TrendingUp size={12} /> {hasBase ? 'Cadastrados no CRM' : 'Cadastre apoiadores no CRM'}
             </span>
           </div>
         </div>
@@ -118,9 +131,9 @@ export default function Dashboard({ activeCandidate, tasks, setTasks, setActiveP
           </div>
           <div>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)', textTransform: 'uppercase', fontWeight: 600 }}>Meta da Base</span>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: '2px' }}>{candidate.targetGoal.toLocaleString()}</h3>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: '2px' }}>{targetGoal.toLocaleString()}</h3>
             <span style={{ fontSize: '0.65rem', color: 'var(--text-gray)', fontWeight: 500, marginTop: '2px', display: 'inline-block' }}>
-              Faltam {(candidate.targetGoal - candidate.baseCount).toLocaleString()} contatos
+              {targetGoal ? `Faltam ${Math.max(targetGoal - baseMapeada, 0).toLocaleString()} contatos` : 'Defina sua campanha'}
             </span>
           </div>
         </div>
@@ -132,9 +145,9 @@ export default function Dashboard({ activeCandidate, tasks, setTasks, setActiveP
           </div>
           <div>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)', textTransform: 'uppercase', fontWeight: 600 }}>Lideranças</span>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: '2px' }}>{CAMPAIGN_METRICS.leadersCount}</h3>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: '2px' }}>{lideresCount}</h3>
             <span style={{ fontSize: '0.65rem', color: 'var(--text-gray)', fontWeight: 500, marginTop: '2px', display: 'inline-block' }}>
-              Cobrindo {CAMPAIGN_METRICS.regionsCovered} bairros municipais
+              {regionsCovered > 0 ? `Cobrindo ${regionsCovered} região(ões)` : 'Nenhuma liderança ainda'}
             </span>
           </div>
         </div>
@@ -146,9 +159,9 @@ export default function Dashboard({ activeCandidate, tasks, setTasks, setActiveP
           </div>
           <div>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)', textTransform: 'uppercase', fontWeight: 600 }}>Taxa de Atividade</span>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: '2px' }}>{CAMPAIGN_METRICS.activeRatio}%</h3>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: '2px' }}>{hasBase ? `${activeRatio}%` : '—'}</h3>
             <span style={{ fontSize: '0.65rem', color: 'var(--accent-green-bright)', fontWeight: 600, marginTop: '2px', display: 'inline-block' }}>
-              Base altamente saudável
+              {hasBase ? `${ativosCount} de ${baseMapeada} ativos` : 'Sem base cadastrada'}
             </span>
           </div>
         </div>
@@ -400,12 +413,12 @@ export default function Dashboard({ activeCandidate, tasks, setTasks, setActiveP
             <div style={{ width: '100%', borderTop: '1px solid var(--border-color)', marginTop: '1.25rem', paddingTop: '1.25rem', display: 'flex', justifyContent: 'space-around', textAlign: 'center' }}>
               <div>
                 <span style={{ fontSize: '0.7rem', color: 'var(--text-gray)', display: 'block', fontWeight: 500 }}>Objetivo</span>
-                <strong style={{ fontSize: '1rem', fontWeight: 700 }}>{candidate.targetGoal.toLocaleString()}</strong>
+                <strong style={{ fontSize: '1rem', fontWeight: 700 }}>{targetGoal.toLocaleString()}</strong>
               </div>
               <div style={{ borderLeft: '1px solid var(--border-color)' }}></div>
               <div>
                 <span style={{ fontSize: '0.7rem', color: 'var(--text-gray)', display: 'block', fontWeight: 500 }}>Alcance Atual</span>
-                <strong style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--accent-green-bright)' }}>{candidate.baseCount.toLocaleString()}</strong>
+                <strong style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--accent-green-bright)' }}>{baseMapeada.toLocaleString()}</strong>
               </div>
             </div>
           </div>

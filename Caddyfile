@@ -1,0 +1,6 @@
+# TLS automático (Let's Encrypt) para o domínio definido em $DOMAIN.
+# Encaminha todo o tráfego para o app Node (porta 3000).
+{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy app:3000
+}

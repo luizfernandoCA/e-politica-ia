@@ -498,12 +498,19 @@ function RealApuracaoBanner({ setActivePage }) {
   const [error, setError] = useState(null);
 
   const city = params?.city || '';
-  const role = params?.role || 'Vereador';
+  const uf = params?.state || 'RO';
+  const role = params?.role || '';
+  const prevRole = params?.previousRole || '';
+  const prevYear = params?.previousYear || '';
   const candidateHint = params?.candidateName || '';
+  // Apuração oficial 2024 só faz sentido para cargo MUNICIPAL (Prefeito/Vereador).
+  // Para cargos da eleição geral 2026, não há apuração a casar — o painel
+  // reflete os dados DECLARADOS, não uma suposição.
+  const isMunicipal = ['prefeito', 'vereador'].includes(role.toLowerCase());
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    if (!city) return;
+    if (!isMunicipal || !city) return;
     let cancelled = false;
     setLoading(true);
     setError(null);
@@ -524,16 +531,68 @@ function RealApuracaoBanner({ setActivePage }) {
     return () => {
       cancelled = true;
     };
-  }, [city, role]);
+  }, [city, role, isMunicipal]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  // Loading / erro / sem setup
-  if (!city) {
+  // Sem setup
+  if (!role) {
     return (
       <div className="glass" style={{ padding: '1.25rem', borderLeft: '4px solid var(--accent-yellow)' }}>
         <strong>Configure sua campanha</strong>
         <p style={{ color: 'var(--text-gray)', fontSize: '0.85rem', marginTop: '4px' }}>
-          Defina município e cargo no setup para ver dados reais do TSE.
+          Defina o cargo e o local no setup para o sistema cruzar os dados certos.
+        </p>
+      </div>
+    );
+  }
+
+  // Cargo da eleição geral 2026 (Dep./Senador/Governador): reflete os DADOS
+  // DECLARADOS — não tenta casar com a apuração municipal de 2024.
+  if (!isMunicipal) {
+    return (
+      <div className="glass" style={{ padding: '1.5rem', borderLeft: '4px solid var(--accent-blue-bright)', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div>
+            <h2 style={{ fontFamily: 'var(--font-title)', fontSize: '1.15rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+              Candidatura 2026 · {role} · {uf}
+              <DataSourceBadge kind="official" />
+            </h2>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-gray)', margin: '4px 0 0' }}>
+              {candidateHint ? <strong style={{ color: 'var(--text-white)' }}>{candidateHint}</strong> : 'Candidato'} — eleição geral de outubro/2026.
+            </p>
+          </div>
+          <button
+            onClick={() => setActivePage('apuracao-tse')}
+            style={{ background: 'rgba(37,99,235,0.1)', border: '1px solid rgba(37,99,235,0.2)', color: 'var(--accent-blue-bright)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', fontSize: '0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}
+          >
+            Ver coeficiente <ArrowUpRight size={12} />
+          </button>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
+          <KPI icon={<Target size={18} />} label="Apuração 2026" value="Após o pleito" color="var(--accent-yellow)" />
+          <KPI
+            icon={<Trophy size={18} />}
+            label="Candidatura anterior"
+            value={prevRole ? `${prevRole}${prevYear ? ` · ${prevYear}` : ''}` : 'Estreante'}
+            color={prevRole ? 'var(--accent-blue-bright)' : 'var(--text-gray)'}
+          />
+        </div>
+        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>
+          {prevRole
+            ? `Cruzamento de dados baseado no que você informou: candidatura anterior a ${prevRole}${prevYear ? ` em ${prevYear}` : ''}. A apuração oficial de 2026 aparece aqui após o pleito.`
+            : 'Você declarou que este é um candidato estreante (sem disputa anterior) — a Consultoria foca em construção de presença. A apuração de 2026 aparece após o pleito.'}
+        </p>
+      </div>
+    );
+  }
+
+  // Loading / erro (somente cargo municipal)
+  if (!city) {
+    return (
+      <div className="glass" style={{ padding: '1.25rem', borderLeft: '4px solid var(--accent-yellow)' }}>
+        <strong>Configure o município</strong>
+        <p style={{ color: 'var(--text-gray)', fontSize: '0.85rem', marginTop: '4px' }}>
+          Para cargo municipal, defina o município no setup para ver a apuração oficial do TSE.
         </p>
       </div>
     );

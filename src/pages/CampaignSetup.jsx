@@ -5,10 +5,11 @@ import { RO_MUNICIPALITIES } from '../data/roMunicipalities';
 export default function CampaignSetup({ onSetupComplete }) {
   const [formData, setFormData] = useState({
     candidateName: '',
-    city: 'Porto Velho',
-    state: 'RO',
-    role: 'Prefeito',
-    previousRole: '', // cargo já disputado (vazio = nunca concorreu)
+    city: '',
+    state: '',
+    role: '',          // cargo concorrendo — começa vazio (sem suposição)
+    previousRole: '',  // cargo já disputado (vazio = nunca concorreu)
+    previousYear: '',  // ano da candidatura anterior
     party: ''
   });
 
@@ -39,6 +40,14 @@ export default function CampaignSetup({ onSetupComplete }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.candidateName || !formData.party) return;
+    if (!formData.role || !formData.state) {
+      setErrorMessage('Selecione o cargo que o candidato vai disputar e a UF.');
+      return;
+    }
+    if (formData.previousRole && !formData.previousYear) {
+      setErrorMessage('Informe o ano da candidatura anterior (ou marque "Nunca concorreu").');
+      return;
+    }
     
     setIsProcessing(true);
     setErrorMessage(null);
@@ -202,6 +211,7 @@ export default function CampaignSetup({ onSetupComplete }) {
                       fontSize: '0.9rem'
                     }}
                   >
+                    <option value="" disabled>Selecione o cargo…</option>
                     {CARGOS.map((c) => (
                       <option key={c} value={c}>{c}</option>
                     ))}
@@ -230,6 +240,31 @@ export default function CampaignSetup({ onSetupComplete }) {
                     ))}
                   </select>
                 </div>
+
+                {/* Ano da candidatura anterior — só aparece se houver candidatura anterior */}
+                {formData.previousRole && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-gray)' }}>Ano da candidatura anterior</label>
+                    <select
+                      value={formData.previousYear}
+                      onChange={(e) => setFormData(prev => ({ ...prev, previousYear: e.target.value }))}
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        background: 'var(--bg-dark)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: 'var(--radius-sm)',
+                        color: '#FFFFFF',
+                        fontSize: '0.9rem'
+                      }}
+                    >
+                      <option value="" disabled>Ano…</option>
+                      {['2024', '2022', '2020', '2018', '2016', '2014', '2012', '2010'].map((y) => (
+                        <option key={y} value={y}>{y}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 {/* Partido */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -300,6 +335,7 @@ export default function CampaignSetup({ onSetupComplete }) {
                       textAlign: 'center'
                     }}
                   >
+                    <option value="" disabled>UF…</option>
                     {UFS.map((uf) => (
                       <option key={uf} value={uf}>{uf}</option>
                     ))}

@@ -550,16 +550,6 @@ function TabVotacao({ candidates }) {
 // Fonte: TSE (quociente eleitoral) + Código Eleitoral, arts. 106-109.
 // Pré-2026 é PROJEÇÃO sobre o eleitorado — rotulada como estimativa.
 // =========================================================================
-function classifyCargo(role) {
-  const r = (role || '').toLowerCase();
-  if (r.includes('deputad') || r.includes('vereador')) return 'proporcional';
-  if (r.includes('senador')) return 'senador';
-  if (r.includes('governador')) return 'governador';
-  if (r.includes('prefeito')) return 'prefeito';
-  if (r.includes('presidente')) return 'presidente';
-  return 'proporcional';
-}
-
 // QE pela regra do TSE: despreza a fração se ≤ 0,5; arredonda p/ 1 se > 0,5.
 function quocienteEleitoral(votosValidos, vagas) {
   if (!vagas || vagas <= 0) return 0;
@@ -569,7 +559,6 @@ function quocienteEleitoral(votosValidos, vagas) {
 }
 
 function TabCoeficiente({ role, data }) {
-  const tipo = classifyCargo(role);
   const params = (() => {
     try {
       return typeof window !== 'undefined'
@@ -583,15 +572,9 @@ function TabCoeficiente({ role, data }) {
   const [eleitorado, setEleitorado] = useState(eleitoradoOficial ? String(eleitoradoOficial) : '');
   const [comparecimento, setComparecimento] = useState('80');
   const [pctValidos, setPctValidos] = useState('90');
-  const [vagas, setVagas] = useState(
-    (role || '').toLowerCase().includes('vereador') && data?.role?.seats ? String(data.role.seats) : ''
-  );
   const [depFederais, setDepFederais] = useState('');
 
   const roleLower = (role || '').toLowerCase();
-  const isDepEstadual = roleLower.includes('estadual');
-  const isDepFederal = roleLower.includes('federal');
-  const isDeputado = isDepEstadual || isDepFederal;
 
   const eN = Number(String(eleitorado).replace(/\D/g, '')) || 0;
   const comp = Math.min(Math.max(Number(comparecimento) || 0, 0), 100);
@@ -600,10 +583,7 @@ function TabCoeficiente({ role, data }) {
   // Assembleia Legislativa (CF, art. 27): 3× a bancada federal até atingir 36;
   // a partir daí, +1 estadual por federal que exceder 12.
   const estadualSeats = fedN > 12 ? 36 + (fedN - 12) : fedN * 3;
-  // Vagas efetivas que entram no QE conforme o cargo.
-  const vagasEfetivas = isDepEstadual ? estadualSeats : isDepFederal ? fedN : (Number(vagas) || 0);
   const votosValidos = Math.round(eN * (comp / 100) * (val / 100));
-  const qe = quocienteEleitoral(votosValidos, vagasEfetivas);
 
   const inputStyle = {
     width: '100%', padding: '10px 12px', background: 'var(--bg-dark)',
@@ -613,118 +593,116 @@ function TabCoeficiente({ role, data }) {
   const labelStyle = { fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-gray)', textTransform: 'uppercase', letterSpacing: '0.04em' };
   const card = { background: 'rgba(20,30,60,0.25)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', padding: '1.25rem' };
 
-  const isMajoritario = tipo === 'senador' || tipo === 'governador' || tipo === 'prefeito' || tipo === 'presidente';
+  const cargoAtual = roleLower;
+  // Coeficiente/limiar por candidatura na eleição GERAL de 2026, usando a MESMA
+  // projeção de votos. Proporcional usa QE; majoritário usa o limiar de maioria.
+  const cargos2026 = [
+    { key: 'deputado federal', nome: 'Deputado Federal', sistema: 'Proporcional', vagas: fedN, coef: fedN > 0 ? quocienteEleitoral(votosValidos, fedN) : null },
+    { key: 'deputado estadual', nome: 'Deputado Estadual', sistema: 'Proporcional', vagas: estadualSeats, coef: estadualSeats > 0 ? quocienteEleitoral(votosValidos, estadualSeats) : null },
+    { key: 'senador', nome: 'Senador', sistema: 'Majoritário', vagas: 2, limiar: '2 mais votados' },
+    { key: 'governador', nome: 'Governador', sistema: 'Majoritário', vagas: 1, limiar: 'maioria · 2º turno' }
+  ];
+  const th = { textAlign: 'left', padding: '8px 10px', fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-gray)', borderBottom: '1px solid var(--border-color)' };
+  const td = { padding: '9px 10px', borderBottom: '1px solid var(--border-color)', fontSize: '0.85rem' };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', maxWidth: '760px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', maxWidth: '860px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
         <Calculator size={18} style={{ color: 'var(--accent-blue-bright)' }} />
         <h3 style={{ fontSize: '1.1rem', fontFamily: 'var(--font-title)', fontWeight: 700, margin: 0 }}>
-          Coeficiente eleitoral · {role} ({uf}) · 2026
+          Coeficiente eleitoral · {role || 'candidatura'} ({uf}) · 2026
         </h3>
         <span style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '2px 8px', borderRadius: '100px', background: 'rgba(245,158,11,0.15)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.25)' }}>
           Projeção · estimativa
         </span>
       </div>
 
-      {isMajoritario ? (
-        <div style={card}>
-          <strong style={{ color: 'var(--accent-yellow)' }}>Cargo majoritário — não há quociente eleitoral.</strong>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-gray)', marginTop: '0.5rem', lineHeight: 1.5 }}>
-            {tipo === 'senador' && (
-              <>O <strong>Senado</strong> é eleito pelo sistema <strong>majoritário simples</strong>: em 2026 são renovadas 2/3 das cadeiras (54 no total), ou seja <strong>2 vagas por estado</strong> — eleitos os 2 candidatos mais votados. Não se aplica quociente.</>
-            )}
-            {tipo === 'governador' && (
-              <>O <strong>governo estadual</strong> é eleição <strong>majoritária</strong>: vence quem tiver mais da metade dos votos válidos; havendo estado com mais de 200 mil eleitores e ninguém atingindo 50%+1, há <strong>2º turno</strong> entre os dois mais votados. Não se aplica quociente.</>
-            )}
-            {tipo === 'prefeito' && (
-              <>A <strong>prefeitura</strong> é eleição majoritária. Não se aplica quociente eleitoral (esse cargo concorre nas eleições municipais — 2024/2028 — não em 2026).</>
-            )}
-            {tipo === 'presidente' && (
-              <>A <strong>Presidência</strong> é eleição majoritária (2 turnos). Não se aplica quociente eleitoral.</>
-            )}
-          </p>
-          <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.75rem' }}>
-            Para esse cargo, o número relevante é o <strong>total de votos válidos</strong> e o limiar de maioria — não um coeficiente por vaga.
-          </p>
+      <div style={card}>
+        <p style={{ fontSize: '0.85rem', color: 'var(--text-gray)', margin: 0, lineHeight: 1.5 }}>
+          O <strong>Quociente Eleitoral (QE)</strong> é a quantidade de votos válidos dividida pelo número de vagas —
+          define quantos votos uma legenda/federação precisa somar para conquistar <strong>uma cadeira</strong> nos
+          cargos <strong>proporcionais</strong> (Deputado Federal/Estadual). Nos <strong>majoritários</strong>
+          (Senador/Governador) não há quociente — vale o limiar de maioria. Como o pleito de 2026 é em outubro, os
+          campos abaixo são uma <strong>projeção</strong> sobre o eleitorado — ajuste as premissas.
+        </p>
+      </div>
+
+      {/* Premissas da projeção (sempre visíveis) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.9rem' }}>
+        <div>
+          <label style={labelStyle}>Eleitorado ({uf})</label>
+          <input style={inputStyle} inputMode="numeric" value={eleitorado} onChange={(e) => setEleitorado(e.target.value)} placeholder="ex.: 1.200.000" />
         </div>
-      ) : (
-        <>
-          <div style={card}>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-gray)', margin: 0, lineHeight: 1.5 }}>
-              Cargo <strong>proporcional</strong>: o <strong>Quociente Eleitoral (QE)</strong> é a quantidade de votos válidos
-              dividida pelo número de vagas. Ele define quantos votos uma legenda/federação precisa somar para
-              conquistar <strong>uma cadeira</strong>. Como o pleito de 2026 ocorre em outubro, os campos abaixo são uma
-              <strong> projeção</strong> sobre o eleitorado — ajuste as premissas.
-            </p>
-          </div>
+        <div>
+          <label style={labelStyle}>Comparecimento (%)</label>
+          <input style={inputStyle} inputMode="numeric" value={comparecimento} onChange={(e) => setComparecimento(e.target.value)} />
+        </div>
+        <div>
+          <label style={labelStyle}>Votos válidos (%)</label>
+          <input style={inputStyle} inputMode="numeric" value={pctValidos} onChange={(e) => setPctValidos(e.target.value)} />
+        </div>
+        <div>
+          <label style={labelStyle}>Deputados federais do estado</label>
+          <input style={inputStyle} inputMode="numeric" value={depFederais} onChange={(e) => setDepFederais(e.target.value)} placeholder={uf === 'RO' ? 'RO: 8' : 'ver TSE'} />
+          <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
+            {fedN > 0 ? `Estaduais (CF art. 27): ${estadualSeats}` : 'Base do QE proporcional'}
+          </span>
+        </div>
+      </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.9rem' }}>
-            <div>
-              <label style={labelStyle}>Eleitorado ({uf})</label>
-              <input style={inputStyle} inputMode="numeric" value={eleitorado} onChange={(e) => setEleitorado(e.target.value)} placeholder="ex.: 1.200.000" />
-            </div>
-            <div>
-              <label style={labelStyle}>Comparecimento (%)</label>
-              <input style={inputStyle} inputMode="numeric" value={comparecimento} onChange={(e) => setComparecimento(e.target.value)} />
-            </div>
-            <div>
-              <label style={labelStyle}>Votos válidos (%)</label>
-              <input style={inputStyle} inputMode="numeric" value={pctValidos} onChange={(e) => setPctValidos(e.target.value)} />
-            </div>
-            {isDeputado ? (
-              <div>
-                <label style={labelStyle}>Deputados federais do estado</label>
-                <input style={inputStyle} inputMode="numeric" value={depFederais} onChange={(e) => setDepFederais(e.target.value)} placeholder={uf === 'RO' ? 'RO: 8' : 'ver TSE'} />
-                <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
-                  {fedN > 0
-                    ? `Vagas no cargo: ${vagasEfetivas} ${isDepEstadual ? '(estaduais, pela fórmula da CF art. 27)' : '(federais)'}`
-                    : 'Informe a bancada federal do estado'}
-                </span>
-              </div>
-            ) : (
-              <div>
-                <label style={labelStyle}>Vagas (cadeiras)</label>
-                <input style={inputStyle} inputMode="numeric" value={vagas} onChange={(e) => setVagas(e.target.value)} placeholder="ex.: nº de cadeiras" />
-              </div>
-            )}
-          </div>
+      <div style={{ ...card, textAlign: 'center', maxWidth: '280px' }}>
+        <span style={labelStyle}>Votos válidos projetados</span>
+        <h3 style={{ fontSize: '1.6rem', fontWeight: 800, margin: '4px 0 0', color: '#FFFFFF' }}>{formatNumber(votosValidos)}</h3>
+      </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.9rem' }}>
-            <div style={{ ...card, textAlign: 'center' }}>
-              <span style={labelStyle}>Votos válidos projetados</span>
-              <h3 style={{ fontSize: '1.6rem', fontWeight: 800, margin: '4px 0 0', color: '#FFFFFF' }}>{formatNumber(votosValidos)}</h3>
-            </div>
-            <div style={{ ...card, textAlign: 'center', borderColor: 'rgba(0,168,89,0.35)' }}>
-              <span style={labelStyle}>Quociente eleitoral (1 cadeira)</span>
-              <h3 style={{ fontSize: '1.6rem', fontWeight: 800, margin: '4px 0 0', color: 'var(--accent-green-bright)' }}>
-                {vagasEfetivas > 0 ? formatNumber(qe) : '—'}
-              </h3>
-              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                {vagasEfetivas > 0 ? `votos para eleger 1 nome` : 'informe o nº de vagas'}
-              </span>
-            </div>
-          </div>
+      {/* Coeficiente por candidatura (cada cargo de 2026) */}
+      <div>
+        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '0 0 0.5rem' }}>Coeficiente por candidatura · {uf} · 2026</h4>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <th style={th}>Cargo</th>
+                <th style={th}>Sistema</th>
+                <th style={th}>Vagas</th>
+                <th style={th}>Coeficiente / limiar</th>
+              </tr>
+            </thead>
+            <tbody>
+              {cargos2026.map((c) => {
+                const atual = cargoAtual === c.key;
+                return (
+                  <tr key={c.key} style={atual ? { background: 'rgba(0,168,89,0.08)' } : undefined}>
+                    <td style={{ ...td, fontWeight: atual ? 800 : 600 }}>
+                      {c.nome}{atual ? ' ✓' : ''}
+                    </td>
+                    <td style={{ ...td, color: 'var(--text-gray)' }}>{c.sistema}</td>
+                    <td style={td}>{c.vagas > 0 ? c.vagas : '—'}</td>
+                    <td style={{ ...td, fontWeight: 700, color: 'var(--accent-green-bright)' }}>
+                      {c.sistema === 'Proporcional'
+                        ? (c.coef != null ? `${formatNumber(c.coef)} votos/cadeira` : (votosValidos ? 'informe a bancada federal' : 'informe o eleitorado'))
+                        : c.limiar}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '0.5rem 0 0', lineHeight: 1.5 }}>
+          Mesma projeção de votos aplicada a cada cargo. ✓ marca a candidatura configurada. Proporcional: <code>QE = votos válidos ÷ vagas</code>
+          (fração ≤ 0,5 desprezada; &gt; 0,5 sobe). Estaduais derivados da bancada federal (CF art. 27). Votos válidos = nominais + legenda.
+        </p>
+      </div>
 
-          <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>
-            Cálculo: <code>QE = votos válidos ÷ vagas</code> (despreza-se a fração ≤ 0,5; arredonda-se para 1 se &gt; 0,5).
-            O <strong>quociente partidário</strong> de cada legenda = votos válidos da legenda ÷ QE.
-            <strong> Votos válidos = nominais + de legenda</strong> (não inclui brancos nem nulos).
-          </p>
-
-          {isDeputado && (
-            <div style={{ ...card, borderColor: 'rgba(245,158,11,0.3)' }}>
-              <strong style={{ color: '#F59E0B', fontSize: '0.82rem' }}>⚠️ Distribuição de cadeiras 2026 em definição</strong>
-              <p style={{ fontSize: '0.78rem', color: 'var(--text-gray)', margin: '0.4rem 0 0', lineHeight: 1.5 }}>
-                A bancada de Deputado Federal por estado está em revisão (projeto que amplia de 513 para 531
-                e a redistribuição pelo Censo 2022). <strong>Confirme a bancada do seu estado no portal do TSE</strong> antes
-                de fechar o número. A bancada estadual é derivada pela fórmula da Constituição (art. 27).
-                Código de cargo no TSE: Deputado Federal = 6 · Deputado Estadual = 7.
-              </p>
-            </div>
-          )}
-        </>
-      )}
+      <div style={{ ...card, borderColor: 'rgba(245,158,11,0.3)' }}>
+        <strong style={{ color: '#F59E0B', fontSize: '0.82rem' }}>⚠️ Distribuição de cadeiras 2026 em definição</strong>
+        <p style={{ fontSize: '0.78rem', color: 'var(--text-gray)', margin: '0.4rem 0 0', lineHeight: 1.5 }}>
+          A bancada de Deputado Federal por estado está em revisão (projeto que amplia de 513 para 531 e a
+          redistribuição pelo Censo 2022). <strong>Confirme a bancada do seu estado no portal do TSE</strong> antes de
+          fechar os números. Código de cargo no TSE: Governador = 3 · Senador = 5 · Deputado Federal = 6 · Deputado Estadual = 7.
+        </p>
+      </div>
 
       <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.5, margin: 0, borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem' }}>
         ⚖️ Base legal: Código Eleitoral (Lei 4.737/65), arts. 106-109, e regras do TSE para o sistema proporcional.

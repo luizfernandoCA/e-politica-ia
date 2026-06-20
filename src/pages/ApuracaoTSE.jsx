@@ -586,13 +586,24 @@ function TabCoeficiente({ role, data }) {
   const [vagas, setVagas] = useState(
     (role || '').toLowerCase().includes('vereador') && data?.role?.seats ? String(data.role.seats) : ''
   );
+  const [depFederais, setDepFederais] = useState('');
+
+  const roleLower = (role || '').toLowerCase();
+  const isDepEstadual = roleLower.includes('estadual');
+  const isDepFederal = roleLower.includes('federal');
+  const isDeputado = isDepEstadual || isDepFederal;
 
   const eN = Number(String(eleitorado).replace(/\D/g, '')) || 0;
   const comp = Math.min(Math.max(Number(comparecimento) || 0, 0), 100);
   const val = Math.min(Math.max(Number(pctValidos) || 0, 0), 100);
-  const vagasN = Number(vagas) || 0;
+  const fedN = Number(depFederais) || 0;
+  // Assembleia Legislativa (CF, art. 27): 3× a bancada federal até atingir 36;
+  // a partir daí, +1 estadual por federal que exceder 12.
+  const estadualSeats = fedN > 12 ? 36 + (fedN - 12) : fedN * 3;
+  // Vagas efetivas que entram no QE conforme o cargo.
+  const vagasEfetivas = isDepEstadual ? estadualSeats : isDepFederal ? fedN : (Number(vagas) || 0);
   const votosValidos = Math.round(eN * (comp / 100) * (val / 100));
-  const qe = quocienteEleitoral(votosValidos, vagasN);
+  const qe = quocienteEleitoral(votosValidos, vagasEfetivas);
 
   const inputStyle = {
     width: '100%', padding: '10px 12px', background: 'var(--bg-dark)',
@@ -661,10 +672,22 @@ function TabCoeficiente({ role, data }) {
               <label style={labelStyle}>Votos válidos (%)</label>
               <input style={inputStyle} inputMode="numeric" value={pctValidos} onChange={(e) => setPctValidos(e.target.value)} />
             </div>
-            <div>
-              <label style={labelStyle}>Vagas (cadeiras)</label>
-              <input style={inputStyle} inputMode="numeric" value={vagas} onChange={(e) => setVagas(e.target.value)} placeholder={uf === 'RO' ? 'RO: 8 fed. / 24 est.' : 'consulte o TSE'} />
-            </div>
+            {isDeputado ? (
+              <div>
+                <label style={labelStyle}>Deputados federais do estado</label>
+                <input style={inputStyle} inputMode="numeric" value={depFederais} onChange={(e) => setDepFederais(e.target.value)} placeholder={uf === 'RO' ? 'RO: 8' : 'ver TSE'} />
+                <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
+                  {fedN > 0
+                    ? `Vagas no cargo: ${vagasEfetivas} ${isDepEstadual ? '(estaduais, pela fórmula da CF art. 27)' : '(federais)'}`
+                    : 'Informe a bancada federal do estado'}
+                </span>
+              </div>
+            ) : (
+              <div>
+                <label style={labelStyle}>Vagas (cadeiras)</label>
+                <input style={inputStyle} inputMode="numeric" value={vagas} onChange={(e) => setVagas(e.target.value)} placeholder="ex.: nº de cadeiras" />
+              </div>
+            )}
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.9rem' }}>
@@ -675,10 +698,10 @@ function TabCoeficiente({ role, data }) {
             <div style={{ ...card, textAlign: 'center', borderColor: 'rgba(0,168,89,0.35)' }}>
               <span style={labelStyle}>Quociente eleitoral (1 cadeira)</span>
               <h3 style={{ fontSize: '1.6rem', fontWeight: 800, margin: '4px 0 0', color: 'var(--accent-green-bright)' }}>
-                {vagasN > 0 ? formatNumber(qe) : '—'}
+                {vagasEfetivas > 0 ? formatNumber(qe) : '—'}
               </h3>
               <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                {vagasN > 0 ? `votos para eleger 1 nome` : 'informe o nº de vagas'}
+                {vagasEfetivas > 0 ? `votos para eleger 1 nome` : 'informe o nº de vagas'}
               </span>
             </div>
           </div>
@@ -688,6 +711,18 @@ function TabCoeficiente({ role, data }) {
             O <strong>quociente partidário</strong> de cada legenda = votos válidos da legenda ÷ QE.
             <strong> Votos válidos = nominais + de legenda</strong> (não inclui brancos nem nulos).
           </p>
+
+          {isDeputado && (
+            <div style={{ ...card, borderColor: 'rgba(245,158,11,0.3)' }}>
+              <strong style={{ color: '#F59E0B', fontSize: '0.82rem' }}>⚠️ Distribuição de cadeiras 2026 em definição</strong>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-gray)', margin: '0.4rem 0 0', lineHeight: 1.5 }}>
+                A bancada de Deputado Federal por estado está em revisão (projeto que amplia de 513 para 531
+                e a redistribuição pelo Censo 2022). <strong>Confirme a bancada do seu estado no portal do TSE</strong> antes
+                de fechar o número. A bancada estadual é derivada pela fórmula da Constituição (art. 27).
+                Código de cargo no TSE: Deputado Federal = 6 · Deputado Estadual = 7.
+              </p>
+            </div>
+          )}
         </>
       )}
 

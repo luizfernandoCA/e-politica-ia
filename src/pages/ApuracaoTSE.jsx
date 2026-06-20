@@ -11,6 +11,7 @@ import {
   Award,
   Vote,
   GitCompare,
+  Calculator,
   X
 } from 'lucide-react';
 import DataSourceBadge from '../components/DataSourceBadge';
@@ -32,6 +33,7 @@ const TABS = [
   { id: 'desempenho', label: 'Desempenho', icon: Award },
   { id: 'votacao', label: 'Votação', icon: BarChart3 },
   { id: 'comparar', label: 'Comparar', icon: GitCompare },
+  { id: 'coeficiente', label: 'Coeficiente', icon: Calculator },
   { id: 'ia', label: 'Análise IA', icon: Brain },
   { id: 'relatorio', label: 'Relatório', icon: FileText }
 ];
@@ -315,6 +317,9 @@ export default function ApuracaoTSE() {
             // que dispara warning do React 19 sobre cascading renders).
             <TabComparar key={`${role}-${year}`} candidates={data.candidates} />
           )}
+          {activeTab === 'coeficiente' && (
+            <TabCoeficiente role={role} data={data} />
+          )}
           {activeTab === 'ia' && <TabIA city={data.municipality?.name} role={role} />}
           {activeTab === 'relatorio' && (
             <TabRelatorio
@@ -534,6 +539,162 @@ function TabVotacao({ candidates }) {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+// =========================================================================
+// TabCoeficiente — Quociente Eleitoral do cargo (eleições 2026).
+// Proporcional (Dep. Federal/Estadual, Vereador): QE = votos válidos ÷ vagas.
+// Majoritário (Senador, Governador, Prefeito, Presidente): QE não se aplica.
+// Fonte: TSE (quociente eleitoral) + Código Eleitoral, arts. 106-109.
+// Pré-2026 é PROJEÇÃO sobre o eleitorado — rotulada como estimativa.
+// =========================================================================
+function classifyCargo(role) {
+  const r = (role || '').toLowerCase();
+  if (r.includes('deputad') || r.includes('vereador')) return 'proporcional';
+  if (r.includes('senador')) return 'senador';
+  if (r.includes('governador')) return 'governador';
+  if (r.includes('prefeito')) return 'prefeito';
+  if (r.includes('presidente')) return 'presidente';
+  return 'proporcional';
+}
+
+// QE pela regra do TSE: despreza a fração se ≤ 0,5; arredonda p/ 1 se > 0,5.
+function quocienteEleitoral(votosValidos, vagas) {
+  if (!vagas || vagas <= 0) return 0;
+  const q = votosValidos / vagas;
+  const frac = q - Math.floor(q);
+  return frac > 0.5 ? Math.ceil(q) : Math.floor(q);
+}
+
+function TabCoeficiente({ role, data }) {
+  const tipo = classifyCargo(role);
+  const params = (() => {
+    try {
+      return typeof window !== 'undefined'
+        ? JSON.parse(localStorage.getItem('campaignParams') || 'null')
+        : null;
+    } catch { return null; }
+  })();
+  const uf = params?.state || data?.uf || '—';
+  const eleitoradoOficial = data?.aggregate?.totalVoters || 0;
+
+  const [eleitorado, setEleitorado] = useState(eleitoradoOficial ? String(eleitoradoOficial) : '');
+  const [comparecimento, setComparecimento] = useState('80');
+  const [pctValidos, setPctValidos] = useState('90');
+  const [vagas, setVagas] = useState(
+    (role || '').toLowerCase().includes('vereador') && data?.role?.seats ? String(data.role.seats) : ''
+  );
+
+  const eN = Number(String(eleitorado).replace(/\D/g, '')) || 0;
+  const comp = Math.min(Math.max(Number(comparecimento) || 0, 0), 100);
+  const val = Math.min(Math.max(Number(pctValidos) || 0, 0), 100);
+  const vagasN = Number(vagas) || 0;
+  const votosValidos = Math.round(eN * (comp / 100) * (val / 100));
+  const qe = quocienteEleitoral(votosValidos, vagasN);
+
+  const inputStyle = {
+    width: '100%', padding: '10px 12px', background: 'var(--bg-dark)',
+    border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)',
+    color: '#FFFFFF', fontSize: '0.9rem'
+  };
+  const labelStyle = { fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-gray)', textTransform: 'uppercase', letterSpacing: '0.04em' };
+  const card = { background: 'rgba(20,30,60,0.25)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', padding: '1.25rem' };
+
+  const isMajoritario = tipo === 'senador' || tipo === 'governador' || tipo === 'prefeito' || tipo === 'presidente';
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', maxWidth: '760px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <Calculator size={18} style={{ color: 'var(--accent-blue-bright)' }} />
+        <h3 style={{ fontSize: '1.1rem', fontFamily: 'var(--font-title)', fontWeight: 700, margin: 0 }}>
+          Coeficiente eleitoral · {role} ({uf}) · 2026
+        </h3>
+        <span style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '2px 8px', borderRadius: '100px', background: 'rgba(245,158,11,0.15)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.25)' }}>
+          Projeção · estimativa
+        </span>
+      </div>
+
+      {isMajoritario ? (
+        <div style={card}>
+          <strong style={{ color: 'var(--accent-yellow)' }}>Cargo majoritário — não há quociente eleitoral.</strong>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-gray)', marginTop: '0.5rem', lineHeight: 1.5 }}>
+            {tipo === 'senador' && (
+              <>O <strong>Senado</strong> é eleito pelo sistema <strong>majoritário simples</strong>: em 2026 são renovadas 2/3 das cadeiras (54 no total), ou seja <strong>2 vagas por estado</strong> — eleitos os 2 candidatos mais votados. Não se aplica quociente.</>
+            )}
+            {tipo === 'governador' && (
+              <>O <strong>governo estadual</strong> é eleição <strong>majoritária</strong>: vence quem tiver mais da metade dos votos válidos; havendo estado com mais de 200 mil eleitores e ninguém atingindo 50%+1, há <strong>2º turno</strong> entre os dois mais votados. Não se aplica quociente.</>
+            )}
+            {tipo === 'prefeito' && (
+              <>A <strong>prefeitura</strong> é eleição majoritária. Não se aplica quociente eleitoral (esse cargo concorre nas eleições municipais — 2024/2028 — não em 2026).</>
+            )}
+            {tipo === 'presidente' && (
+              <>A <strong>Presidência</strong> é eleição majoritária (2 turnos). Não se aplica quociente eleitoral.</>
+            )}
+          </p>
+          <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.75rem' }}>
+            Para esse cargo, o número relevante é o <strong>total de votos válidos</strong> e o limiar de maioria — não um coeficiente por vaga.
+          </p>
+        </div>
+      ) : (
+        <>
+          <div style={card}>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-gray)', margin: 0, lineHeight: 1.5 }}>
+              Cargo <strong>proporcional</strong>: o <strong>Quociente Eleitoral (QE)</strong> é a quantidade de votos válidos
+              dividida pelo número de vagas. Ele define quantos votos uma legenda/federação precisa somar para
+              conquistar <strong>uma cadeira</strong>. Como o pleito de 2026 ocorre em outubro, os campos abaixo são uma
+              <strong> projeção</strong> sobre o eleitorado — ajuste as premissas.
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.9rem' }}>
+            <div>
+              <label style={labelStyle}>Eleitorado ({uf})</label>
+              <input style={inputStyle} inputMode="numeric" value={eleitorado} onChange={(e) => setEleitorado(e.target.value)} placeholder="ex.: 1.200.000" />
+            </div>
+            <div>
+              <label style={labelStyle}>Comparecimento (%)</label>
+              <input style={inputStyle} inputMode="numeric" value={comparecimento} onChange={(e) => setComparecimento(e.target.value)} />
+            </div>
+            <div>
+              <label style={labelStyle}>Votos válidos (%)</label>
+              <input style={inputStyle} inputMode="numeric" value={pctValidos} onChange={(e) => setPctValidos(e.target.value)} />
+            </div>
+            <div>
+              <label style={labelStyle}>Vagas (cadeiras)</label>
+              <input style={inputStyle} inputMode="numeric" value={vagas} onChange={(e) => setVagas(e.target.value)} placeholder={uf === 'RO' ? 'RO: 8 fed. / 24 est.' : 'consulte o TSE'} />
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.9rem' }}>
+            <div style={{ ...card, textAlign: 'center' }}>
+              <span style={labelStyle}>Votos válidos projetados</span>
+              <h3 style={{ fontSize: '1.6rem', fontWeight: 800, margin: '4px 0 0', color: '#FFFFFF' }}>{formatNumber(votosValidos)}</h3>
+            </div>
+            <div style={{ ...card, textAlign: 'center', borderColor: 'rgba(0,168,89,0.35)' }}>
+              <span style={labelStyle}>Quociente eleitoral (1 cadeira)</span>
+              <h3 style={{ fontSize: '1.6rem', fontWeight: 800, margin: '4px 0 0', color: 'var(--accent-green-bright)' }}>
+                {vagasN > 0 ? formatNumber(qe) : '—'}
+              </h3>
+              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                {vagasN > 0 ? `votos para eleger 1 nome` : 'informe o nº de vagas'}
+              </span>
+            </div>
+          </div>
+
+          <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>
+            Cálculo: <code>QE = votos válidos ÷ vagas</code> (despreza-se a fração ≤ 0,5; arredonda-se para 1 se &gt; 0,5).
+            O <strong>quociente partidário</strong> de cada legenda = votos válidos da legenda ÷ QE.
+            <strong> Votos válidos = nominais + de legenda</strong> (não inclui brancos nem nulos).
+          </p>
+        </>
+      )}
+
+      <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.5, margin: 0, borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem' }}>
+        ⚖️ Base legal: Código Eleitoral (Lei 4.737/65), arts. 106-109, e regras do TSE para o sistema proporcional.
+        Valores pré-eleitorais são <strong>estimativas</strong> — confirme eleitorado e nº de cadeiras no portal oficial do TSE/TRE.
+      </p>
     </div>
   );
 }

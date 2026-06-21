@@ -642,7 +642,7 @@ function TabCoeficiente({ role, data }) {
   const inputStyle = {
     width: '100%', padding: '10px 12px', background: 'var(--bg-dark)',
     border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)',
-    color: '#FFFFFF', fontSize: '0.9rem'
+    color: 'var(--text-white)', fontSize: '0.9rem'
   };
   const labelStyle = { fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-gray)', textTransform: 'uppercase', letterSpacing: '0.04em' };
   const card = { background: 'rgba(20,30,60,0.25)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', padding: '1.25rem' };
@@ -729,7 +729,7 @@ function TabCoeficiente({ role, data }) {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.9rem' }}>
             <div style={{ ...card, textAlign: 'center' }}>
               <span style={labelStyle}>Votos válidos projetados</span>
-              <h3 style={{ fontSize: '1.6rem', fontWeight: 800, margin: '4px 0 0', color: '#FFFFFF' }}>{formatNumber(votosValidos)}</h3>
+              <h3 style={{ fontSize: '1.6rem', fontWeight: 800, margin: '4px 0 0', color: 'var(--text-white)' }}>{formatNumber(votosValidos)}</h3>
             </div>
             <div style={{ ...card, textAlign: 'center', borderColor: 'rgba(0,168,89,0.35)' }}>
               <span style={labelStyle}>Quociente eleitoral (1 cadeira)</span>
@@ -789,14 +789,24 @@ function TabCoeficiente({ role, data }) {
             </div>
           )}
 
-          {isDeputado && (
+          {isDepFederal && (
             <div style={{ ...card, borderColor: 'rgba(245,158,11,0.3)' }}>
-              <strong style={{ color: '#F59E0B', fontSize: '0.82rem' }}>⚠️ Distribuição de cadeiras 2026 em definição</strong>
+              <strong style={{ color: '#F59E0B', fontSize: '0.82rem' }}>⚠️ Bancada Federal 2026 em definição</strong>
               <p style={{ fontSize: '0.78rem', color: 'var(--text-gray)', margin: '0.4rem 0 0', lineHeight: 1.5 }}>
                 A bancada de Deputado Federal por estado está em revisão (projeto que amplia de 513 para 531
-                e a redistribuição pelo Censo 2022). <strong>Confirme a bancada do seu estado no portal do TSE</strong> antes
-                de fechar o número. A bancada estadual é derivada pela fórmula da Constituição (art. 27).
-                Código de cargo no TSE: Deputado Federal = 6 · Deputado Estadual = 7.
+                e redistribuição pelo Censo 2022). <strong>Confirme a bancada do seu estado no portal do TSE</strong> antes
+                de fechar o número. Código de cargo no TSE: Deputado Federal = 6.
+              </p>
+            </div>
+          )}
+          {isDepEstadual && (
+            <div style={{ ...card, borderColor: 'rgba(99,102,241,0.3)' }}>
+              <strong style={{ color: '#6366F1', fontSize: '0.82rem' }}>ℹ️ Como as {vagasEfetivas} vagas estaduais são calculadas</strong>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-gray)', margin: '0.4rem 0 0', lineHeight: 1.5 }}>
+                A Assembleia Legislativa de cada estado segue a <strong>fórmula da Constituição, art. 27</strong>:
+                3× a bancada de Deputados Federais até alcançar 36; a partir daí, +1 deputado estadual por cada federal
+                que ultrapasse 12. Por isso pedimos a bancada federal acima — a estadual deriva dela automaticamente.
+                Código de cargo no TSE: Deputado Estadual = 7.
               </p>
             </div>
           )}
@@ -1227,12 +1237,12 @@ function MajoritarioCalc({ tipo, ufInfo, card, labelStyle }) {
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.9rem', marginTop: '0.75rem' }}>
       <div style={{ ...card, textAlign: 'center' }}>
         <span style={labelStyle}>Eleitorado projetado 2026</span>
-        <h3 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '4px 0 0', color: '#FFFFFF' }}>{formatNumber(eleitorado)}</h3>
+        <h3 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '4px 0 0', color: 'var(--text-white)' }}>{formatNumber(eleitorado)}</h3>
         <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>base TSE (atualizar com cadastro 2026)</span>
       </div>
       <div style={{ ...card, textAlign: 'center' }}>
         <span style={labelStyle}>Comparecimento esperado</span>
-        <h3 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '4px 0 0', color: '#FFFFFF' }}>{formatNumber(compareceram)}</h3>
+        <h3 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '4px 0 0', color: 'var(--text-white)' }}>{formatNumber(compareceram)}</h3>
         <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{Math.round(comparecimento*100)}% (média BR)</span>
       </div>
       <div style={{ ...card, textAlign: 'center' }}>

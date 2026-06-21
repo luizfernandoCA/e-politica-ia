@@ -8,7 +8,8 @@ import {
   LogOut,
   Sliders,
   Vote,
-  Sparkles
+  Sparkles,
+  Crosshair,
 } from 'lucide-react';
 import Logo from './Logo';
 
@@ -27,6 +28,7 @@ export default function Sidebar({
     { id: 'dashboard', name: 'Painel Geral', icon: LayoutDashboard },
     { id: 'apuracao-tse', name: 'Apuração TSE', icon: Vote },
     { id: 'consultoria', name: 'Consultoria IA', icon: Sparkles },
+    { id: 'plano-tatico', name: 'Plano Tático', icon: Crosshair, badge: 'NOVO' },
     { id: 'assistant', name: 'Mestre AI', icon: Brain },
     { id: 'crm', name: 'Gestão de Base', icon: Target },
     { id: 'reports', name: 'Relatórios', icon: FileText }

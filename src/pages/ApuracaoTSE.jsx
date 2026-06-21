@@ -100,7 +100,7 @@ export default function ApuracaoTSE() {
   const [error, setError] = useState(null);
   const [year, setYear] = useState(2024);
   // Para a apuração municipal de contexto, usa cargo municipal válido.
-  const [role, setRole] = useState(isMunicipalCargo ? params.role : 'Prefeito');
+  const [role, setRole] = useState(params?.role || 'Prefeito');
 
   const city = params?.city || 'PORTO VELHO';
 
@@ -114,7 +114,11 @@ export default function ApuracaoTSE() {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    const url = `/api/tse-apuracao?city=${encodeURIComponent(city)}&role=${role}&year=${year}`;
+    // Para apuração TSE 2024/2020 só temos cargos municipais. Se o usuário disputa
+    // cargo estadual+ em 2026, buscamos a apuração de Prefeito como CONTEXTO do município
+    // — o TabCoeficiente já recebe o role real e calcula a projeção 2026 corretamente.
+    const roleForApuracao = ['Prefeito','Vereador'].includes(role) ? role : 'Prefeito';
+    const url = `/api/tse-apuracao?city=${encodeURIComponent(city)}&role=${roleForApuracao}&year=${year}`;
     fetch(url)
       .then((res) => res.json())
       .then((json) => {
@@ -226,6 +230,10 @@ export default function ApuracaoTSE() {
           <select value={role} onChange={(e) => setRole(e.target.value)} style={selectStyle}>
             <option value="Prefeito">Prefeito</option>
             <option value="Vereador">Vereador</option>
+            <option value="Deputado Estadual">Deputado Estadual</option>
+            <option value="Deputado Federal">Deputado Federal</option>
+            <option value="Senador">Senador</option>
+            <option value="Governador">Governador</option>
           </select>
           <button onClick={loadData} disabled={loading} style={refreshBtnStyle}>
             <RefreshCw size={14} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
@@ -670,6 +678,8 @@ function TabCoeficiente({ role, data }) {
               <>A <strong>Presidência</strong> é eleição majoritária (2 turnos). Não se aplica quociente eleitoral.</>
             )}
           </p>
+          <MajoritarioCalc tipo={tipo} ufInfo={ufInfo} card={card} labelStyle={labelStyle} />
+
           <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.75rem' }}>
             Para esse cargo, o número relevante é o <strong>total de votos válidos</strong> e o limiar de maioria — não um coeficiente por vaga.
           </p>
@@ -746,6 +756,38 @@ function TabCoeficiente({ role, data }) {
             O <strong>quociente partidário</strong> de cada legenda = votos válidos da legenda ÷ QE.
             <strong> Votos válidos = nominais + de legenda</strong> (não inclui brancos nem nulos).
           </p>
+
+          {vagasEfetivas > 0 && qe > 0 && (
+            <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))', gap:'0.9rem'}}>
+              <div style={{ ...card, textAlign:'center', borderColor:'rgba(168,85,247,0.35)' }}>
+                <span style={labelStyle}>Voto individual mínimo (10% QE)</span>
+                <h3 style={{ fontSize:'1.4rem', fontWeight:800, margin:'4px 0 0', color:'#A855F7' }}>
+                  {formatNumber(Math.ceil(qe*0.10))}
+                </h3>
+                <span style={{ fontSize:'0.68rem', color:'var(--text-muted)' }}>
+                  Lei 13.165/15 art. 108 — voto individual mínimo p/ candidato eleito
+                </span>
+              </div>
+              <div style={{ ...card, textAlign:'center', borderColor:'rgba(245,158,11,0.35)' }}>
+                <span style={labelStyle}>Cláusula partidária (80% QE)</span>
+                <h3 style={{ fontSize:'1.4rem', fontWeight:800, margin:'4px 0 0', color:'#F59E0B' }}>
+                  {formatNumber(Math.ceil(qe*0.80))}
+                </h3>
+                <span style={{ fontSize:'0.68rem', color:'var(--text-muted)' }}>
+                  Lei 9.504/97 art. 109 §2º — soma mínima da legenda p/ disputar sobras
+                </span>
+              </div>
+              <div style={{ ...card, textAlign:'center', borderColor:'rgba(99,102,241,0.35)' }}>
+                <span style={labelStyle}>Cadeiras restantes (sobras)</span>
+                <h3 style={{ fontSize:'1.4rem', fontWeight:800, margin:'4px 0 0', color:'#6366F1' }}>
+                  {formatNumber(vagasEfetivas - Math.floor(votosValidos / qe))}
+                </h3>
+                <span style={{ fontSize:'0.68rem', color:'var(--text-muted)' }}>
+                  Vagas distribuídas em fases sucessivas pela maior média (CE art. 109)
+                </span>
+              </div>
+            </div>
+          )}
 
           {isDeputado && (
             <div style={{ ...card, borderColor: 'rgba(245,158,11,0.3)' }}>
@@ -1162,3 +1204,57 @@ const secondaryBtnStyle = {
   alignItems: 'center',
   gap: '0.5rem'
 };
+
+// =========================================================================
+// MajoritarioCalc — projeção de votos válidos esperados para cargos
+// majoritários (Senador, Governador, Presidente). Não há QE, mas o cálculo
+// do universo de votos válidos é essencial para dimensionar campanha.
+// =========================================================================
+function MajoritarioCalc({ tipo, ufInfo, card, labelStyle }) {
+  const eleitorado = ufInfo?.eleitorado || 0;
+  if (!eleitorado) return null;
+  // Defaults conservadores baseados em média BR 2022:
+  const comparecimento = 0.79;
+  const validos = 0.93;
+  const compareceram = Math.round(eleitorado * comparecimento);
+  const votosValidos = Math.round(compareceram * validos);
+  // Limiar de maioria absoluta (2º turno): metade + 1
+  const maioriaAbs = Math.ceil(votosValidos / 2) + 1;
+  // Para Senador: votos do 2º colocado típico (referência histórica: ~30-40% do válidos)
+  const ref2Sen = Math.round(votosValidos * 0.35);
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.9rem', marginTop: '0.75rem' }}>
+      <div style={{ ...card, textAlign: 'center' }}>
+        <span style={labelStyle}>Eleitorado projetado 2026</span>
+        <h3 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '4px 0 0', color: '#FFFFFF' }}>{formatNumber(eleitorado)}</h3>
+        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>base TSE (atualizar com cadastro 2026)</span>
+      </div>
+      <div style={{ ...card, textAlign: 'center' }}>
+        <span style={labelStyle}>Comparecimento esperado</span>
+        <h3 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '4px 0 0', color: '#FFFFFF' }}>{formatNumber(compareceram)}</h3>
+        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{Math.round(comparecimento*100)}% (média BR)</span>
+      </div>
+      <div style={{ ...card, textAlign: 'center' }}>
+        <span style={labelStyle}>Votos válidos esperados</span>
+        <h3 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '4px 0 0', color: 'var(--accent-green-bright)' }}>{formatNumber(votosValidos)}</h3>
+        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{Math.round(validos*100)}% dos comparecentes</span>
+      </div>
+      {(tipo === 'governador' || tipo === 'presidente') && (
+        <div style={{ ...card, textAlign: 'center', borderColor: 'rgba(245,158,11,0.35)' }}>
+          <span style={labelStyle}>Limiar para vitória em 1º turno</span>
+          <h3 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '4px 0 0', color: '#F59E0B' }}>{formatNumber(maioriaAbs)}</h3>
+          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>50%+1 dos votos válidos (CF art. 77)</span>
+        </div>
+      )}
+      {tipo === 'senador' && (
+        <div style={{ ...card, textAlign: 'center', borderColor: 'rgba(168,85,247,0.35)' }}>
+          <span style={labelStyle}>Referência 2º colocado (ciclos anteriores)</span>
+          <h3 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '4px 0 0', color: '#A855F7' }}>~{formatNumber(ref2Sen)}</h3>
+          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>~35% dos válidos = patamar competitivo p/ 2 vagas</span>
+        </div>
+      )}
+    </div>
+  );
+}
+

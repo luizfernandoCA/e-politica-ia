@@ -10,6 +10,12 @@ import {
   Vote,
   Sparkles,
   Crosshair,
+  ClipboardCheck,
+  Map,
+  Building2,
+  Radar,
+  MapPin,
+  Trophy,
 } from 'lucide-react';
 import Logo from './Logo';
 
@@ -29,6 +35,12 @@ export default function Sidebar({
     { id: 'apuracao-tse', name: 'Apuração TSE', icon: Vote },
     { id: 'consultoria', name: 'Consultoria IA', icon: Sparkles },
     { id: 'plano-tatico', name: 'Plano Tático', icon: Crosshair, badge: 'NOVO' },
+    { id: 'diagnostico', name: 'Diagnóstico', icon: ClipboardCheck },
+    { id: 'mapa-eleitoral', name: 'Mapa Eleitoral', icon: Map },
+    { id: 'analise-territorial', name: 'Análise Territorial', icon: Building2 },
+    { id: 'radar-oportunidades', name: 'Radar de Oportunidades', icon: Radar },
+    { id: 'locais-votacao', name: 'Locais de Votação', icon: MapPin },
+    { id: 'caminho-vitoria', name: 'Caminho da Vitória', icon: Trophy },
     { id: 'assistant', name: 'Mestre AI', icon: Brain },
     { id: 'crm', name: 'Gestão de Base', icon: Target },
     { id: 'reports', name: 'Relatórios', icon: FileText }

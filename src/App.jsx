@@ -19,6 +19,12 @@ const Reports = lazy(() => import('./pages/Reports'));
 const ApuracaoTSE = lazy(() => import('./pages/ApuracaoTSE'));
 const Consultoria = lazy(() => import('./pages/Consultoria'));
 const StrategicPlan = lazy(() => import('./pages/StrategicPlan'));
+const Diagnostico = lazy(() => import('./pages/Diagnostico'));
+const MapaEleitoral = lazy(() => import('./pages/MapaEleitoral'));
+const AnaliseTerritorial = lazy(() => import('./pages/AnaliseTerritorial'));
+const RadarOportunidades = lazy(() => import('./pages/RadarOportunidades'));
+const LocaisVotacao = lazy(() => import('./pages/LocaisVotacao'));
+const CaminhoVitoria = lazy(() => import('./pages/CaminhoVitoria'));
 // Páginas legadas (Analytics/Comparison) foram absorvidas pela ApuracaoTSE
 // (que usa dados reais do TSE em vez do mock). Arquivos permanecem no repo
 // como referência histórica mas não são mais rotas ativas.
@@ -459,6 +465,18 @@ export default function App() {
             <StrategicPlan user={activeUser} />
           </ErrorBoundary>
         );
+      case 'diagnostico':
+        return <ErrorBoundary label="Diagnóstico"><Diagnostico setActivePage={setActivePage} /></ErrorBoundary>;
+      case 'mapa-eleitoral':
+        return <ErrorBoundary label="Mapa Eleitoral"><MapaEleitoral /></ErrorBoundary>;
+      case 'analise-territorial':
+        return <ErrorBoundary label="Análise Territorial"><AnaliseTerritorial /></ErrorBoundary>;
+      case 'radar-oportunidades':
+        return <ErrorBoundary label="Radar de Oportunidades"><RadarOportunidades /></ErrorBoundary>;
+      case 'locais-votacao':
+        return <ErrorBoundary label="Locais de Votação"><LocaisVotacao /></ErrorBoundary>;
+      case 'caminho-vitoria':
+        return <ErrorBoundary label="Caminho da Vitória"><CaminhoVitoria setActivePage={setActivePage} /></ErrorBoundary>;
       case 'reports':
         return (
           <Reports

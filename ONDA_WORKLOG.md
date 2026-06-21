@@ -228,3 +228,79 @@ ainda não cacheada — rode o preload"). Autorizou opção "Tudo via Dados Aber
   250975/249231.50; lint 0; syntax OK. (Comandos do aviso no Reports.jsx seguem válidos.)
 - NOTA: para popular OUTRAS cidades/cargos, rode os scripts com a service_role real
   (Supabase → Settings → API). O preload de gastos baixa ~1.2GB (nacional) uma vez.
+
+
+## Iteração 3 — NEMESIS (2026-06-21): Motor Estratégico + paridade EleitoAI
+Contexto: usuário apresentou PDF de planos do concorrente EleitoAI (R$297/597/1197) e
+pediu paridade total + motor cross-fonte (TSE×IBGE×redes) + deploy. Modo NEMESIS pleno
+escolhido via AskUserQuestion (full-auto, secrets futuros, verificação adversarial).
+
+### Diagnóstico no início
+- Repo MUITO mais maduro do que pareceu inicialmente: 13 tabelas Supabase, IA ativa
+  (Opus 4.7 com tool use sobre TSE), Mercado Pago em prod, smoke test de prod 200.
+- Advisor security: 1 WARN (leaked_password_protection, pendência humana).
+- Advisor performance: 15 warnings auth_rls_initplan + 10 unused_index + 3 unindexed FKs.
+- Gap real vs PDF: motor estratégico cross-fonte (não existe) + 11 features visuais
+  do EleitoAI (mapa, território, radar, caminho, projeção, narrativas, chapa, aliados,
+  coligação). Single-file motor = MAIOR ALAVANCA → foco da Onda 1.
+- Pesquisa de APIs: X v2 pivotou para pay-per-use em 06/02/2026 ($0.005/post lido);
+  Basic/Pro fechados a novos. Mudou modelo de custo do produto.
+
+### Decisão de escopo (anti-inflação)
+Não entregar 12 features pela metade. Onda 1 entrega:
+- Motor estratégico backend funcional (TSE+IBGE+ranker+Claude+validator+persistor)
+- UI esqueleto de 1 tela (Plano Tático) end-to-end
+- Auditoria + corrigir advisors críticos do Supabase
+- Documentação Kit v2 + Onda 1 (3 docs)
+- Migration SQL aplicada em produção
+- Instintos gravados
+
+Ondas 2+: X/Meta integration, 11 telas visuais, refresh nightly, multi-tenant equipe.
+
+### Implementado nesta iteração
+
+#### Documentação (docs/motor/)
+- 01-identidade-e-dominio.md (86 linhas)
+- 02-modelo-de-dados.md (217 linhas)
+- 03-arquitetura-onda1.md (209 linhas)
+
+#### Schema Supabase (aplicado via MCP)
+- Migration motor_estrategico_v1: 8 novas tabelas (candidate_profiles, strategic_plans,
+  evidence, tse_candidates, ibge_indicators, signals, ai_budget, rate_limits) com RLS
+  habilitada e policies usando (select auth.uid()).
+- Reescrita de 15 policies existentes para resolver auth_rls_initplan advisor.
+- Índices em 3 FKs órfãos (payments, voting_results).
+- Hot-fix: ENABLE RLS em rate_limits (advisor critical resolvido na sequência).
+- Trigger touch_updated_at em strategic_plans + candidate_profiles.
+
+#### Código (branch feat/nemesis3-motor-estrategico)
+- lib/rate-limit.js (124L): bucket por user/endpoint/minuto + daily cap, store Supabase
+- lib/budget.js (137L): cap mensal de custo Anthropic por plano (start/pro/premium)
+- api/strategic-plan/generate.js (228L): endpoint orquestrador HTTP
+- api/strategic-plan/collectors/tse-collector.js (73L): lê tse_apuracao + tse_candidates
+- api/strategic-plan/collectors/ibge-collector.js (93L): SIDRA agregados 3.0 + cache
+- api/strategic-plan/ranker.js (61L): threat_score determinístico
+- api/strategic-plan/validator.js (53L): INV-1..7 hard-coded (blocklist legal)
+- api/strategic-plan/prompts/v1.system.txt (39L): system prompt versionado, JSON estrito
+- src/pages/StrategicPlan.jsx (216L): UI esqueleto end-to-end
+- src/App.jsx: lazy import + case 'plano-tatico'
+- src/components/Sidebar.jsx: item "Plano Tático" com badge NOVO
+
+#### Gates técnicos
+- npm run lint → 0 erros (todas as 3 ocorrências iniciais corrigidas)
+- npm run build → sucesso (StrategicPlan chunk 6.78kB; sem regressão de bundle)
+- Advisor critical → resolvido (rate_limits RLS habilitada)
+
+### Pendências para finalizar a Onda 1
+- [HUMANO] GitHub PAT (escopo: repo write em luizfernandoCA/e-politica-ia) p/ push do branch
+- [HUMANO] Vercel deploy hook URL OU token (Account Settings → Tokens) p/ trigger deploy
+- [HUMANO] Toggle Leaked Password Protection no Supabase Auth dashboard
+- [HUMANO] Confirmar ANTHROPIC_API_KEY válida em Vercel env (worklog iteração 2 marcou pendente)
+- [VERIFIER] Spawn onda-verifier para red team adversarial antes do deploy
+- [PRÓXIMA ONDA] Cron preload-tse-candidatos para popular tse_candidates (hoje 0 linhas)
+- [PRÓXIMA ONDA] Conversão mun_code TSE 5-dig ↔ IBGE 7-dig (lookup table)
+- [PRÓXIMA ONDA] X API pay-per-use integration ($0.005/post; modelar como COGS)
+
+### Instintos novos
+Gravados em ONDA_INSTINTOS.md: I-001 a I-007. Foco em audit-first, cost-guard,
+honesty-banner, anti-inflation, smoke-test-via-chrome-not-webfetch, agent-mcp-scope.

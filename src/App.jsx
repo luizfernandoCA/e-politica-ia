@@ -18,6 +18,7 @@ const CRM = lazy(() => import('./pages/CRM'));
 const Reports = lazy(() => import('./pages/Reports'));
 const ApuracaoTSE = lazy(() => import('./pages/ApuracaoTSE'));
 const Consultoria = lazy(() => import('./pages/Consultoria'));
+const StrategicPlan = lazy(() => import('./pages/StrategicPlan'));
 // Páginas legadas (Analytics/Comparison) foram absorvidas pela ApuracaoTSE
 // (que usa dados reais do TSE em vez do mock). Arquivos permanecem no repo
 // como referência histórica mas não são mais rotas ativas.
@@ -451,6 +452,12 @@ export default function App() {
             setCandidates={setCandidates}
             activeCandidate={activeCandidate}
           />
+        );
+      case 'plano-tatico':
+        return (
+          <ErrorBoundary label="Plano Tático">
+            <StrategicPlan user={activeUser} />
+          </ErrorBoundary>
         );
       case 'reports':
         return (

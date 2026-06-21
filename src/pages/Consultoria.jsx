@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Sparkles, Search, Globe, TrendingUp, ShieldAlert, Megaphone,
   Target, FileText, Loader2, Download, RefreshCw, ExternalLink, Brain
@@ -50,10 +50,43 @@ export default function Consultoria() {
   const [loading, setLoading] = useState(false);
   const [phase, setPhase] = useState(0);
   const [result, setResult] = useState(null);
+  const [projecao, setProjecao] = useState(null);
+  const [projLoading, setProjLoading] = useState(false);
   const [error, setError] = useState(null);
   const reportRef = useRef(null);
 
   useScrollReveal([result]);
+
+  // NEMESIS3: mapa cargo → código TSE + flags
+  const CARGO_CODE = { 'Prefeito':'PM','Vereador':'VR','Deputado Estadual':'DE','Deputado Federal':'DF','Senador':'SF','Governador':'GV' };
+  const cargoCode = CARGO_CODE[form.role] || 'PM';
+  const cargoEstadual = ['DE','DF','SF','GV'].includes(cargoCode);
+  const cargoProporcional = ['VR','DE','DF'].includes(cargoCode);
+
+  const carregarProjecao = useCallback(async () => {
+    if (!form.role) return;
+    setProjLoading(true);
+    try {
+      const res = await authedFetch('/api/electoral-projection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cargo: cargoCode,
+          estado: form.state || 'RO',
+          mun_code: form.city || null,
+        }),
+      });
+      const json = await res.json();
+      if (json.ok) setProjecao(json);
+    } catch { /* silent */ }
+    finally { setProjLoading(false); }
+  }, [form.role, form.state, form.city, cargoCode]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => { if (!cancelled) await carregarProjecao(); })();
+    return () => { cancelled = true; };
+  }, [carregarProjecao]);
 
   useEffect(() => {
     if (!loading) return;
@@ -63,7 +96,8 @@ export default function Consultoria() {
 
   async function generate() {
     if (!form.candidateName.trim()) { setError('Informe o nome do candidato a pesquisar.'); return; }
-    if (!form.city && !form.state) { setError('Selecione ao menos o município ou a UF.'); return; }
+    if (!cargoEstadual && !form.city) { setError('Selecione o município.'); return; }
+    if (cargoEstadual && !(form.state || 'RO')) { setError('Selecione a UF.'); return; }
     setLoading(true);
     setError(null);
     setResult(null);
@@ -83,7 +117,8 @@ export default function Consultoria() {
           currentRole: params?.currentRole || '',
           coligacao: params?.coligacao || '',
           context: context.trim(),
-          focusAreas
+          focusAreas,
+          electoralData: projecao || null,
         })
       });
       const json = await res.json();
@@ -155,13 +190,29 @@ export default function Consultoria() {
           </div>
 
           <div className="cs-form reveal">
-            <label htmlFor="cs-city">Município (Rondônia)</label>
-            <select id="cs-city" className="cs-input" value={form.city} onChange={setField('city')}>
-              <option value="" disabled>Selecione o município…</option>
-              {RO_MUNICIPALITIES.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
+            {!cargoEstadual ? (
+              <>
+                <label htmlFor="cs-city">Município (Rondônia)</label>
+                <select id="cs-city" className="cs-input" value={form.city} onChange={setField('city')}>
+                  <option value="" disabled>Selecione o município…</option>
+                  {RO_MUNICIPALITIES.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </>
+            ) : (
+              <>
+                <label htmlFor="cs-uf">Estado (UF)</label>
+                <select id="cs-uf" className="cs-input" value={form.state || 'RO'} onChange={setField('state')}>
+                  {['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'].map(uf => (
+                    <option key={uf} value={uf}>{uf}</option>
+                  ))}
+                </select>
+                <div style={{padding:'6px 4px', color:'#64748b', fontSize:12}}>
+                  Cargo {cargoProporcional ? 'proporcional' : 'majoritário'} estadual — análise cobre o estado inteiro.
+                </div>
+              </>
+            )}
 
             <label htmlFor="cs-name">Nome do candidato(a)</label>
             <input
@@ -211,6 +262,31 @@ export default function Consultoria() {
               onChange={(e) => setFocusAreas(e.target.value)}
               rows={3}
             />
+            {projLoading && <div style={{padding:12, color:'#64748b', fontSize:14}}>Calculando projeção 2026…</div>}
+            {projecao && projecao.ok !== false && (
+              <div style={{margin:'16px 0', padding:16, background:'#f0f9ff', border:'1px solid #bae6fd', borderRadius:8}}>
+                <div style={{fontWeight:600, fontSize:14, marginBottom:8, color:'#0369a1'}}>
+                  📊 Panorama Eleitoral 2026 — {form.role}/{cargoEstadual ? (form.state || 'RO') : (form.city || '...')}
+                </div>
+                <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, fontSize:13}}>
+                  {projecao.calculations?.map((c, i) => (
+                    <div key={i} style={{padding:'6px 10px', background:'#fff', borderRadius:4}}>
+                      <div style={{color:'#64748b', fontSize:11, marginBottom:2}}>{c.label}</div>
+                      <div style={{fontWeight:600, color:'#0c4a6e'}}>{c.value}</div>
+                      <div style={{color:'#94a3b8', fontSize:10, marginTop:2}}>{c.source}</div>
+                    </div>
+                  ))}
+                </div>
+                {projecao.warnings?.length > 0 && (
+                  <div style={{marginTop:10, fontSize:11, color:'#b45309'}}>
+                    ⚠️ {projecao.warnings.join(' · ')}
+                  </div>
+                )}
+                <div style={{marginTop:8, fontSize:10, color:'#64748b', fontStyle:'italic'}}>
+                  {projecao.disclaimer}
+                </div>
+              </div>
+            )}
             <button className="cs-cta" onClick={generate} disabled={loading}>
               {loading ? <Loader2 size={18} className="cs-spin" /> : <Search size={18} />}
               {loading ? 'Pesquisando menções…' : 'Buscar menções e gerar consultoria'}

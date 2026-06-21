@@ -58,3 +58,43 @@
 - Origem: NEMESIS 3 (2026-06-21)
 - Confiança: 0.6 (candidato; aplicar no momento da delegação)
 - Evidência: 1 análise prévia
+
+## [I-008] Rate-limit e budget cap em produção EXIGEM RPC SQL atômica
+- Categoria: custo
+- Gatilho: implementar qualquer cap (rate-limit, budget, quota) usando UPSERT ou GET+PATCH em Postgres
+- Comportamento: NÃO use UPSERT-then-SELECT nem GET+PATCH. Crie RPC SQL com INSERT...ON CONFLICT DO UPDATE...RETURNING (atomic) ou UPDATE...WHERE guard...RETURNING. Verifier vai pegar esse race em 100% dos casos. Adotado via atomic_rate_limit_check + atomic_budget_charge.
+- Origem: NEMESIS 3 verifier (2026-06-21), defeitos #2 e #3
+- Confiança: 0.95 (regra dura, evidência forte)
+- Evidência: 1 reprovação direta + literatura clássica de race conditions
+
+## [I-009] INV de domínio NUNCA vai opcional — implementar mesmo que custe
+- Categoria: domínio
+- Gatilho: tentar entregar feature com invariante "TODO"
+- Comportamento: validator que diz "INV-1 desligada nesta versão" é vetor de alucinação em 100% dos casos onde IA está no caminho. Solução: ou (a) implementa a invariante com a fonte de dados disponível, ou (b) DESATIVA a feature até ter a invariante. Não publicar com INV-off.
+- Origem: NEMESIS 3 verifier (2026-06-21), defeito #5
+- Confiança: 0.85
+- Evidência: 1 reprovação direta + I-003 (banner de honestidade) reforça
+
+## [I-010] Blocklist regex contra fala humana é teatro de segurança
+- Categoria: segurança
+- Gatilho: filtrar saída de LLM por conteúdo proibido com regex
+- Comportamento: regex pega 30-50% dos casos. Homoglyph, base64, idioma alternativo, paráfrase passam. Solução real: classifier IA (Claude rápido perguntando "isso viola X?") OU revisão humana obrigatória até ter dataset. Normalização de homoglyph é must-have mas não é suficiente.
+- Origem: NEMESIS 3 verifier (2026-06-21), defeito #6
+- Confiança: 0.8
+- Evidência: 1 reprovação + estado da arte de safety filters
+
+## [I-011] Subagent do tipo Skill NÃO vê /tmp do parent
+- Categoria: operação
+- Gatilho: spawn de onda-verifier ou outro subagent para auditar código que está em /tmp
+- Comportamento: subagent começa cold, sem acesso ao filesystem do parent. Para auditar código, anexar o diretório à sessão ANTES via request_cowork_directory, OU mandar os trechos no brief (caro), OU clonar o repo dentro do agent. Sem isso, verifier devolve "REPROVADO por falta de evidência" — o que tecnicamente está correto.
+- Origem: NEMESIS 3 verifier (2026-06-21), nota de método
+- Confiança: 0.7
+- Evidência: 1 ocorrência clara
+
+## [I-012] cpf_hash sem salt = CPF em claro perante ANPD
+- Categoria: segurança
+- Gatilho: armazenar identificador derivado de PII (CPF, CNPJ, telefone)
+- Comportamento: SHA-256 de CPF é quebrado por rainbow table (10^11 espaço) em segundos. Use HMAC com chave em KMS/secret manager, ou hash com salt único por linha. Nunca hash plano. ANPD trata como dado pessoal em claro.
+- Origem: NEMESIS 3 verifier (2026-06-21), defeito #7
+- Confiança: 0.9
+- Evidência: regulação ANPD + literatura básica de criptografia

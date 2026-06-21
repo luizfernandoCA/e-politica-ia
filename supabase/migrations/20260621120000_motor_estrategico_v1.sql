@@ -309,3 +309,38 @@ COMMIT;
 -- SELECT count(*) FROM public.strategic_plans;        -- 0
 -- SELECT count(*) FROM public.candidate_profiles;     -- 0
 -- =========================================================================
+
+-- =========================================================================
+-- 13) NEMESIS3 hot-fix do verifier: RPCs atômicas (defeitos #2 e #3)
+--     Aplicadas em prod via migration motor_estrategico_v1_atomic_guards
+-- =========================================================================
+CREATE OR REPLACE FUNCTION public.atomic_rate_limit_check(
+  p_user_id uuid, p_endpoint text, p_per_minute int, p_per_day int
+) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp
+AS $$
+DECLARE
+  v_minute_start timestamptz := date_trunc('minute', now());
+  v_day_start timestamptz := date_trunc('day', now() at time zone 'UTC') at time zone 'UTC';
+  v_minute_count int;
+  v_day_count int;
+BEGIN
+  INSERT INTO public.rate_limits(user_id, endpoint, window_start, count)
+  VALUES (p_user_id, p_endpoint, v_minute_start, 1)
+  ON CONFLICT (user_id, endpoint, window_start)
+    DO UPDATE SET count = public.rate_limits.count + 1
+  RETURNING count INTO v_minute_count;
+  SELECT COALESCE(sum(count), 0) INTO v_day_count
+  FROM public.rate_limits
+  WHERE user_id = p_user_id AND endpoint = p_endpoint AND window_start >= v_day_start;
+  IF v_day_count > p_per_day THEN
+    RETURN jsonb_build_object('ok', false, 'code', 'DAILY_LIMIT', 'limit', p_per_day, 'used', v_day_count);
+  END IF;
+  IF v_minute_count > p_per_minute THEN
+    RETURN jsonb_build_object('ok', false, 'code', 'MINUTE_LIMIT', 'limit', p_per_minute, 'retry_after_ms', 60000);
+  END IF;
+  RETURN jsonb_build_object('ok', true, 'used_minute', v_minute_count, 'used_day', v_day_count);
+END;
+$$;
+REVOKE ALL ON FUNCTION public.atomic_rate_limit_check(uuid, text, int, int) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.atomic_rate_limit_check(uuid, text, int, int) TO service_role;

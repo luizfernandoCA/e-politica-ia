@@ -102,6 +102,11 @@ export default async function handler(req, res) {
   if (tooLong(nome_urna, 120) || tooLong(estado, 2) || tooLong(mun_code, 10)) {
     return res.status(413).json({ ok:false, code:'INPUT_TOO_LONG' });
   }
+  // Hot-fix verifier (defeito #9): cap explícito no payload bruto p/ evitar prompt-stuffing.
+  const rawPayloadSize = JSON.stringify(req.body || {}).length;
+  if (rawPayloadSize > 8000) {
+    return res.status(413).json({ ok:false, code:'PAYLOAD_TOO_LARGE', detail:`max 8000 chars, got ${rawPayloadSize}` });
+  }
   if (!process.env.ANTHROPIC_API_KEY) {
     return res.status(503).json({ ok:false, code:'AI_NOT_CONFIGURED' });
   }
@@ -121,7 +126,7 @@ export default async function handler(req, res) {
       model_used: DEFAULT_MODEL,
     });
   } catch (e) {
-    return res.status(500).json({ ok:false, code:'DB_INSERT_FAILED', detail: String(e.message) });
+    console.error('[strategic-plan] DB_INSERT_FAILED', e); return res.status(500).json({ ok:false, code:'DB_INSERT_FAILED' });
   }
 
   // 5) Collectors paralelos
@@ -178,7 +183,8 @@ export default async function handler(req, res) {
 
   // 10) Validator (sem evidências de verdade nesta primeira versão, deixa pular INV-1)
   // TODO Onda 2: criar tabela evidence_input + plugar fontes nas claims.
-  const validation = validatePlan(planData, []);
+  const officialAdversaryIds = (tseRes.adversaries || []).map(a => a.tse_candidate_id);
+  const validation = validatePlan(planData, [], officialAdversaryIds);
   if (!validation.ok && validation.violations.some(v => v.inv === 'INV-6')) {
     await dbUpdate('strategic_plans', `id=eq.${plan.id}`, {
       status:'FAILED', error_code:'VALIDATOR_REJECTED', error_message: JSON.stringify(validation.violations),

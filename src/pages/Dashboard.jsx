@@ -502,12 +502,16 @@ function RealApuracaoBanner({ setActivePage }) {
   const [error, setError] = useState(null);
 
   const city = params?.city || '';
-  const role = params?.role || 'Vereador';
+  const role = params?.role || '';
   const candidateHint = params?.candidateName || '';
+
+  // NEMESIS3: cargos estaduais+ (DE/DF/SF/GV) NÃO têm apuração municipal de 2024 —
+  // são pleito 2026 que ainda não ocorreu. Não chamar /api/tse-apuracao p/ eles.
+  const isMunicipalCargo = ['Prefeito', 'Vereador'].includes(role);
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    if (!city) return;
+    if (!isMunicipalCargo || !city || !role) return;
     let cancelled = false;
     setLoading(true);
     setError(null);
@@ -528,16 +532,53 @@ function RealApuracaoBanner({ setActivePage }) {
     return () => {
       cancelled = true;
     };
-  }, [city, role]);
+  }, [city, role, isMunicipalCargo]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   // Loading / erro / sem setup
-  if (!city) {
+  if (!role || !params?.candidateName) {
     return (
       <div className="glass" style={{ padding: '1.25rem', borderLeft: '4px solid var(--accent-yellow)' }}>
         <strong>Configure sua campanha</strong>
         <p style={{ color: 'var(--text-gray)', fontSize: '0.85rem', marginTop: '4px' }}>
-          Defina município e cargo no setup para ver dados reais do TSE.
+          Complete o ajuste de campanha (nome, cargo, partido, UF) para ver os dados oficiais.
+        </p>
+      </div>
+    );
+  }
+
+  // Cargos estaduais+: pleito 2026 ainda não ocorreu. Não buscar apuração municipal.
+  if (!isMunicipalCargo) {
+    return (
+      <div className="glass" style={{ padding: '1.25rem', borderLeft: '4px solid var(--accent-blue-bright)' }}>
+        <strong>Candidatura 2026: {params.candidateName} · {role}/{params.state || 'BR'}</strong>
+        <p style={{ color: 'var(--text-gray)', fontSize: '0.85rem', marginTop: '6px', lineHeight: 1.5 }}>
+          A eleição geral de 2026 ocorre em <strong>outubro/2026</strong>. Ainda não há apuração oficial para cruzar.
+          Para a projeção do <strong>coeficiente eleitoral</strong> (votos válidos esperados, QE, voto individual mínimo,
+          cláusula partidária), vá em <strong>Apuração TSE → aba Coeficiente</strong>. Para análise estratégica com IA
+          a partir de notícias e dados oficiais, use <strong>Consultoria IA</strong> ou <strong>Plano Tático</strong>.
+        </p>
+        <button
+          onClick={() => setActivePage('apuracao-tse')}
+          style={{
+            background: 'rgba(0,168,89,0.1)', border: '1px solid rgba(0,168,89,0.2)',
+            color: 'var(--accent-green-bright)', padding: '6px 12px',
+            borderRadius: 'var(--radius-sm)', fontSize: '0.75rem',
+            cursor: 'pointer', fontWeight: 600, marginTop: '8px'
+          }}
+        >
+          Ver Coeficiente Eleitoral →
+        </button>
+      </div>
+    );
+  }
+
+  if (!city) {
+    return (
+      <div className="glass" style={{ padding: '1.25rem', borderLeft: '4px solid var(--accent-yellow)' }}>
+        <strong>Defina o município</strong>
+        <p style={{ color: 'var(--text-gray)', fontSize: '0.85rem', marginTop: '4px' }}>
+          Para {role}, o município é obrigatório no setup.
         </p>
       </div>
     );

@@ -5,9 +5,9 @@ import { RO_MUNICIPALITIES } from '../data/roMunicipalities';
 export default function CampaignSetup({ onSetupComplete }) {
   const [formData, setFormData] = useState({
     candidateName: '',
-    city: 'Porto Velho',
+    city: '',
     state: 'RO',
-    role: 'Prefeito',
+    role: '',
     previousRole: '', // cargo já disputado (vazio = nunca concorreu)
     party: ''
   });
@@ -38,7 +38,17 @@ export default function CampaignSetup({ onSetupComplete }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.candidateName || !formData.party) return;
+    setErrorMessage(null);
+    if (!formData.candidateName.trim()) { setErrorMessage('Informe o nome do candidato.'); return; }
+    if (!formData.role) { setErrorMessage('Selecione o cargo pretendido.'); return; }
+    if (!formData.party.trim()) { setErrorMessage('Informe o partido político atual.'); return; }
+    if (!formData.state) { setErrorMessage('Selecione a UF.'); return; }
+    const requiresCity = MUNICIPAL_CARGOS.includes(formData.role);
+    if (requiresCity && !formData.city.trim()) { setErrorMessage('Para Prefeito/Vereador, o município é obrigatório.'); return; }
+    // Para cargos estaduais+, normalizar city para vazio (não deve influenciar dashboard)
+    if (!requiresCity && formData.city) {
+      setFormData(prev => ({ ...prev, city: '' }));
+    }
     
     setIsProcessing(true);
     setErrorMessage(null);
@@ -202,6 +212,7 @@ export default function CampaignSetup({ onSetupComplete }) {
                       fontSize: '0.9rem'
                     }}
                   >
+                    <option value="" disabled>Selecione o cargo…</option>
                     {CARGOS.map((c) => (
                       <option key={c} value={c}>{c}</option>
                     ))}
@@ -259,7 +270,11 @@ export default function CampaignSetup({ onSetupComplete }) {
                 
                 {/* Cidade */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-gray)' }}>Cidade / Município *</label>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-gray)' }}>
+                    {MUNICIPAL_CARGOS.includes(formData.role)
+                      ? 'Cidade / Município *'
+                      : 'Cidade / Município (opcional — cargos estaduais cobrem toda a UF)'}
+                  </label>
                   <input
                     list="ro-cities-list"
                     value={formData.city}

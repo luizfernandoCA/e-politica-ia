@@ -304,3 +304,19 @@ Ondas 2+: X/Meta integration, 11 telas visuais, refresh nightly, multi-tenant eq
 ### Instintos novos
 Gravados em ONDA_INSTINTOS.md: I-001 a I-007. Foco em audit-first, cost-guard,
 honesty-banner, anti-inflation, smoke-test-via-chrome-not-webfetch, agent-mcp-scope.
+
+### Deploy de produção concluído (2026-06-21 19:04 UTC)
+- Push branch feat/nemesis3-motor-estrategico → PR #21 aberto via API GitHub
+- Build #1 falhou (failure unknown sem log via WebFetch)
+- Diagnosticado via Claude in Chrome MCP (user logado na Vercel): "No more than 12
+  Serverless Functions on Hobby plan". Fix: mover 4 helpers de api/strategic-plan/
+  para lib/strategic-plan/ — function count caiu de 14 → 10.
+- Build #2 verde, PR mergeado (squash), produção redeployada.
+- Smoke test:
+  - https://e-politica-ia.vercel.app/ → HTTP 200
+  - /api/electoral-projection → 401 (auth requerida — esperado)
+  - /api/strategic-plan/generate → 401 (auth requerida — esperado)
+  - /api/tse-apuracao?city=PORTO%20VELHO&role=Prefeito&year=2024 → 200 (sem regressão)
+- Bug user-facing resolvido: aba Coeficiente agora respeita cargo cadastrado
+  (Deputado Estadual mostra QE projetado em vez de "Prefeito majoritário").
+- Instintos novos gravados: I-013 (limite Hobby), I-014 (Chrome MCP rescue), I-015 (inline prompts).

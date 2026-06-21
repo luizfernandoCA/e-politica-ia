@@ -98,3 +98,27 @@
 - Origem: NEMESIS 3 verifier (2026-06-21), defeito #7
 - Confiança: 0.9
 - Evidência: regulação ANPD + literatura básica de criptografia
+
+## [I-013] Vercel Hobby plan = 12 serverless functions MAX por deployment
+- Categoria: operação
+- Gatilho: adicionar novo .js dentro de api/ ou subpastas de api/
+- Comportamento: Vercel conta TODO .js dentro de api/ (incluindo subpastas) como serverless function. Hobby plan cap=12. Pro $20/mês cap=100+. Para projetos Hobby, helpers de uma function devem viver em lib/ (não em api/), e a function importa via `import { ... } from '../../lib/...'`. Confirmado em 21/06/2026 — build falhou com mensagem clara "No more than 12 Serverless Functions can be added".
+- Origem: NEMESIS 3 (2026-06-21), build Vercel falhou 2x
+- Confiança: 0.95
+- Evidência: mensagem explícita do Vercel + fix funcionou imediatamente
+
+## [I-014] Sem acesso ao Vercel dashboard? Use Claude in Chrome MCP (user logado)
+- Categoria: operação
+- Gatilho: build da Vercel falhou, WebFetch retorna HTML shell sem log, sem token Vercel
+- Comportamento: pedir ao user pra abrir o link de build no Chrome dele (logado), depois usar mcp__Claude_in_Chrome__navigate + get_page_text para ler o log real renderizado. Funciona porque Chrome MCP executa JS (WebFetch não). Levou 1 turn pra achar o erro real, vs várias horas de chute cego.
+- Origem: NEMESIS 3 (2026-06-21)
+- Confiança: 0.8
+- Evidência: 1 ocorrência salvou a iteração
+
+## [I-015] Inline prompts em serverless functions (não readFileSync de .txt)
+- Categoria: arquitetura
+- Gatilho: serverless function precisa de conteúdo grande estático (prompt, config, template)
+- Comportamento: Vercel/Netlify/Lambda NÃO incluem arquivos não-JS no bundle por default. readFileSync de .txt vai falhar em runtime. Solução: inline como template string no .js, ou criar wrapper .js que exporta a string. Para versionamento de prompts grandes: usar arquivo .js separado (ex: prompts/v1.js exportando const SYSTEM_PROMPT). Confirmado mas não foi a causa do build fail desta iteração (foi I-013).
+- Origem: NEMESIS 3 (2026-06-21)
+- Confiança: 0.85
+- Evidência: comportamento conhecido + correção preventiva aplicada

@@ -16,10 +16,10 @@
 import { applyCors, verifyUser, unauthorized, fetchWithTimeout, tooLong } from '../../lib/guard.js';
 import { checkRateLimit } from '../../lib/rate-limit.js';
 import { checkBudget, recordBudgetUsage, computeCostCents } from '../../lib/budget.js';
-import { collectTSE } from './collectors/tse-collector.js';
-import { collectIBGE } from './collectors/ibge-collector.js';
-import { rankAdversaries } from './ranker.js';
-import { validatePlan } from './validator.js';
+import { collectTSE } from '../../lib/strategic-plan/collectors/tse-collector.js';
+import { collectIBGE } from '../../lib/strategic-plan/collectors/ibge-collector.js';
+import { rankAdversaries } from '../../lib/strategic-plan/ranker.js';
+import { validatePlan } from '../../lib/strategic-plan/validator.js';
 
 export const config = { maxDuration: 60 };
 

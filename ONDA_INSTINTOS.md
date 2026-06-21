@@ -122,3 +122,11 @@
 - Origem: NEMESIS 3 (2026-06-21)
 - Confiança: 0.85
 - Evidência: comportamento conhecido + correção preventiva aplicada
+
+## [I-016] Defaults hardcoded em formulário ('Prefeito', 'Porto Velho', 'Vereador') mascaram cargo real e contaminam dashboards downstream
+- Categoria: domínio
+- Gatilho: form de setup/cadastro com `useState({ campo: 'valor-default' })` e downstream que lê esses params
+- Comportamento: nunca prefiller cargo/cidade/UF/cargo-anterior com default não-vazio quando há mais de uma escolha válida e o sistema toma decisões diferentes por valor. Use placeholder ('Selecione…') + validação obrigatória no submit. Defaults reaparecem em queries downstream (`role: params?.role || 'Vereador'`) e mascaram bugs porque o app "funciona" com o cargo errado. Caso real: dashboard tentou buscar Carlos Magno (Deputado Estadual) na lista oficial de Prefeito 2024 porque setup tinha `role: 'Prefeito'` default + Dashboard tinha `|| 'Vereador'` fallback.
+- Origem: NEMESIS 3 (2026-06-21), bug reportado pelo usuário Luiz
+- Confiança: 0.9
+- Evidência: 1 ocorrência com 3 hardcodes diferentes apontando para o mesmo padrão

@@ -68,9 +68,14 @@ export default function CaminhoVitoria({ setActivePage }) {
   const qe = projecao?.quociente_eleitoral || 0;
   const vagas = projecao?.vagas || 0;
 
-  // Meta de votos
+  // Meta de votos — calibrada com dados históricos reais
+  // Para DE/DF: média histórica dos eleitos = ~0.6-0.8× QE (sobras + arrasto da legenda)
+  // Para VR: tipicamente 0.5-0.7× QE
+  // Para majoritários (PM/GV/PR): 50%+1 dos válidos
+  // Para SF: top 2 dos válidos (referência histórica ~30%)
+  const fatorPorCargo = { VR: 0.55, DE: 0.65, DF: 0.70 };
   const metaDefault = isProp
-    ? Math.max(Math.ceil(qe * 0.10), Math.ceil(qe * 1.2))  // 1.2× QE = posição segura na legenda
+    ? Math.max(Math.ceil(qe * 0.10), Math.ceil(qe * (fatorPorCargo[cargoCode] || 0.70)))
     : (cargoCode === 'SF' ? Math.round(validos * 0.30) : Math.ceil(validos / 2) + 1);
   const metaFinal = Number(String(meta).replace(/\D/g,'')) || metaDefault;
 
@@ -102,7 +107,7 @@ export default function CaminhoVitoria({ setActivePage }) {
         <div style={{display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:16, flexWrap:'wrap'}}>
           <div>
             <div style={{fontSize:12, color:'var(--text-gray)', textTransform:'uppercase', fontWeight:600, marginBottom:6}}>
-              {isProp ? `Voto seguro para ${params.role} (1.2× QE)` : `Limiar de ${cargoCode === 'SF' ? 'competitividade (~30% válidos)' : 'maioria absoluta (50%+1)'}`}
+              {isProp ? `Voto seguro estimado para ${params.role} (${Math.round((fatorPorCargo[cargoCode] || 0.70)*100)}% do QE — média histórica dos eleitos)` : `Limiar de ${cargoCode === 'SF' ? 'competitividade (~30% válidos)' : 'maioria absoluta (50%+1)'}`}
             </div>
             <div style={{fontSize:42, fontWeight:800, color:'#F59E0B', lineHeight:1}}>
               {metaFinal.toLocaleString('pt-BR')}
@@ -165,7 +170,7 @@ export default function CaminhoVitoria({ setActivePage }) {
       </div>
 
       <p style={{fontSize:11, color:'var(--text-muted)', marginTop:14, fontStyle:'italic'}}>
-        Cálculo: meta-base = {isProp ? '1.2× QE (margem segura na legenda)' : cargoCode === 'SF' ? '~30% válidos (referência histórica do 2º colocado)' : '50%+1 dos válidos (CF art. 77)'}.
+        Cálculo: meta-base = {isProp ? `${Math.round((fatorPorCargo[cargoCode] || 0.70)*100)}% do QE (média histórica dos eleitos no estado — DE entra na faixa 0.55-0.70× QE somando voto pessoal + arrasto)` : cargoCode === 'SF' ? '~30% válidos (referência histórica do 2º colocado)' : '50%+1 dos válidos (CF art. 77)'}.
         Distribuição por cenário multiplica por taxa de base consolidada. Próxima onda: agregar dados reais do CRM e calcular votos por território.
       </p>
     </div>

@@ -423,11 +423,16 @@ export default function CRM({ contacts, setContacts, setCandidates, activeCandid
                 value={newContact.role}
                 onChange={(e) => setNewContact(prev => ({ ...prev, role: e.target.value }))}
               >
-                <option value="Apoiador">Apoiador</option>
-                <option value="Liderança">Liderança</option>
-                <option value="Voluntário">Voluntário</option>
-                <option value="Eleitor">Eleitor</option>
+                <option value="Coordenador Municipal">Coordenador Municipal (líder local)</option>
+                <option value="Formiguinha">Formiguinha (porta-a-porta)</option>
+                <option value="Apoiador">Apoiador Independente</option>
+                <option value="Liderança">Liderança (regional)</option>
+                <option value="Voluntário">Voluntário (eventual)</option>
+                <option value="Eleitor">Eleitor (cadastro simples)</option>
               </select>
+              <span style={{fontSize:'0.65rem', color:'var(--text-muted)', marginTop:2}}>
+                <strong>Coordenador Municipal</strong> = responsável por mobilizar uma cidade. <strong>Formiguinha</strong> = vai porta a porta. <strong>Apoiador Independente</strong> = rede passiva (sem atribuição).
+              </span>
             </div>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>

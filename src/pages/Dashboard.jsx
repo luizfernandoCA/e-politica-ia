@@ -449,28 +449,11 @@ export default function Dashboard({ activeCandidate, candidates, contacts = [], 
                 }} 
               />
 
-              {/* Activity 1 */}
-              <div style={{ position: 'relative' }}>
-                <div style={{ position: 'absolute', left: '-20px', top: '3px', width: '10px', height: '10px', borderRadius: '50%', background: 'var(--accent-green)', border: '2px solid var(--dot-border)' }} />
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', fontWeight: 500 }}>Recentemente</span>
-                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-white)' }}>Reunião Geral em Vila Nova</span>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-gray)', marginTop: '2px' }}>Nova liderança cadastrou 85 apoiadores locais.</p>
-              </div>
-
-              {/* Activity 2 */}
-              <div style={{ position: 'relative' }}>
-                <div style={{ position: 'absolute', left: '-20px', top: '3px', width: '10px', height: '10px', borderRadius: '50%', background: 'var(--accent-blue-bright)', border: '2px solid var(--dot-border)' }} />
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', fontWeight: 500 }}>Há 2 dias</span>
-                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-white)' }}>Atualização de Dados do TSE</span>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-gray)', marginTop: '2px' }}>Histórico eleitoral consolidado do pleito de 2024 importado.</p>
-              </div>
-
-              {/* Activity 3 */}
-              <div style={{ position: 'relative' }}>
-                <div style={{ position: 'absolute', left: '-20px', top: '3px', width: '10px', height: '10px', borderRadius: '50%', background: 'var(--accent-yellow)', border: '2px solid var(--dot-border)' }} />
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', fontWeight: 500 }}>Há 4 dias</span>
-                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-white)' }}>Simulação de IA Concluída</span>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-gray)', marginTop: '2px' }}>IA Mestre traçou plano de marketing para bairro estratégico.</p>
+              {/* Estado vazio — sem dados mock; a Linha será populada conforme você usar o app */}
+              <div style={{padding:'8px 0', color:'var(--text-gray)', fontSize:13, lineHeight:1.5}}>
+                Sua Linha de Atividades aparecerá aqui conforme você usar o produto: planos
+                gerados, contatos cadastrados, análises feitas, decisões tomadas. Sem dados
+                fakes nem placeholder — só o que você realmente fez.
               </div>
             </div>
           </div>

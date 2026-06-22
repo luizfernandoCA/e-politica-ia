@@ -102,7 +102,7 @@ export default function ApuracaoTSE() {
   // Para a apuração municipal de contexto, usa cargo municipal válido.
   const [role, setRole] = useState(params?.role || 'Prefeito');
 
-  const city = params?.city || 'PORTO VELHO';
+  const city = params?.city || (isMunicipalCargo ? 'PORTO VELHO' : '');
 
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -619,6 +619,7 @@ function TabCoeficiente({ role, data }) {
   );
   // Bancada federal do estado prefilled da base oficial → deriva as estaduais.
   const [depFederais, setDepFederais] = useState(ufInfo?.depFed ? String(ufInfo.depFed) : '');
+  const [federacaoLabel, setFederacaoLabel] = useState('');
 
   const roleLower = (role || '').toLowerCase();
   const isDepEstadual = roleLower.includes('estadual');
@@ -709,15 +710,24 @@ function TabCoeficiente({ role, data }) {
               <input style={inputStyle} inputMode="numeric" value={pctValidos} onChange={(e) => setPctValidos(e.target.value)} />
             </div>
             {isDeputado ? (
-              <div>
-                <label style={labelStyle}>Deputados federais do estado</label>
-                <input style={inputStyle} inputMode="numeric" value={depFederais} onChange={(e) => setDepFederais(e.target.value)} placeholder={uf === 'RO' ? 'RO: 8' : 'ver TSE'} />
-                <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
-                  {fedN > 0
-                    ? `Vagas no cargo: ${vagasEfetivas} ${isDepEstadual ? '(estaduais, pela fórmula da CF art. 27)' : '(federais)'}`
-                    : 'Informe a bancada federal do estado'}
-                </span>
-              </div>
+              <>
+                <div>
+                  <label style={labelStyle}>Deputados federais do estado</label>
+                  <input style={inputStyle} inputMode="numeric" value={depFederais} onChange={(e) => setDepFederais(e.target.value)} placeholder={uf === 'RO' ? 'RO: 8' : 'ver TSE'} />
+                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
+                    {fedN > 0
+                      ? `Vagas no cargo: ${vagasEfetivas} ${isDepEstadual ? '(estaduais, pela fórmula da CF art. 27)' : '(federais)'}`
+                      : 'Informe a bancada federal do estado'}
+                  </span>
+                </div>
+                <div>
+                  <label style={labelStyle}>Federação política (opcional)</label>
+                  <input style={inputStyle} type="text" value={federacaoLabel} onChange={(e) => setFederacaoLabel(e.target.value)} placeholder="ex: PRD-Solidariedade" />
+                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
+                    Federação = partidos coligados nacionalmente. Para QE conta como 1 legenda única (soma de todos os votos).
+                  </span>
+                </div>
+              </>
             ) : (
               <div>
                 <label style={labelStyle}>Vagas (cadeiras)</label>
@@ -803,10 +813,21 @@ function TabCoeficiente({ role, data }) {
             <div style={{ ...card, borderColor: 'rgba(99,102,241,0.3)' }}>
               <strong style={{ color: '#6366F1', fontSize: '0.82rem' }}>ℹ️ Como as {vagasEfetivas} vagas estaduais são calculadas</strong>
               <p style={{ fontSize: '0.78rem', color: 'var(--text-gray)', margin: '0.4rem 0 0', lineHeight: 1.5 }}>
-                A Assembleia Legislativa de cada estado segue a <strong>fórmula da Constituição, art. 27</strong>:
-                3× a bancada de Deputados Federais até alcançar 36; a partir daí, +1 deputado estadual por cada federal
-                que ultrapasse 12. Por isso pedimos a bancada federal acima — a estadual deriva dela automaticamente.
-                Código de cargo no TSE: Deputado Estadual = 7.
+                Assembleia Legislativa segue a <strong>CF art. 27</strong>: 3× a bancada de Deputados Federais até alcançar 36;
+                acima disso, +1 estadual por federal além de 12. Por isso pedimos a bancada federal — a estadual deriva.
+                Código TSE: Deputado Estadual = 7.
+              </p>
+            </div>
+          )}
+          {federacaoLabel && qe > 0 && (
+            <div style={{ ...card, borderColor: 'rgba(34,197,94,0.3)' }}>
+              <strong style={{ color: 'var(--accent-green-bright)', fontSize: '0.82rem' }}>🤝 Cálculo pela federação {federacaoLabel}</strong>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-gray)', margin: '0.4rem 0 0', lineHeight: 1.5 }}>
+                A federação <strong>{federacaoLabel}</strong> conta como UMA legenda no quociente partidário (Lei 14.208/2021).
+                Para eleger <strong>1 candidato</strong>, a soma de votos da federação inteira (nominais + legenda de todos os
+                partidos componentes) precisa atingir <strong>{formatNumber(qe)} votos</strong> (1× QE).
+                Para disputar sobras na maior média, precisa <strong>{formatNumber(Math.ceil(qe*0.80))} votos</strong> (80% QE).
+                Cada candidato individual ainda precisa cruzar o piso de <strong>{formatNumber(Math.ceil(qe*0.10))} votos</strong> (10% QE).
               </p>
             </div>
           )}

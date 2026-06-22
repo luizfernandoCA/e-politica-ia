@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Menu, Bell, ShieldCheck, ChevronDown } from 'lucide-react';
 import { CANDIDATES } from '../data/electoralMockData';
 
@@ -10,6 +11,7 @@ export default function Header({
   activeUser,
   candidates
 }) {
+  const [notifOpen, setNotifOpen] = useState(false);
 
   const getPageTitle = () => {
     switch (activePage) {
@@ -148,10 +150,20 @@ export default function Header({
           onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent-blue-bright)')}
           onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-gray)')}
           aria-label="Notificações"
+          onClick={() => setNotifOpen(o => !o)}
         >
           <Bell size={18} />
-          <span style={{ position: 'absolute', top: '7px', right: '8px', width: '7px', height: '7px', borderRadius: '50%', background: 'var(--danger)', border: '2px solid var(--bg-dark-sidebar)' }} />
         </button>
+        {notifOpen && (
+          <div style={{position:'absolute', top:60, right:120, width:300, background:'#fff', border:'1px solid var(--border-color)', borderRadius:8, boxShadow:'0 8px 24px rgba(0,0,0,0.08)', padding:16, zIndex:1000}}>
+            <strong style={{fontSize:13, color:'var(--text-white)'}}>Notificações</strong>
+            <p style={{fontSize:13, color:'var(--text-gray)', margin:'8px 0 0'}}>
+              Nenhuma notificação no momento. Você receberá alertas quando houver:
+              novos dados do TSE, alertas de prazo legal, sugestões da Mestre AI.
+            </p>
+            <button onClick={() => setNotifOpen(false)} style={{marginTop:10, padding:'4px 10px', background:'transparent', border:'1px solid var(--border-color)', borderRadius:4, fontSize:12, color:'var(--text-gray)', cursor:'pointer'}}>Fechar</button>
+          </div>
+        )}
 
         {/* User Profile */}
         {activeUser && (

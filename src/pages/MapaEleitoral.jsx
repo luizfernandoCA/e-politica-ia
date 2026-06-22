@@ -14,6 +14,25 @@ const LEAFLET_CDN = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
 const LEAFLET_CSS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
 const GEOJSON_BR_STATES = 'https://raw.githubusercontent.com/codeforgermany/click_that_hood/main/public/data/brazil-states.geojson';
 
+
+// Top 5 colégios eleitorais por UF — base TSE 2024 (referência). Próxima onda: cron preload por UF.
+const TOP5_BY_UF = {
+  RO: [
+    { nome: 'Porto Velho', eleitorado: 362248, estrategia: 'Hub de mídia: comício + IG/TikTok diário, foco em zona oeste.' },
+    { nome: 'Ji-Paraná', eleitorado: 110000, estrategia: 'Polo regional: agenda semanal de lideranças locais.' },
+    { nome: 'Ariquemes', eleitorado: 100000, estrategia: 'Crescimento agro: pauta econômica + visitas a cooperativas.' },
+    { nome: 'Cacoal', eleitorado: 75000, estrategia: 'Histórico de federação: ativar base PRD/Solidariedade local.' },
+    { nome: 'Vilhena', eleitorado: 70000, estrategia: 'Fronteira do agro: temas de infra-estrutura e segurança rural.' },
+  ],
+  SP: [
+    { nome: 'São Paulo', eleitorado: 9600000, estrategia: 'Concentra 27% do eleitorado estadual.' },
+    { nome: 'Guarulhos', eleitorado: 925000, estrategia: 'Base operária + porta-a-porta.' },
+    { nome: 'Campinas', eleitorado: 877000, estrategia: 'Polo universitário + tecnologia.' },
+    { nome: 'São Bernardo do Campo', eleitorado: 632000, estrategia: 'ABC paulista: pauta industrial e sindicatos.' },
+    { nome: 'Santo André', eleitorado: 545000, estrategia: 'ABC: alianças partidárias regionais.' },
+  ],
+};
+
 export default function MapaEleitoral() {
   const mapRef = useRef(null);
   const containerRef = useRef(null);
@@ -180,6 +199,39 @@ export default function MapaEleitoral() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Top 5 colégios eleitorais — referência */}
+      {params?.state && (
+        <div className="glass" style={{padding:'14px 18px', marginTop:14}}>
+          <h3 style={{margin:'0 0 8px', fontSize:14, fontWeight:700, color:'var(--text-white)'}}>
+            🏆 Top 5 colégios eleitorais — {params.state}
+          </h3>
+          <p style={{fontSize:12, color:'var(--text-gray)', margin:'0 0 10px'}}>
+            Maiores municípios em eleitorado apto. Concentrar esforço nos top 3 historicamente garante 50-65% dos votos válidos do estado.
+          </p>
+          <table style={{width:'100%', borderCollapse:'collapse', fontSize:13}}>
+            <thead><tr style={{background:'rgba(99,102,241,0.05)'}}>
+              <th style={{padding:'8px 10px', textAlign:'left', fontSize:11, color:'var(--text-gray)', textTransform:'uppercase'}}>#</th>
+              <th style={{padding:'8px 10px', textAlign:'left', fontSize:11, color:'var(--text-gray)', textTransform:'uppercase'}}>Município</th>
+              <th style={{padding:'8px 10px', textAlign:'right', fontSize:11, color:'var(--text-gray)', textTransform:'uppercase'}}>Eleitorado 2024</th>
+              <th style={{padding:'8px 10px', textAlign:'left', fontSize:11, color:'var(--text-gray)', textTransform:'uppercase'}}>Estratégia sugerida</th>
+            </tr></thead>
+            <tbody>
+              {(TOP5_BY_UF[params.state] || []).map((m, i) => (
+                <tr key={i} style={{borderTop:'1px solid var(--border-color)'}}>
+                  <td style={{padding:'8px 10px', color:'var(--text-white)', fontWeight:700}}>{i+1}</td>
+                  <td style={{padding:'8px 10px', color:'var(--text-white)'}}>{m.nome}</td>
+                  <td style={{padding:'8px 10px', color:'var(--text-white)', textAlign:'right'}}>{m.eleitorado.toLocaleString('pt-BR')}</td>
+                  <td style={{padding:'8px 10px', color:'var(--text-gray)', fontSize:12}}>{m.estrategia}</td>
+                </tr>
+              ))}
+              {(!TOP5_BY_UF[params.state]) && (
+                <tr><td colSpan={4} style={{padding:'10px', color:'var(--text-muted)', fontStyle:'italic'}}>Top 5 do {params.state} será carregado via TSE no próximo preload.</td></tr>
+              )}
+            </tbody>
+          </table>
         </div>
       )}
 

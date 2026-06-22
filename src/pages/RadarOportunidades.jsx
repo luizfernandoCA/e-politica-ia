@@ -25,16 +25,36 @@ export default function RadarOportunidades() {
   }, []);
 
   const isMunicipal = ['Prefeito','Vereador'].includes(params?.role);
+  const ROLE_CODE = { 'Prefeito':'PM','Vereador':'VR','Deputado Estadual':'7','Deputado Federal':'6','Senador':'5','Governador':'3' };
+  const ELECTION_ID_2022 = { 'Deputado Estadual':'544', 'Deputado Federal':'544', 'Senador':'544', 'Governador':'544' };
+  const [incumbentes, setIncumbentes] = useState([]);
 
   const load = useCallback(async () => {
-    if (!isMunicipal || !params?.city) { setLoading(false); return; }
+    if (!params?.role) { setLoading(false); return; }
     try {
-      const res = await fetch(`/api/tse-apuracao?city=${encodeURIComponent(params.city)}&role=${params.role}&year=2024`);
-      const j = await res.json();
-      if (j.success) setApuracao(j);
+      if (isMunicipal && params?.city) {
+        const res = await fetch(`/api/tse-apuracao?city=${encodeURIComponent(params.city)}&role=${params.role}&year=2024`);
+        const j = await res.json();
+        if (j.success) setApuracao(j);
+      } else if (!isMunicipal && params?.state) {
+        // Cargo estadual+: buscar incumbentes 2022 do estado via Supabase
+        const { supabase } = await import('../supabase');
+        const cargo_code = ROLE_CODE[params.role];
+        const election_id = ELECTION_ID_2022[params.role];
+        if (cargo_code && election_id) {
+          const { data } = await supabase
+            .from('tse_candidates')
+            .select('*')
+            .eq('election_id', election_id)
+            .eq('cargo_code', cargo_code)
+            .eq('estado', params.state)
+            .eq('situacao', 'ELEITO');
+          setIncumbentes(data || []);
+        }
+      }
     } catch { /* */ }
     setLoading(false);
-  }, [isMunicipal, params?.city, params?.role]);
+  }, [isMunicipal, params?.city, params?.role, params?.state]);
 
   useEffect(() => {
     let cancelled = false;
@@ -74,19 +94,57 @@ export default function RadarOportunidades() {
 
       {loading && <div style={{padding:24, textAlign:'center', color:'var(--text-gray)'}}>Carregando...</div>}
 
-      {!loading && !isMunicipal && (
+      {!loading && !isMunicipal && incumbentes.length === 0 && (
         <div className="glass" style={{padding:20, borderLeft:'4px solid var(--accent-blue-bright)'}}>
           <strong style={{color:'var(--text-white)'}}>{params?.role} · {params?.state || 'UF'}</strong>
           <p style={{color:'var(--text-gray)', fontSize:14, margin:'8px 0 0', lineHeight:1.5}}>
-            Para cargos estaduais e federais, o Radar usa como referência os <strong>candidatos eleitos no último pleito 2022</strong> do seu estado.
-            Esses são os <strong>incumbentes em mandato vigente</strong> e seus adversários reais para 2026.
-          </p>
-          <p style={{color:'var(--text-gray)', fontSize:13, margin:'10px 0 0', fontStyle:'italic'}}>
-            ⚙️ Preload TSE de candidatos eleitos 2022 por estado roda na próxima onda.
-            Por enquanto, use a <strong>Consultoria IA</strong> (E-Poliana faz pesquisa web em tempo real)
-            ou o <strong>Plano Tático</strong> para gerar o ranking via dados externos.
+            Catálogo TSE de incumbentes ainda não tem dados de {params?.role}/{params?.state} para o pleito 2022.
+            Use a <strong>Consultoria IA</strong> (E-Poliana faz pesquisa web em tempo real) ou o <strong>Plano Tático</strong>
+            para gerar análise dos adversários via dados externos.
           </p>
         </div>
+      )}
+
+      {!loading && !isMunicipal && incumbentes.length > 0 && (
+        <>
+          <div className="glass" style={{padding:'14px 18px', marginBottom:14, borderLeft:'4px solid var(--accent-blue-bright)'}}>
+            <strong style={{color:'var(--text-white)', fontSize:14}}>
+              {incumbentes.length} incumbentes em mandato vigente — {params?.role}/{params?.state}
+            </strong>
+            <p style={{color:'var(--text-gray)', fontSize:13, margin:'6px 0 0'}}>
+              São os <strong>adversários reais</strong> do pleito 2026: foram eleitos em 2022 e cumprem mandato. Fonte: TSE oficial (Poder360 release).
+            </p>
+          </div>
+          <div className="glass" style={{padding:0, overflow:'hidden'}}>
+            <table style={{width:'100%', borderCollapse:'collapse', fontSize:13}}>
+              <thead><tr style={{background:'rgba(99,102,241,0.05)'}}>
+                <th style={{padding:'10px 14px', textAlign:'left', fontSize:11, color:'var(--text-gray)', textTransform:'uppercase'}}>Nome</th>
+                <th style={{padding:'10px 14px', textAlign:'left', fontSize:11, color:'var(--text-gray)', textTransform:'uppercase'}}>Partido</th>
+                <th style={{padding:'10px 14px', textAlign:'left', fontSize:11, color:'var(--text-gray)', textTransform:'uppercase'}}>Federação potencial</th>
+              </tr></thead>
+              <tbody>
+                {incumbentes.map((inc) => {
+                  const partido = inc.partido_sigla;
+                  const fed = ['PRD','SOLIDARIEDADE','SD'].includes(partido) ? 'PRD-Solidariedade'
+                            : ['PT','PCdoB','PV'].includes(partido) ? 'Brasil da Esperança'
+                            : ['PSDB','CIDADANIA'].includes(partido) ? 'PSDB-Cidadania' : '—';
+                  return (
+                    <tr key={inc.tse_candidate_id} style={{borderTop:'1px solid var(--border-color)'}}>
+                      <td style={{padding:'10px 14px', color:'var(--text-white)', fontWeight:600}}>{inc.nome_urna}</td>
+                      <td style={{padding:'10px 14px'}}>
+                        <span style={{padding:'2px 8px', background:'rgba(99,102,241,0.08)', color:'var(--accent-blue-bright)', borderRadius:4, fontSize:11, fontWeight:700}}>{partido}</span>
+                      </td>
+                      <td style={{padding:'10px 14px', color:'var(--text-gray)', fontSize:12}}>{fed}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <p style={{fontSize:11, color:'var(--text-muted)', marginTop:10, fontStyle:'italic'}}>
+            Catálogo seed: 24 eleitos RO 2022 via Poder360. Próxima onda: cronjob de preload com votos exatos por município do TSE.
+          </p>
+        </>
       )}
 
       {!loading && isMunicipal && !apuracao && (
